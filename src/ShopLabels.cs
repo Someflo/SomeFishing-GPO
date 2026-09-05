@@ -19,6 +19,16 @@ namespace SomeFishingGPO
             for(int y=region.Top;y<region.Bottom;y++)for(int x=region.Left;x<region.Right;x++)if(White(image.GetPixel(x,y))){l=Math.Min(l,x);t=Math.Min(t,y);r=Math.Max(r,x);b=Math.Max(b,y);}
             return r>=l&&b>=t?Rectangle.FromLTRB(l,t,r+1,b+1):Rectangle.Empty;
         }
+        internal static Rectangle GreenButtonBounds(Bitmap image,Rectangle region)
+        {
+            int l=region.Right,t=region.Bottom,r=region.Left-1,b=region.Top-1;
+            for(int y=region.Top;y<region.Bottom;y++)for(int x=region.Left;x<region.Right;x++){
+                Color c=image.GetPixel(x,y);
+                if(c.G>150&&c.G-c.B>90&&c.G>c.R*.8){l=Math.Min(l,x);t=Math.Min(t,y);r=Math.Max(r,x);b=Math.Max(b,y);}
+            }
+            Rectangle box=r>=l&&b>=t?Rectangle.FromLTRB(l,t,r+1,b+1):Rectangle.Empty;
+            return box.Width>=6&&box.Height>=6&&box.Width<region.Width*.8&&box.Height<region.Height*.9?box:Rectangle.Empty;
+        }
         internal static bool Match(Bitmap image,Rectangle region,string reference)
         {
             Rectangle box=InkBounds(image,region);

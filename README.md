@@ -2,7 +2,7 @@
 
 Macro visual para el minijuego de pesca de GPO en Windows. Su objetivo es ofrecer un programa sencillo, transparente y revisable, con el código completo y una forma de compilarlo localmente.
 
-**Compilación local 0.5.3: clic inicial de Sí restaurado y doble clic reservado al número central.** Incluye compra por cronómetro y cierre del diálogo final. Todavía necesita validación en partidas reales. No promete una tasa de capturas, evitar todas las desconexiones ni una garantía absoluta de ausencia de virus.
+**Compilación local 0.5.4: lectura de MAX corregida, continuación tras Sí manual y diagnóstico de clics.** Incluye compra por cronómetro y cierre del diálogo final. Todavía necesita validación en partidas reales. No promete una tasa de capturas, evitar todas las desconexiones ni una garantía absoluta de ausencia de virus.
 
 ![Vista del detector de SomeFishing GPO; imagen sintética](docs/Vista-previa.png)
 
@@ -20,7 +20,7 @@ El ciclo es **lanzar → esperar → seguir al pez → comprobar el cierre del m
 
 ## Descargar y empezar
 
-Esta compilación se entrega como `SomeFishing-GPO-v0.5.3-win-x64.zip`: extrae toda la carpeta y abre `SomeFishingGPO.exe`. La 0.5.3 todavía no se ha publicado en GitHub; la última publicación es la [versión preliminar 0.3.1](https://github.com/Someflo/SomeFishing-GPO/releases/tag/v0.3.1). Para conservar las zonas y opciones de una versión anterior, cierra la macro y copia su `ajustes.xml` a la nueva carpeta. Requiere Windows 10 u 11 de 64 bits, .NET Framework 4.8 y el cliente de escritorio de Roblox. La lectura de cebo y de los menús utiliza el reconocimiento de texto de Windows y necesita al menos un idioma OCR disponible. La aplicación no descarga ni instala idiomas. El SDK solo es necesario para recompilar, no para ejecutar el binario entregado.
+Esta compilación se entrega como `SomeFishing-GPO-v0.5.4-win-x64.zip`: extrae toda la carpeta y abre `SomeFishingGPO.exe`. La 0.5.4 todavía no se ha publicado en GitHub; la última publicación es la [versión preliminar 0.3.1](https://github.com/Someflo/SomeFishing-GPO/releases/tag/v0.3.1). Para conservar las zonas y opciones de una versión anterior, cierra la macro y copia su `ajustes.xml` a la nueva carpeta. Requiere Windows 10 u 11 de 64 bits, .NET Framework 4.8 y el cliente de escritorio de Roblox. La lectura de cebo y de los menús utiliza el reconocimiento de texto de Windows y necesita al menos un idioma OCR disponible. La aplicación no descarga ni instala idiomas. El SDK solo es necesario para recompilar, no para ejecutar el binario entregado.
 
 1. Abre Roblox en ventana o sin bordes, equipa la caña y lanza una vez manualmente.
 2. Con el minijuego visible, pulsa **F6**. Dibuja **una sola zona** con toda la altura de la barra azul y sus dos bordes oscuros. Deja margen lateral para su pequeño balanceo. La barra verde puede quedar dentro.
@@ -122,11 +122,15 @@ La prueba de falta de cebo simula el cero; no demuestra que el OCR detecte corre
 
 La prueba usa el modo elegido en Compra: Cronómetro puede terminar sin contador; Contador OCR exige cebo positivo tras cerrar. El registro distingue E sin oferta reconocida, Sí sin menú de cantidad, número escrito sin confirmar, Comprar enviado sin reconocer «…» y cierre sin confirmar cebo disponible. En modo Contador OCR, si la lectura de cebo está apagada, la prueba puede enviar Comprar y cerrar el diálogo, pero termina indicando que no pudo confirmar la reposición. No repite Comprar. Un contador positivo después del cierre confirma que hay cebo visible, no que haya aumentado exactamente en la cantidad solicitada: revisa el contador y el saldo del juego.
 
-El informe conserva estados, posiciones de clic y lecturas resumidas del detector, sin capturas. Puede incluir fragmentos breves del OCR del contador para explicar una lectura fallida. Está excluido del repositorio y del paquete. Si algo falla, este archivo permite identificar el paso pendiente.
+El informe conserva estados, posiciones de clic y lecturas resumidas del detector, sin capturas. Registra cuándo Windows acepta presionar y soltar y la duración de la pulsación; esto no demuestra que Roblox haya respondido. Si se pierde el foco, indica el proceso y el identificador de ventana que quedó activo, sin guardar su título ni su ruta. Puede incluir fragmentos breves del OCR del contador para explicar una lectura fallida. Está excluido del repositorio y del paquete. Si algo falla, este archivo permite identificar el paso pendiente.
 
 ![Botones de prueba y registro de pasos](docs/Pruebas.png)
 
-## OCR y entradas en la 0.5.3
+## OCR y entradas en la 0.5.4
+
+La captura nueva del menú **MAX: 294 / cantidad 1** no se reconocía en la 0.5.3. El lector puede aislar la línea de MAX y ensancharla antes de leerla a varios tamaños; exige dos números completos iguales y rechaza contradicciones. Las letras, comillas o dígitos truncados no se convierten en cantidades. El área de lectura de Comprar admite un pequeño solapamiento para que un margen lateral no corte la palabra. Si tu idioma OCR deja esta pantalla desconocida, prueba **Español (México)** o **Español (España)** en Cebo.
+
+Si pulsas Sí manualmente durante una prueba todavía activa, puede continuar tras confirmar dos imágenes nuevas del menú de cantidad y MAX, sin volver a pulsar Sí. Mantén Roblox en primer plano: una sesión que ya se detuvo no se reanuda con un clic manual. Antes de cada clic automático también comprueba que la ventana situada bajo el puntero sea Roblox; si hay otra ventana superpuesta, cancela e identifica el proceso.
 
 El OCR añade contraste suave para conservar los bordes de dígitos pequeños. Exige el prefijo x, × o * junto a la cantidad: evita aceptar solo el 2 de x42 si el OCR omite los caracteres anteriores. Sigue exigiendo coincidencia entre escalas y capturas. Las lecturas ambiguas permanecen desconocidas. No se afirma que reconozca todas las cantidades: varias imágenes reducidas y x42 siguen fallando.
 
@@ -176,7 +180,7 @@ SomeFishingGPO.exe --self-test pruebas
 
 `compilar.cmd` utiliza `%WINDIR%\Microsoft.NET\Framework64\v4.0.30319\csc.exe`, busca los metadatos `Windows.winmd` del SDK y las bibliotecas locales de interoperabilidad. El modo `--self-test` no registra atajos globales ni envía clics o teclas reales; los botones de la sección Pruebas sí ejecutan acciones reales cuando los utilizas. Guarda el informe en `pruebas/resultados.txt`; el código de salida 0 indica éxito.
 
-Las **378 comprobaciones integradas realizadas en este equipo** cubren seguimiento, balanceo, exclusión del verde, contador, desaparición, espera, compra simulada, límite de compras, regreso a la pesca y liberación de entradas. La validación local alcanzó **454 comprobaciones** al añadir once capturas del desarrollo; esas capturas no se distribuyen. Incluye umbral, rearme, idioma OCR, pausas, un solo clic clásico en Sí y posición incluida en cada pulsación del número, doble clic, cancelación entre sus pulsaciones y posición real de los tres puntos. También cubre cronómetro, modos de prueba, conservación de ajustes, duración de E, respaldo x2 y la regresión de `x300` con una franja blanca. La cantidad de comprobaciones depende de los idiomas OCR disponibles. Los resultados de esta compilación y el análisis de Defender están en [VERIFICACION.txt](docs/VERIFICACION.txt).
+Las **390 comprobaciones integradas realizadas en este equipo** cubren seguimiento, balanceo, exclusión del verde, contador, desaparición, espera, compra simulada, límite de compras, regreso a la pesca y liberación de entradas. La validación local alcanzó **477 comprobaciones** al añadir doce capturas del desarrollo; esas capturas no se distribuyen. Incluye umbral, rearme, idioma OCR, pausas, un solo clic clásico en Sí y posición incluida en cada pulsación del número, doble clic, cancelación entre sus pulsaciones y posición real de los tres puntos. También cubre cronómetro, modos de prueba, conservación de ajustes, duración de E, respaldo x2 y la regresión de `x300` con una franja blanca. La cantidad de comprobaciones depende de los idiomas OCR disponibles. Los resultados de esta compilación y el análisis de Defender están en [VERIFICACION.txt](docs/VERIFICACION.txt).
 
 Puedes comparar la huella del ejecutable descargado con [SHA256.txt](docs/SHA256.txt):
 

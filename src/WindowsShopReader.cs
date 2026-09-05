@@ -1,6 +1,8 @@
 using System;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Drawing.Drawing2D;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Windows.Media.Ocr;
 
@@ -57,6 +59,55 @@ namespace SomeFishingGPO
             }
             return target;
         }
+        private static int? ReadMaximum(OcrEngine engine,Bitmap image,Rectangle body,OcrResult words,string first,string second)
+        {
+            int? a=ShopText.Maximum(first),b=ShopText.Maximum(second);
+            if(a.HasValue&&b.HasValue)return a==b?a:null;
+            if(words.TextAngle.HasValue&&Math.Abs(words.TextAngle.Value)>.5)return null;
+            Rectangle lineBox=Rectangle.Empty;
+            foreach(var line in words.Lines)
+            {
+                // Locate MAX before reading any trailing digits. The isolated line
+                // retains the whole question so Windows can segment the game font.
+                if(!Regex.IsMatch(ShopText.Clean(line.Text),@"\bMA[XY][.:]"))continue;
+                if(!lineBox.IsEmpty)return null;
+                foreach(var word in line.Words){var r=word.BoundingRect;
+                    Rectangle box=Rectangle.FromLTRB(body.X+(int)Math.Floor((r.X-20)/3),body.Y+(int)Math.Floor((r.Y-20)/3),
+                        body.X+(int)Math.Ceiling((r.X+r.Width-20)/3),body.Y+(int)Math.Ceiling((r.Y+r.Height-20)/3));
+                    lineBox=lineBox.IsEmpty?box:Rectangle.Union(lineBox,box);
+                }
+            }
+            if(lineBox.IsEmpty||lineBox.Width<20||lineBox.Height<5)return null;
+            lineBox.Inflate(4,4);lineBox=Rectangle.Intersect(lineBox,body);
+            // OCR word rectangles vary by a pixel when the same menu is selected
+            // with different margins. Anchor the crop to the actual bright text.
+            int brightLeft=lineBox.Right,brightTop=lineBox.Bottom,brightRight=-1,brightBottom=-1;
+            for(int y=lineBox.Top;y<lineBox.Bottom;y++)for(int x=lineBox.Left;x<lineBox.Right;x++){
+                Color c=image.GetPixel(x,y);if(c.R>120&&c.G>140){brightLeft=Math.Min(brightLeft,x);brightTop=Math.Min(brightTop,y);brightRight=Math.Max(brightRight,x);brightBottom=Math.Max(brightBottom,y);}
+            }
+            if(brightRight<brightLeft||brightBottom<brightTop)return null;
+            lineBox=Rectangle.FromLTRB(brightLeft,brightTop,brightRight+1,brightBottom+1);lineBox.Inflate(5,5);lineBox=Rectangle.Intersect(lineBox,body);
+            int stretchedWidth=(int)Math.Round(lineBox.Width*1.6);
+            using(var crop=image.Clone(lineBox,PixelFormat.Format32bppArgb))
+            using(var expanded=new Bitmap(stretchedWidth+20,lineBox.Height+20,PixelFormat.Format32bppArgb))
+            {
+                using(var g=Graphics.FromImage(expanded)){
+                    g.Clear(Color.FromArgb(40,40,40));g.InterpolationMode=InterpolationMode.HighQualityBicubic;
+                    g.DrawImage(crop,new Rectangle(10,10,stretchedWidth,lineBox.Height));
+                }
+                int? candidate=null;int agreements=0;
+                foreach(int scale in new[]{2,3,5}){
+                    // Only a complete numeric suffix after the colon is evidence.
+                    // Never repair letters, quotes or punctuation into digits.
+                    string text=WindowsBaitReader.Recognize(engine,expanded,scale);
+                    Match match=Regex.Match(text??"",@":\s*([0-9]{1,4})\s*\z");
+                    int value;if(!match.Success||!int.TryParse(match.Groups[1].Value,out value))continue;
+                    if((a.HasValue&&a!=value)||(b.HasValue&&b!=value)||(candidate.HasValue&&candidate!=value))return null;
+                    candidate=value;agreements++;
+                }
+                return agreements>=2?candidate:null;
+            }
+        }
         internal static ShopReading ReadImage(Bitmap image,string language="")
         {
             var result=new ShopReading();
@@ -65,10 +116,12 @@ namespace SomeFishingGPO
             if(engine==null){result.ReadFailed=true;result.Detail="El idioma OCR elegido no está disponible en Windows";return result;}
             int row=(int)(image.Height*.73),third=image.Width/3;
             var body=new Rectangle(0,0,image.Width,row);
-            var left=new Rectangle(0,row,third,image.Height-row);
+            // Button labels can straddle an exact third when the selection has
+            // side margin. Extend toward the centre without reaching its number.
+            var left=new Rectangle(0,row,(int)(image.Width*.42),image.Height-row);
             var center=new Rectangle(third,row,third,image.Height-row);
             var right=new Rectangle(third*2,row,image.Width-third*2,image.Height-row);
-            string a=Read(engine,image,body,2),b=Read(engine,image,body,3);
+            string a=Read(engine,image,body,2);OcrResult bodyWords=ReadWords(engine,image,body,3);string b=bodyWords.Text;
             OcrResult leftWords=ReadWords(engine,image,left,3),centerWords=ReadWords(engine,image,center,3);
             string la=leftWords.Text,lb=Read(engine,image,left,5);
             string ca=centerWords.Text,cb=Read(engine,image,center,5);
@@ -80,14 +133,17 @@ namespace SomeFishingGPO
                 result.Left=yesTarget.Value;
                 result.Menu=ShopMenu.Confirm;result.Detail="Oferta de cebo en Peli · Sí localizado dentro de la zona en "+result.Left.X+", "+result.Left.Y;return result;
             }
-            int? ma=ShopText.Maximum(a),mb=ShopText.Maximum(b);
-            if(ma.HasValue&&ma==mb&&ShopText.QuantityConfirmation(la)&&ShopText.QuantityConfirmation(lb))
+            int? ma=null;
+            if(ShopText.QuantityConfirmation(la)&&ShopText.QuantityConfirmation(lb))ma=ReadMaximum(engine,image,body,bodyWords,a,b);
+            if(ma.HasValue)
             {
                 result.Menu=ShopMenu.Quantity;result.Maximum=ma;
                 int? qa=BaitText.Parse(ca),qb=BaitText.Parse(cb);
                 if(qa.HasValue&&qa==qb)result.Quantity=qa;
                 if(!result.Quantity.HasValue)result.Quantity=ShopLabels.Number(engine,image,center);
-                Point? buyTarget=WordTarget(leftWords,left,3,ShopText.QuantityConfirmation)??InkTarget(image,left);
+                Rectangle greenButton=ShopLabels.GreenButtonBounds(image,left);
+                Point? buyTarget=WordTarget(leftWords,left,3,ShopText.QuantityConfirmation)
+                    ??(!greenButton.IsEmpty?(Point?)Center(greenButton):InkTarget(image,left));
                 if(!buyTarget.HasValue){result.Menu=ShopMenu.Unknown;result.Detail="MAX reconocido, pero no se localiza el botón Comprar";return result;}
                 result.Left=buyTarget.Value;
                 Rectangle numberBox=ShopLabels.InkBounds(image,center);

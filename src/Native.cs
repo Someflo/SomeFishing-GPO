@@ -12,6 +12,8 @@ namespace SomeFishingGPO
     {
         [DllImport("user32.dll")] internal static extern bool SetProcessDPIAware();
         [DllImport("user32.dll")] internal static extern IntPtr GetForegroundWindow();
+        [DllImport("user32.dll")] private static extern IntPtr WindowFromPoint(NativePoint point);
+        [DllImport("user32.dll")] private static extern IntPtr GetAncestor(IntPtr window,uint flags);
         [DllImport("user32.dll")] internal static extern short GetAsyncKeyState(int key);
         [DllImport("user32.dll")] internal static extern uint GetWindowThreadProcessId(IntPtr window, out uint process);
         [DllImport("user32.dll")] internal static extern bool GetClientRect(IntPtr window, out Rect rectangle);
@@ -107,6 +109,17 @@ namespace SomeFishingGPO
             }
             catch { return false; }
         }
+        internal static IntPtr RootWindow(IntPtr window)
+        { IntPtr root=GetAncestor(window,2);return root==IntPtr.Zero?window:root; }
+        internal static IntPtr WindowAt(Point point)
+        { return RootWindow(WindowFromPoint(new NativePoint{X=point.X,Y=point.Y})); }
+        internal static string WindowDescription(IntPtr window)
+        {
+            uint id;GetWindowThreadProcessId(window,out id);
+            string processName="no disponible";
+            try{using(var process=Process.GetProcessById((int)id))processName=process.ProcessName;}catch{}
+            return processName+" · ventana 0x"+window.ToInt64().ToString("X");
+        }
         internal static bool InStopCorner()
         {
             Point position = Cursor.Position;
@@ -135,6 +148,9 @@ namespace SomeFishingGPO
         private readonly MouseLease mouse;
         private Point? shopMouseDownPoint;
         private ShopClickKind shopMouseDownKind;
+        private bool tracingShopPress;
+        private double shopPressStarted;
+        private volatile string inputStatus="Sin pulsaciones de compra";
         private readonly MouseLease jump;
         private readonly MouseLease shopKey, controlKey;
         private volatile int currentShopKey;
@@ -147,14 +163,19 @@ namespace SomeFishingGPO
         public Bitmap LastFrame { get; private set; }
         internal bool PendingRelease { get { return mouse.PendingRelease || jump.PendingRelease || shopKey.PendingRelease || controlKey.PendingRelease; } }
         internal string FaultReason { get { return mouse.Fault ?? jump.Fault ?? shopKey.Fault ?? controlKey.Fault; } }
+        internal string InputStatus { get { return inputStatus; } }
         internal GameRuntime(Settings settings, IntPtr target, bool sendClicks, bool requireFishingArea=true)
         {
             this.settings = settings; this.target = target; this.sendClicks = sendClicks;
             shopReader=new WindowsShopReader(settings.OcrLanguage);baitReader=new WindowsBaitReader(settings.OcrLanguage);
             this.requireFishingArea=requireFishingArea;
-            mouse = new MouseLease(delegate(bool down) { if (sendClicks) {
-                if(down&&shopMouseDownPoint.HasValue)Native.ShopMouseDown(shopMouseDownPoint.Value,shopMouseDownKind);else Native.MouseButton(down);
-            } },
+            mouse = new MouseLease(delegate(bool down) {
+                if(sendClicks){
+                    if(down&&shopMouseDownPoint.HasValue)Native.ShopMouseDown(shopMouseDownPoint.Value,shopMouseDownKind);else Native.MouseButton(down);
+                }
+                if(down&&shopMouseDownPoint.HasValue){tracingShopPress=true;shopPressStarted=clock.Elapsed.TotalMilliseconds;inputStatus=(sendClicks?"Windows aceptó presionar":"Presión simulada")+" · cursor "+Cursor.Position.X+", "+Cursor.Position.Y+" · esperando soltar";}
+                else if(!down&&tracingShopPress){tracingShopPress=false;inputStatus=(sendClicks?"Windows aceptó soltar":"Liberación simulada")+" · duración "+Math.Round(clock.Elapsed.TotalMilliseconds-shopPressStarted)+" ms · esto no confirma la respuesta del juego";}
+            },
                 delegate { return ForegroundAllowed; }, delegate { return clock.Elapsed.TotalMilliseconds; }, delegate { return safetyReason; });
             jump = new MouseLease(delegate(bool down) { if (sendClicks) Native.JumpKey(down); },
                 delegate { return ForegroundAllowed; }, delegate { return clock.Elapsed.TotalMilliseconds; }, delegate { return safetyReason; }, "Espacio");
@@ -186,8 +207,9 @@ namespace SomeFishingGPO
                 if (closing) { safetyReason = "La aplicación se está cerrando."; return false; }
                 if ((Native.GetAsyncKeyState((int)Keys.F10) & 0x8000) != 0)
                 { safetyReason = "Detenida con F10."; return false; }
-                if (Native.GetForegroundWindow() != target)
-                { safetyReason = "Detenida: Roblox dejó de estar en primer plano."; return false; }
+                IntPtr foreground=Native.GetForegroundWindow();
+                if (foreground != target)
+                { safetyReason = "Detenida: Roblox dejó de estar en primer plano. Activa: "+Native.WindowDescription(foreground)+"; esperada: "+Native.WindowDescription(target); return false; }
                 if (Native.InStopCorner())
                 { safetyReason = "Detenida: el ratón llegó a la esquina superior izquierda."; return false; }
                 Rectangle client = Native.ClientBounds(target);
@@ -244,6 +266,8 @@ namespace SomeFishingGPO
             Guard();if(!settings.AutoBuyBait||!Settings.ContainsSafely(settings.ShopArea,new Rectangle(point,new Size(1,1))))throw new InvalidOperationException("Clic de compra fuera de la zona autorizada.");
             Point actual=Cursor.Position;
             if(sendClicks&&(Math.Abs(actual.X-point.X)>3||Math.Abs(actual.Y-point.Y)>3))throw new InvalidOperationException("El puntero no llegó al botón o se movió. Clic cancelado; suelta el ratón durante la prueba.");
+            IntPtr below=Native.WindowAt(actual);
+            if(sendClicks&&below!=Native.RootWindow(target))throw new InvalidOperationException("El clic quedó sobre otra ventana: "+Native.WindowDescription(below)+". Despeja el diálogo de Roblox y repite la prueba.");
             Release();if(PendingRelease)throw new InvalidOperationException("Hay una entrada pendiente de liberación.");
             shopMouseDownPoint=point;shopMouseDownKind=kind;
             try{mouse.Pulse(180);}finally{shopMouseDownPoint=null;}

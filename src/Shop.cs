@@ -29,7 +29,7 @@ namespace SomeFishingGPO
         public static int? Maximum(string text)
         {
             // Windows sometimes reads the X of this fixed MAX label as Y.
-            MatchCollection matches=Regex.Matches(Clean(text), @"\bMA[XY][.:\s]*([0-9]{1,4})\b");
+            MatchCollection matches=Regex.Matches(Clean(text), @"\bMA[XY][.:\s]*([0-9]{1,4})(?=\s|$)");
             int value;
             return matches.Count==1 && int.TryParse(matches[0].Groups[1].Value,out value) && value<=9999 ? (int?)value:null;
         }
@@ -151,6 +151,8 @@ namespace SomeFishingGPO
             ShopReading reading=shop.ReadShop(now);
             LastReading=reading;
             if(!FreshStable(reading,now))return;
+            if(State==PurchasePhase.Confirming&&reading.Menu==ShopMenu.Quantity&&reading.Maximum>0&&reading.Quantity>0&&reading.Quantity<=reading.Maximum)
+            { Wait(PurchasePhase.Editing,now,"Menú de cantidad ya abierto · continuando sin repetir Sí…");return; }
             if(State==PurchasePhase.Confirming&&reading.Menu==ShopMenu.Confirm)
             { Click("Sí",reading.Left);YesAttempts++;Wait(PurchasePhase.Editing,now,"Sí pulsado una vez · esperando cantidad y MAX…");return; }
             if(State==PurchasePhase.Editing&&reading.Menu==ShopMenu.Quantity&&reading.Maximum.HasValue)
@@ -178,7 +180,7 @@ namespace SomeFishingGPO
             switch(State)
             {
                 case PurchasePhase.Confirming:reason="Windows aceptó E durante "+settings.ShopOpenMilliseconds+" ms, pero no se confirmó la oferta con Sí/No. Revisa la distancia al barril, Mantener E y la zona";break;
-                case PurchasePhase.Editing:reason="se pulsó Sí, pero no se confirmó el menú de cantidad y MAX";break;
+                case PurchasePhase.Editing:reason=YesAttempts==0?"el menú abierto manualmente dejó de reconocerse antes de editar su cantidad":"se envió Sí, pero no se confirmó el menú de cantidad y MAX";break;
                 case PurchasePhase.Verifying:reason="la cantidad escrita no se confirmó como "+Quantity+" dentro del MAX. Comprar no se pulsó";break;
                 case PurchasePhase.Finishing:reason="Comprar se envió una vez, pero no se reconoció el botón final «…». Revisa el diálogo y el saldo";break;
                 case PurchasePhase.Closing:reason=settings.PurchaseByTimer?"se pulsó «…», pero no se confirmó el cierre del diálogo; no se repetirá Comprar":"se pulsó «…», pero no se confirmó cebo disponible después. Revisa el contador; no se repetirá Comprar";break;

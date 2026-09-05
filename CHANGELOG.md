@@ -1,5 +1,14 @@
 # Cambios
 
+## 0.5.4 — lectura de MAX y continuación manual (compilación local)
+
+- Corrige tres fallos reproducidos en la nueva captura: Comprar cortado por la división del área, MAX 294 leído como dígitos truncados y localización del botón verde con un respaldo que solo buscaba blanco.
+- Amplía de forma acotada la región de Comprar, localiza sus letras verdes tras reconocerlas y lee la línea completa de MAX ensanchada a varias escalas. Requiere acuerdo de dos escalas sin números contradictorios; no convierte letras o comillas en dígitos.
+- La imagen completa y el recorte 519 × 199 se reconocen como MAX 294 y cantidad 1 con Automático y español. Inglés permanece desconocido en esa captura.
+- Puede continuar si Sí se pulsó manualmente durante una sesión activa, tras dos lecturas nuevas válidas. No repite Sí ni reanuda sesiones detenidas por pérdida de foco.
+- Comprueba la ventana bajo el cursor antes de pulsar. El registro distingue pulsación y liberación aceptadas por Windows, duración y ventana que tomó el foco. Esa aceptación no demuestra que Roblox respondiera.
+- 390 comprobaciones integradas y 477 con doce capturas privadas. Conserva ajustes y los métodos de clic de la 0.5.3; el clic inicial dentro de Roblox todavía requiere comprobarse con el nuevo diagnóstico.
+
 ## 0.5.3 — restaurar el clic inicial de Sí (compilación local)
 
 - Restaura el movimiento separado y la pulsación clásica de la 0.5.1 para Sí, Comprar y «…», tras el fallo del clic inicial comunicado con la 0.5.2.

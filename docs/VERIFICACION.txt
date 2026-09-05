@@ -1,33 +1,41 @@
-SomeFishing GPO 0.5.3 - verificación local, 2026-09-05
+SomeFishing GPO 0.5.4 - verificación local, 2026-09-05
 
-378 comprobaciones integradas; 454 al añadir once capturas privadas del usuario.
+390 comprobaciones integradas; 477 al añadir doce capturas privadas del usuario.
 La cuenta incluye los tres idiomas OCR instalados en el equipo de desarrollo.
 
-Regresión comunicada: E abre el diálogo en la 0.5.2, el lector reconoce Sí y
-Windows acepta su pulsación, pero no se confirma el menú de cantidad. La última
-prueba del usuario permanece en ese paso. La 0.5.1 sí llegó al menú de cantidad.
+La nueva imagen real después de Sí fallaba con la 0.5.3: Comprar se cortaba
+como Compra, MAX294 producía dígitos truncados y el respaldo de posición
+buscaba texto blanco aunque Comprar es verde.
+La lectura ahora amplía la región izquierda, localiza texto verde solo después
+de reconocer Comprar en dos escalas y ensancha la línea completa de MAX.
+Exige dos números completos iguales y rechaza toda contradicción numérica.
+No transforma comillas o letras en dígitos. Las lecturas truncadas de29
+ya no se aceptan como el máximo completo.
 
-Se restaura para Sí, Comprar y los tres puntos el movimiento y clic separados
-de la 0.5.1: movimiento absoluto 0xC001 y pulsación simple 0x0002.
-El evento combinado con coordenadas se limita al número central: ambas
-pulsaciones reciben un destino propio y el tipo Quantity explícito.
-Las pruebas verifican toda la secuencia Button, Quantity, Quantity, Button,
-Button, el formato de los eventos y la posición sobre escritorios múltiples.
-La liberación del botón conserva el formato 0x0004 sin movimiento en ambos casos.
-Tipos de clic inválidos se rechazan antes de enviar entradas.
+Imagen completa660x282: Automático, es-ES y es-MX reconocen MAX294/cantidad1.
+Comprar se localiza en187,227 y el número en336,226.
+Recorte519x199 desde72,42: MAX294/cantidad1, Comprar115,185 y número264,184.
+Los destinos coinciden exactamente al sumar el origen del recorte.
+En-US permanece desconocido en ambas imágenes; no inventa29 o299.
 
-Se conserva un solo Sí, las pausas y las comprobaciones del campo y MAX.
-El registro distingue clic clásico de pulsación con posición. Se mantienen
-umbral, cronómetro, idiomas, cantidad de prueba, cierre final y protecciones.
-También se conservan las regresiones de OCR y los once ejemplos privados.
-Los renders de la interfaz se producen sin activación ni atajos.
+La transición tras Sí manual requiere dos capturas nuevas con cantidad y MAX
+válidos. No avanza con una imagen aislada, caché o campo ilegible; mantiene
+pausa y apuntado y no reanuda una sesión detenida por pérdida de foco.
+Pruebas con MouseLease real confirman conservación del pulso hasta180ms,
+liberación por vigilancia a200ms y liberación inmediata al perder el foco.
+Estas pruebas usan remitentes simulados; no envían eventos al juego.
 
-No se enviaron teclas/clics a Roblox ni se gastó Peli en estas pruebas.
-No se afirma que restaurar el método anterior demuestre una compra real.
-El usuario debe comprobar de nuevo Sí y el doble clic dentro del juego.
-La recepción de la pulsación por Roblox no se comprueba con un registro de
-SendInput ni con entradas simuladas. Cronómetro no verifica un aumento exacto
-del inventario. El OCR sigue dejando algunos tamaños y cantidades desconocidos.
+La comprobación de ventana bajo el cursor rechaza otra ventana superpuesta.
+El diagnóstico registra aceptación de down/up, duración e identifica el
+proceso/ventana que tomó el foco, sin guardar títulos, rutas ni capturas.
+Se conservan los métodos de clic de la0.5.3; esta versión no afirma resolver
+ni verificar todavía la recepción del clic inicial dentro de Roblox.
+La aceptación de SendInput no demuestra que el juego responda.
+
+Regresiones anteriores conservadas: pesca, umbral, cronómetro, MAX, cantidad
+de prueba, doble clic, idiomas, límites, cancelaciones y cierre de tres puntos.
+Interfaz renderizada sin activación ni atajos. No se enviaron clics o teclas
+a Roblox ni se gastó Peli. Cronómetro no verifica el aumento del inventario.
 
 Microsoft Defender completó el análisis del ejecutable: found no threats.
 Esto no es una garantía absoluta ni una certificación. Sin firma comercial.
@@ -36,7 +44,7 @@ No se incluyen capturas privadas, preferencias, registros personales ni credenci
 Los PNG de documentación son renders y ejemplos sintéticos.
 
 SHA256 DEL EJECUTABLE
-AC53184740C78A1216E38F2294E4712C94194470CEEEF89EC569F296E7AE39C7  SomeFishingGPO.exe
+AF01C68719ADC874185CC2A5D84BF21E9F708916318AE5FC83C621C2BCF8F24C  SomeFishingGPO.exe
 
 PRUEBAS INTEGRADAS
 OK: Windows INPUT structure matches the platform ABI
@@ -416,6 +424,18 @@ OK: Threshold alone does not enable purchases or stop fishing early
 OK: A still-low count after purchase cannot cause repeated orders at every cast
 OK: A confirmed rise above the threshold rearms a later low-bait purchase
 OK: Bait threshold survives a settings round trip
+OK: Truncated MAX digits cannot silently become a smaller complete limit
+OK: A complete MAX294 remains readable after strict token validation
+OK: One manual quantity frame cannot skip the initial confirmation
+OK: A cached manual quantity frame cannot advance
+OK: Two fresh quantity frames after manual Yes advance without repeating Yes
+OK: Manual advance keeps the menu settling pause before aiming
+OK: After manual Yes both clicks target only the quantity field
+OK: An unreadable quantity cannot authorize manual advance
+OK: Manual advance cannot resume a session after losing focus
+OK: The real lease keeps a purchase press down for180ms while polling
+OK: The real lease sends button-up independently after the purchase pulse
+OK: Losing focus releases an in-progress purchase pulse immediately
 OK: The quantity screen permits its positive purchase button, never No or Cancel
 OK: Menu animation grace period prevents aiming immediately after E
 OK: Configured 700 ms pointer settling is respected despite fresh OCR frames
@@ -452,7 +472,7 @@ OK: An enumerated installed OCR language is selectable: es-ES
 OK: An enumerated installed OCR language is selectable: es-MX
 OK: Unavailable OCR language is a read error, not a closed dialogue
 UI: rendered off-screen non-activating form; no hotkeys registered and no clicks sent.
-PASS: 378 checks.
+PASS: 390 checks.
 
 VALIDACIÓN CON CAPTURAS NO DISTRIBUIDAS
 OK: Windows INPUT structure matches the platform ABI
@@ -914,6 +934,18 @@ OK: Threshold alone does not enable purchases or stop fishing early
 OK: A still-low count after purchase cannot cause repeated orders at every cast
 OK: A confirmed rise above the threshold rearms a later low-bait purchase
 OK: Bait threshold survives a settings round trip
+OK: Truncated MAX digits cannot silently become a smaller complete limit
+OK: A complete MAX294 remains readable after strict token validation
+OK: One manual quantity frame cannot skip the initial confirmation
+OK: A cached manual quantity frame cannot advance
+OK: Two fresh quantity frames after manual Yes advance without repeating Yes
+OK: Manual advance keeps the menu settling pause before aiming
+OK: After manual Yes both clicks target only the quantity field
+OK: An unreadable quantity cannot authorize manual advance
+OK: Manual advance cannot resume a session after losing focus
+OK: The real lease keeps a purchase press down for180ms while polling
+OK: The real lease sends button-up independently after the purchase pulse
+OK: Losing focus releases an in-progress purchase pulse immediately
 OK: The quantity screen permits its positive purchase button, never No or Cancel
 OK: Menu animation grace period prevents aiming immediately after E
 OK: Configured 700 ms pointer settling is respected despite fresh OCR frames
@@ -953,5 +985,16 @@ OK: Yes click lands on the supplied button lettering rather than a generic third
 OK: Double-click target lands on the displayed numeric field in the supplied image
 OK: The actual ellipsis is recognized among HUD labels and targeted at its visible position
 OK: The same HUD without its three dots cannot authorize a closing click
+OK: The new post-Yes image reads MAX294 and quantity1: automatic
+OK: The new image keeps the numeric click at its central1 and Buy separately
+OK: The tighter519x199 selection also recognizes MAX294 and quantity1: automatic
+OK: Ambiguous English OCR cannot turn the new MAX294 image into29 or299
+OK: The ambiguous English crop stays unknown instead of inventing a limit
+OK: The new post-Yes image reads MAX294 and quantity1: es-ES
+OK: The new image keeps the numeric click at its central1 and Buy separately
+OK: The tighter519x199 selection also recognizes MAX294 and quantity1: es-ES
+OK: The new post-Yes image reads MAX294 and quantity1: es-MX
+OK: The new image keeps the numeric click at its central1 and Buy separately
+OK: The tighter519x199 selection also recognizes MAX294 and quantity1: es-MX
 UI: rendered off-screen non-activating form; no hotkeys registered and no clicks sent.
-PASS: 454 checks.
+PASS: 477 checks.

@@ -1019,6 +1019,7 @@ namespace SomeFishingGPO
         }
         private static void TestShopWorkflow(string[] args,string output)
         {
+            TestManualShopAdvance();
             Check(ShopText.QuantityConfirmation("Comprar")&&ShopText.QuantityConfirmation("Sí")&&!ShopText.QuantityConfirmation("No")&&!ShopText.QuantityConfirmation("Cancelar"),"The quantity screen permits its positive purchase button, never No or Cancel");
             var game=new FakeGame();var p=new PurchaseController(new Settings{ShopOpenMilliseconds=1000,ShopSettleMilliseconds=700},game,game);p.Start(0);p.Tick(1000,null,0);
             FeedShop(p,game,ShopMenu.Confirm,1,1300,null,null,null,0);
@@ -1109,6 +1110,55 @@ namespace SomeFishingGPO
                     Check(WindowsShopReader.ReadImage(covered).Menu!=ShopMenu.Done,"The same HUD without its three dots cannot authorize a closing click");
                 }
             }
+            if(args.Length>13)using(var image=new Bitmap(args[13]))
+            {
+                foreach(string language in new[]{"","en-US","es-ES","es-MX"}){
+                    if(WindowsBaitReader.CreateEngine(language)==null)continue;
+                    var reading=WindowsShopReader.ReadImage(image,language);
+                    if(language=="en-US"&&reading.Menu==ShopMenu.Unknown){
+                        Check(!reading.Maximum.HasValue||reading.Maximum==294,"Ambiguous English OCR cannot turn the new MAX294 image into29 or299");
+                        using(var crop=image.Clone(new Rectangle(72,42,519,199),PixelFormat.Format32bppArgb)){
+                            reading=WindowsShopReader.ReadImage(crop,language);
+                            Check((reading.Menu==ShopMenu.Unknown&&(!reading.Maximum.HasValue||reading.Maximum==294))||(reading.Menu==ShopMenu.Quantity&&reading.Maximum==294&&reading.Quantity==1),"The ambiguous English crop stays unknown instead of inventing a limit");
+                        }
+                        continue;
+                    }
+                    Check(reading.Menu==ShopMenu.Quantity&&reading.Maximum==294&&reading.Quantity==1,"The new post-Yes image reads MAX294 and quantity1: "+(language==""?"automatic":language));
+                    Check(Math.Abs(reading.Middle.X-336)<=3&&Math.Abs(reading.Middle.Y-226)<=3&&reading.Left.X<250,"The new image keeps the numeric click at its central1 and Buy separately");
+                    using(var crop=image.Clone(new Rectangle(72,42,519,199),PixelFormat.Format32bppArgb)){
+                        reading=WindowsShopReader.ReadImage(crop,language);
+                        Check(reading.Menu==ShopMenu.Quantity&&reading.Maximum==294&&reading.Quantity==1,"The tighter519x199 selection also recognizes MAX294 and quantity1: "+(language==""?"automatic":language));
+                    }
+                }
+            }
+        }
+        private static void TestManualShopAdvance()
+        {
+            Check(!ShopText.Maximum("MAX:29\"").HasValue&&!ShopText.Maximum("MAY.:29k").HasValue&&!ShopText.Maximum("MAX:29'").HasValue,"Truncated MAX digits cannot silently become a smaller complete limit");
+            Check(ShopText.Maximum("How many do you want? MAX: 294")==294,"A complete MAX294 remains readable after strict token validation");
+            var game=new FakeGame();var p=new PurchaseController(new Settings{ShopOpenMilliseconds=150,ShopSettleMilliseconds=200,BuyMaximum=false,BuyQuantity=4},game,game);
+            p.Start(0);p.Tick(150,null,0);
+            FeedShop(p,game,ShopMenu.Quantity,1,400,294,1,null,0);
+            Check(p.State==PurchasePhase.Confirming&&game.ShopClicks==0,"One manual quantity frame cannot skip the initial confirmation");
+            p.Tick(700,null,0);Check(p.State==PurchasePhase.Confirming,"A cached manual quantity frame cannot advance");
+            FeedShop(p,game,ShopMenu.Quantity,2,800,294,1,null,0);
+            Check(p.State==PurchasePhase.Editing&&p.YesAttempts==0&&game.ShopClicks==0,"Two fresh quantity frames after manual Yes advance without repeating Yes");
+            FeedShop(p,game,ShopMenu.Quantity,3,950,294,1,null,0);
+            Check(game.Aims==0,"Manual advance keeps the menu settling pause before aiming");
+            FeedShop(p,game,ShopMenu.Quantity,4,1050,294,1,null,0);FeedShop(p,game,ShopMenu.Quantity,5,1300,294,1,null,0);p.Tick(1550,null,0);
+            Check(game.ShopClicks==2&&game.ClickKinds[0]==ShopClickKind.Quantity&&game.ClickKinds[1]==ShopClickKind.Quantity&&p.Quantity==4,"After manual Yes both clicks target only the quantity field");p.Fail("test");
+            game=new FakeGame();p=new PurchaseController(new Settings{ShopOpenMilliseconds=150,ShopSettleMilliseconds=200},game,game);p.Start(0);p.Tick(150,null,0);
+            FeedShop(p,game,ShopMenu.Quantity,1,400,294,null,null,0);FeedShop(p,game,ShopMenu.Quantity,2,700,294,null,null,0);
+            Check(p.State==PurchasePhase.Confirming&&game.ShopClicks==0,"An unreadable quantity cannot authorize manual advance");
+            FeedShop(p,game,ShopMenu.Quantity,3,1000,294,1,null,0);game.Active=false;FeedShop(p,game,ShopMenu.Quantity,4,1300,294,1,null,0);
+            Check(p.State==PurchasePhase.Failed&&game.ShopClicks==0,"Manual advance cannot resume a session after losing focus");
+            double now=0;bool active=true;var transitions=new List<string>();
+            var lease=new MouseLease(delegate(bool down){transitions.Add((down?"down@":"up@")+now);},delegate{return active;},delegate{return now;});
+            lease.Pulse(180);for(now=50;now<180;now+=50)lease.Beat();now=179;lease.Watchdog();
+            Check(transitions.Count==1&&lease.PendingRelease,"The real lease keeps a purchase press down for180ms while polling");
+            now=200;lease.Watchdog();Check(transitions.Count==2&&transitions[0]=="down@0"&&transitions[1]=="up@200"&&!lease.PendingRelease,"The real lease sends button-up independently after the purchase pulse");
+            lease.Beat();lease.Pulse(180);now=230;active=false;lease.Watchdog();
+            Check(transitions.Count==4&&!lease.PendingRelease&&lease.Fault!=null,"Losing focus releases an in-progress purchase pulse immediately");
         }
         private sealed class FakeGame : IGameRuntime, IShopRuntime
         {
