@@ -166,6 +166,10 @@ namespace SomeFishingGPO
                 TestCounterRobustness(args);
                 TestBaitThreshold(output);
                 TestShopWorkflow(args,output);
+                DirectPurchaseTests.Run(Check,output);
+                LowBaitTests.Run(Check,output);
+                SimplePurchaseEngineTests.Run(Check,output);
+                if(args.Length>15)LowBaitTests.CheckSamples(Check,args[15],args[14]);
 
                 using (var form = new MainForm(true)) form.RenderExample(Path.Combine(output, "interfaz.png"));
                 results.Add("UI: rendered off-screen non-activating form; no hotkeys registered and no clicks sent.");
@@ -864,7 +868,7 @@ namespace SomeFishingGPO
                     using(var g=Graphics.FromImage(damaged))g.FillRectangle(Brushes.Black,25,45,60,18);
                     Check(!CounterGlyphs.MatchTwo(damaged),"A substantially obscured x2 counter remains unmatched");
                 }
-                results.Add("TINY COUNTER LIMIT: fallback matches only the full supplied x2 glyph shape. It cannot supply zero; other digits still use OCR. The 38x33 case is reconstructed from the enlarged preview, not a native game capture.");
+                results.Add("TINY COUNTER LIMIT: visual fallback supports complete x2/x3/x4 references, never zero. The 38x33 x2 case is reconstructed from an enlarged preview; x3/x4 have optional native samples. Other shapes or scales can remain unknown.");
             }
         }
         private static void TestCounterRobustness(string[] args)

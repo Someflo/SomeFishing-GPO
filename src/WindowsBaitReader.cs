@@ -104,12 +104,13 @@ namespace SomeFishingGPO
                 }
             }
             if(!conflict&&softValue.HasValue)return new BaitReading{Count=softValue,Detail="Lectura: "+softValue.Value+" · contraste suave"};
-            // A narrow positive-only visual reference handles the supplied touching
-            // x2 glyphs when Windows returns no text. It never supplies a zero and
+            // Narrow positive-only visual references handle complete x2/x3/x4
+            // glyphs when Windows returns no text. They never supply a zero and
             // cannot override contradictory numeric OCR evidence at any scale.
-            if(!conflict&&CounterGlyphs.MatchTwo(image)&&(!softEvidence.HasValue||softEvidence==2)&&(!a.HasValue||a==2)&&(!b.HasValue||b==2)
-                &&(!isolatedFirst.HasValue||isolatedFirst==2)&&(!isolatedSecond.HasValue||isolatedSecond==2))
-                return new BaitReading{Count=2,Detail="Lectura: 2 · referencia visual x2"};
+            int? visual = CounterGlyphs.MatchLow(image);
+            if(!conflict&&visual.HasValue&&(!softEvidence.HasValue||softEvidence==visual)&&(!a.HasValue||a==visual)&&(!b.HasValue||b==visual)
+                &&(!isolatedFirst.HasValue||isolatedFirst==visual)&&(!isolatedSecond.HasValue||isolatedSecond==visual))
+                return new BaitReading{Count=visual,Detail="Lectura: "+visual.Value+" · referencia visual x"+visual.Value};
             return new BaitReading { Detail = conflict?"OCR contradictorio; cantidad desconocida. Ajusta la zona o usa Cronómetro.":"OCR sin coincidencia: "+ShortText(first)+" / "+ShortText(second)+". Rodea x y el número o usa Cronómetro." };
         }
         private static string ShortText(string text)

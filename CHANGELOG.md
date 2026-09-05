@@ -1,5 +1,14 @@
-# Cambios
+# Historial de cambios
 
+## 0.6.0 · Compra simplificada y aviso de cebo bajo
+
+- Tres puntos marcados por el usuario: Sí/Comprar, número/…, No/Cancelar. No se calculan posiciones a partir de una zona ni se leen los menús para avanzar.
+- Dos modos: contador confirmado en 2 o menos completa la capacidad configurada (300 inicialmente); cronómetro solicita 50 cada 40 minutos. Valores ajustables.
+- Al tocar la compra, pausa el seguimiento y libera el clic. Espera cierre del minijuego o la picada pendiente; envía una secuencia con pausas y vuelve a pescar.
+- Probar compra usa una cantidad independiente y un solo intento, sin esperar contador, umbral ni cronómetro. Conserva foco, puntos, permiso de entradas y F10.
+- Añade referencias visuales de x3 y x4 y aviso de compra próxima. El disparador sigue en 2 o menos; no convierte lecturas desconocidas o desapariciones en cero.
+- Resultado de la secuencia explícitamente sin verificar en el juego. Sin reintentos dentro de un pedido; límite por sesión y rearme del contador solo por encima del umbral.
+- Interfaz de Compra y Pruebas más breve; conserva ajustes existentes y requiere marcar los tres puntos nuevos.
 ## 0.5.4 — lectura de MAX y continuación manual (compilación local)
 
 - Corrige tres fallos reproducidos en la nueva captura: Comprar cortado por la división del área, MAX 294 leído como dígitos truncados y localización del botón verde con un respaldo que solo buscaba blanco.

@@ -1,61 +1,31 @@
-# Transparencia y seguridad
+# Seguridad y transparencia
 
-El objetivo de SomeFishing GPO es que se pueda revisar qué hace el programa y compilarlo desde el código publicado. No se promete que ningún programa esté libre de todos los defectos o de cualquier riesgo.
+SomeFishing GPO funciona localmente: captura las zonas elegidas, analiza píxeles y envía entradas normales de Windows. No lee ni modifica la memoria de Roblox, inyecta código, descarga archivos, recoge credenciales, cambia el antivirus ni requiere administrador. No tiene funciones de red, inicio automático ni actualizador.
 
-## Qué hace
+## Entradas y datos
 
-- Lee los píxeles de las zonas seleccionadas: minijuego, contador opcional y diálogo de compra opcional.
-- Identifica la ventana de Roblox en primer plano y comprueba los límites del área seleccionada.
-- Registra F6, F8 y F10 como atajos; consulta F10 para la protección de parada. No registra lo que escribes.
-- Envía movimientos del ratón al punto de lanzamiento y clics normales mediante las funciones de Windows.
-- Si habilitas los saltos durante la espera, envía pulsaciones breves de Espacio. No envía teclas de dirección ni verifica que el personaje haya saltado.
-- Si habilitas compras, pulsa E, hace clic dentro de la zona de compra, utiliza Ctrl+A y Retroceso para reemplazar la cantidad y escribe únicamente dígitos. Esto puede gastar Peli del juego. Hay un límite configurable de intentos por sesión; la compra empieza desactivada.
-- Guarda `ajustes.xml`, un informe `ultima-parada.txt` y el último registro de diagnóstico `ultima-prueba.txt` junto al ejecutable. No los sube a ningún servicio.
-- Procesa las capturas del juego en memoria; no las guarda durante el uso normal.
-- El botón Copiar resultado escribe el registro de la prueba en el portapapeles solo al pulsarlo. No lee el contenido previo del portapapeles ni lo envía a ningún servicio.
+El seguimiento usa clic sostenido y un punto de lanzamiento elegido por el usuario. Los saltos opcionales usan Espacio, sin direcciones. Las compras usan E, cinco clics en los puntos marcados, Ctrl+A, Retroceso y dígitos. Pueden gastar Peli del juego. No leen el portapapeles ni escriben textos libres.
 
-## Qué contiene la aplicación
+F6/F8/F10 controlan la selección, inicio y parada. No se registra lo escrito en otras aplicaciones. Antes de cada entrada se comprueba el foco de Roblox y que los puntos estén dentro de su ventana. La ventana bajo el cursor también debe corresponder a Roblox. Se cancela un clic si el cursor se apartó del destino.
 
-La aplicación no tiene funciones de red, descargas, actualizaciones automáticas, lectura de credenciales, suscripciones, ejecución de comandos externos, inicio automático ni cambios en el antivirus. No lee la memoria del juego ni inyecta código. No requiere privilegios de administrador.
+Los ajustes y registros se guardan junto al ejecutable: `ajustes.xml`, `ultima-parada.txt`, `ultima-prueba.txt`. Las capturas de uso normal se procesan en memoria. Los registros pueden contener cantidades, coordenadas, fragmentos breves de OCR, nombres de proceso e identificadores de ventana; no títulos, rutas ni capturas. Copiar resultado escribe el registro al portapapeles solo al pulsarlo.
 
-El lector de cebo usa la API de OCR local de Windows sobre imágenes en memoria. No transmite capturas a un servicio externo. Permite elegir un idioma OCR instalado o usar las preferencias de Windows; no instala idiomas. Un idioma elegido que no esté disponible produce un error de lectura, sin cambiar silenciosamente de motor. Una tarea separada procesa como máximo una captura pendiente por lector; no envía entradas al juego. Al cerrar el lector se descarta cualquier resultado pendiente.
+## Compra por puntos
 
-Si la lectura original no coincide entre escalas, puede intentar una imagen que conserva únicamente los píxeles amarillos o anaranjados del contador y normaliza el tamaño de las letras. Exige dos lecturas iguales en esa imagen y que no contradigan ningún número reconocido en la original. Este procesamiento no sustituye letras por dígitos ni transforma una imagen blanca o vacía en cero.
+La interfaz 0.6.0 usa tres puntos marcados expresamente. El izquierdo corresponde a Sí/Comprar; el central, al número y al cierre; el derecho se valida, sin pulsarlo. No deriva destinos de un rectángulo ni exige OCR de los menús. Los diálogos deben mantener esos destinos y estar cerrados antes de iniciar.
 
-El respaldo visual de x2 guarda solo dos máscaras binarias de 32 × 24 muestras de ese texto, sin la captura completa. Solo puede aportar el positivo 2; no inventa ceros ni evita la confirmación temporal del contador. Una cantidad OCR contradictoria bloquea ese respaldo.
+Contador OCR compra la diferencia entre capacidad configurada y cantidad confirmada al alcanzar el umbral. Cronómetro compra la cantidad fija al vencer el intervalo. Pausa el seguimiento, libera el clic y espera el cierre del minijuego antes de E. Si había un lanzamiento pendiente, respeta su espera de picada. La pesca continúa al terminar la secuencia.
 
-El lector de compra usa el mismo OCR local en una tarea separada. El código incluye referencias binarias diminutas de las letras de los botones Sí/No, sin capturas del jugador ni su inventario. Los campos de un solo dígito se repiten visualmente en memoria para ayudar al OCR: exige resultados coincidentes entre las copias y las dos escalas, sin convertir letras en números. No escribe textos libres ni comandos.
+La secuencia solo envía un pedido por intento. No comprueba aceptación del número, saldo, MAX del menú, pago ni cierre. El resultado se informa como enviado y sin verificar. Una prueba manual con una unidad permite comprobar los puntos antes de habilitar compras repetidas. El límite por sesión acota los intentos. Un fallo de entrada, foco o tiempo detiene la secuencia; no reintenta automáticamente. El disparador por contador se rearma solo tras confirmar cebo por encima del umbral.
 
-El script de compilación ejecuta el compilador local de .NET Framework y utiliza los metadatos del Windows SDK instalado. El modo `--self-test` crea imágenes sintéticas, renders de la interfaz e informes en la carpeta indicada, sin enviar clics ni teclas al juego.
+## OCR y protecciones
 
-Los botones de la sección **Pruebas** son acciones reales, distintas del modo automatizado `--self-test`: pulsarlos autoriza una prueba concreta tras tres segundos de cuenta atrás. La simulación de cero sigue las opciones de compra o salto configuradas; la prueba de compra puede gastar Peli aunque la compra automática esté apagada. La prueba de compra utiliza la cantidad elegida, hasta el MAX, en un intento; la simulación de cero conserva una unidad. Ambas no guardan sus opciones temporales y terminan sin lanzar la caña. Las vistas de lectura siguen sin enviar entradas.
+El contador usa OCR local de Windows y referencias visuales pequeñas del texto x2/x3/x4. Las referencias son máscaras binarias de letras, sin imagen del jugador o inventario. Requiere coherencia espacial y confirmación temporal; una lectura OCR contradictoria impide aceptar el respaldo visual. No interpreta una captura vacía como cero. La compra por cronómetro no consulta el contador. El código y pruebas del lector de menús anterior se conservan para revisión y regresiones; la interfaz no lo usa al comprar.
 
-El registro local de la última prueba contiene estados, cantidades resumidas, posiciones, aceptación de pulsación/liberación y duración del clic; no incluye capturas. Puede incluir fragmentos breves del OCR de la zona del contador para explicar un fallo de lectura. Al perder el foco o detectar otra ventana sobre el destino, indica nombres de proceso e identificadores de ventana, sin títulos ni rutas. Está limitado a unos 32 000 caracteres y se reemplaza al iniciar otra prueba. La zona de pesca puede omitirse al probar; en ese caso se debe comprobar manualmente que el minijuego esté cerrado. Las zonas que sí están configuradas mantienen la validación de límites y foco.
+F10, F8 durante ejecución, pérdida de foco o esquina superior izquierda detienen las acciones y liberan las entradas. Una vigilancia independiente intenta soltarlas si la interfaz deja de responder durante más de 500 ms. E tiene duración ajustable; los clics de compra duran unos 180 ms y el doble clic del número separa las pulsaciones por 250 ms. No se acumulan acciones atrasadas en un solo ciclo. Si Windows rechaza una liberación, queda pendiente y bloquea nuevas pulsaciones.
 
-## Cronómetro, OCR y entradas
+Estas comprobaciones dependen de Windows y del proceso activo. No garantizan una tasa de capturas, evitar expulsiones por inactividad, conservar objetos o reconocer cualquier contador. Tampoco cubren un cierre forzado o una desconexión.
 
-Cronómetro usa el reloj transcurrido de la aplicación, sin tareas de Windows ni servicios externos. No consulta el contador ni exige su zona. Compra entre rondas, respeta el límite por sesión y empieza un intervalo completo tras cada compra. Al detenerse cancela toda acción futura; reiniciar empieza una cuenta nueva.
+Los botones de Pruebas envían entradas reales con una cuenta atrás de tres segundos y pueden gastar Peli. El modo `--self-test` es distinto: usa remitentes simulados, sin entradas al juego. Los resultados y el análisis local de Microsoft Defender se documentan en `docs/VERIFICACION.txt`; un resultado sin detecciones no es una certificación ni garantía absoluta. El ejecutable no tiene firma comercial.
 
-Conserva la verificación de los menús, la cantidad y el MAX. Tras el botón final exige capturas nuevas sin diálogo reconocido, pero no confirma un aumento del inventario. Errores del lector no confirman cierre. No reintenta una compra fallida. Contador OCR sigue exigiendo cebo positivo después del cierre.
-
-El OCR del contador añade contraste suave y exige x, × o * delante de la cantidad para rechazar lecturas parciales. Los números contradictorios quedan desconocidos; no se garantiza reconocer cualquier tamaño o cantidad. Contador OCR puede reponer al confirmar una cantidad igual o inferior al umbral configurado (inicialmente 2), cuando termina la pesca pendiente. Tras comprar, solo rearma el disparador al confirmar un valor superior al umbral, para evitar compras seguidas por una lectura baja persistente.
-
-E y las teclas de compra se envían con códigos físicos. El puntero se mueve mediante SendInput; la pausa de menús y apuntado es configurable entre 200 y 3000 ms, inicialmente 700 ms. Exige otra lectura estable antes de pulsar 180 ms. Sí, Comprar y «…» envían el movimiento separado del clic, como en la 0.5.1. En el número central hace dos pulsaciones separadas por 250 ms y espera antes de reemplazarlo; solo esas dos pulsaciones incorporan la posición absoluta en el propio evento, sin reutilizar el destino anterior de Sí. La liberación del botón no mueve el puntero, incluso al perder el foco. Si el cursor no queda sobre el botón se cancela el clic. No se usa el portapapeles para escribir cantidades. Sí recibe un único clic, sin reintentos; tampoco se reintentan E ni la confirmación final de compra. Un diálogo final inesperado antes de verificar la cantidad detiene el proceso sin solicitar otro pedido.
-
-## Límites de protección
-
-La ventana raíz bajo el puntero debe coincidir con la ventana de Roblox elegida al iniciar. Esta comprobación evita pulsar sobre otra aplicación que tape el diálogo aunque Roblox aún conserve el foco. No activa ventanas ni desactiva la parada por pérdida de foco. Si el usuario abre manualmente el menú de cantidad mientras la sesión sigue activa, exige dos lecturas nuevas de MAX y cantidad válidos antes de continuar; una sesión detenida permanece detenida.
-
-El respaldo de MAX lee la línea completa a varios tamaños, acepta al menos dos números completos coincidentes y rechaza números contradictorios. No sustituye letras ni signos por dígitos. Ampliar la región de la etiqueta Comprar no autoriza un clic por sí solo: conserva reconocimiento, posición separada del número y verificaciones antes de confirmar el pedido.
-
-F10, F8 durante la ejecución, perder el foco de Roblox o llevar el ratón a la esquina superior izquierda detiene la macro y libera tanto el clic como Espacio. Una comprobación independiente intenta soltar las entradas si la interfaz no responde durante más de 500 ms; también limita cada pulsación de Espacio a unos 100–150 ms. Si Windows rechaza liberar una entrada, el programa conserva el intento pendiente y reintenta sin autorizar otra pulsación. Estas protecciones requieren que Windows y el proceso sigan funcionando; no cubren un cierre forzado del proceso.
-
-La misma protección cubre E, Ctrl, A, Retroceso y los dígitos, e interrumpe el doble clic si se detiene la sesión entre sus pulsaciones. E se puede mantener entre 100 y 3000 ms (1000 por defecto) con revisiones del controlador; la protección independiente sigue soltándola si la interfaz deja de responder durante más de 500 ms. Las demás teclas de compra conservan sus pulsaciones breves. Los clics de compra se limitan a la zona elegida, mientras Roblox conserva el foco. Antes de Comprar se comprueban el menú, el MAX y la cantidad escrita. Se pulsa como máximo una vez el botón que confirma el pedido en cada intento. Los fallos de un diálogo detienen la sesión en lugar de repetir compras con resultado incierto.
-
-La lectura de cebo requiere coincidencia entre dos escalas y confirmación en varias capturas. La ausencia de lectura no equivale a cero. Si un contador antes confirmado pierde el texto amarillo durante 8 segundos y varias capturas nuevas, se informa como desaparecido y puede activar la reposición o la espera. Una ventana u objeto que lo tape puede parecer una desaparición. Estas comprobaciones reducen lecturas erróneas, pero no garantizan la exactitud del OCR. Tres lanzamientos sin minijuego pueden activar la espera. En Contador OCR no autorizan compras por sí solos; en Cronómetro la autorización es el intervalo configurado. El cierre normal de una ronda no basta para activar ninguna de esas acciones. No se garantiza evitar expulsiones por inactividad ni conservar objetos ante una desconexión.
-
-Los análisis locales de Microsoft Defender y sus resultados se documentan en `docs/VERIFICACION.txt`. Un resultado sin amenazas detectadas no es una garantía absoluta ni una certificación externa. El ejecutable no tiene firma digital comercial. La huella SHA-256 de cada publicación identifica exactamente el archivo analizado.
-
-## Informar de problemas
-
-Puedes abrir un issue para fallos de detección o funcionamiento. Evita publicar credenciales, capturas con datos personales o información privada. Si el problema implica datos sensibles, contacta primero con el titular del repositorio para acordar un canal privado.
+El código se ofrece sin licencia concedida; se conserva `NOTICE.md`. Para comunicar un fallo, evita publicar credenciales o capturas con información personal.

@@ -52,7 +52,7 @@ namespace SomeFishingGPO
         void ShopKey(int key, bool held);
     }
     public enum PurchasePhase { Opening, Confirming, Editing, Selecting, Clearing, Typing, Verifying, Finishing, Closing, Complete, Failed }
-    public sealed class PurchaseController
+    public sealed class PurchaseController : IPurchaseFlow
     {
         private readonly Settings settings;
         private readonly IShopRuntime shop;

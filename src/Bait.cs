@@ -38,6 +38,7 @@ namespace SomeFishingGPO
         public int? Count { get; private set; }
         public string Detail { get; private set; }
         public bool Empty { get { return Count.HasValue && Count.Value == 0; } }
+        public bool NearEmpty { get { return Count == 3 || Count == 4; } }
         public double ConfirmedAt { get { return Count.HasValue ? sampledAt : double.NegativeInfinity; } }
         public void Reset()
         {
@@ -66,7 +67,7 @@ namespace SomeFishingGPO
                 if (candidate == reading.Count) streak++; else { candidate = reading.Count; streak = 1; }
                 int required = candidate.Value == 0 ? 3 : 2;
                 // An unconfirmed changed count invalidates the old number.
-                if (streak >= required) { confirmed = candidate; previouslyConfirmed = true; Detail = "Cantidad confirmada"; }
+                if (streak >= required) { confirmed = candidate; previouslyConfirmed = true; Detail = "Cantidad confirmada" + (candidate == 3 || candidate == 4 ? " · " + candidate.Value + " cebos" : ""); }
                 else { confirmed = null; Detail = "Comprobando cantidad…"; }
             }
             Count = now - sampledAt <= 5000 ? confirmed : null;

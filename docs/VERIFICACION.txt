@@ -1,50 +1,48 @@
-SomeFishing GPO 0.5.4 - verificación local, 2026-09-05
+SomeFishing GPO 0.6.0 - verificacion local, 2026-09-05
 
-390 comprobaciones integradas; 477 al añadir doce capturas privadas del usuario.
-La cuenta incluye los tres idiomas OCR instalados en el equipo de desarrollo.
+670 comprobaciones integradas; 783 con catorce capturas privadas del usuario.
+El total incluye los idiomas OCR instalados en este equipo de desarrollo.
 
-La nueva imagen real después de Sí fallaba con la 0.5.3: Comprar se cortaba
-como Compra, MAX294 producía dígitos truncados y el respaldo de posición
-buscaba texto blanco aunque Comprar es verde.
-La lectura ahora amplía la región izquierda, localiza texto verde solo después
-de reconocer Comprar en dos escalas y ensancha la línea completa de MAX.
-Exige dos números completos iguales y rechaza toda contradicción numérica.
-No transforma comillas o letras en dígitos. Las lecturas truncadas de29
-ya no se aceptan como el máximo completo.
+Compra simplificada por tres puntos guardados expresamente. Izquierdo para
+Si/Comprar, central para numero/cierre, derecho solo validado. La secuencia
+no lee menus, MAX ni inventario. Una accion por tick; sin rafagas atrasadas,
+sin reintentos dentro de un pedido. Cantidad y cierre quedan sin verificar.
 
-Imagen completa660x282: Automático, es-ES y es-MX reconocen MAX294/cantidad1.
-Comprar se localiza en187,227 y el número en336,226.
-Recorte519x199 desde72,42: MAX294/cantidad1, Comprar115,185 y número264,184.
-Los destinos coinciden exactamente al sumar el origen del recorte.
-En-US permanece desconocido en ambas imágenes; no inventa29 o299.
+Pruebas con runtime simulado: 4/3 no compran; 2 solicita 298; cero confirmado
+en tres lecturas solicita 300; si la lectura pasa de 2 a 1 mientras espera,
+resuelve 299 al comenzar. No calcula MAX si el contador es desconocido o
+desaparecido. Una lectura baja persistente no encadena pedidos; se rearma
+tras confirmar un numero superior al umbral.
 
-La transición tras Sí manual requiere dos capturas nuevas con cantidad y MAX
-válidos. No avanza con una imagen aislada, caché o campo ilegible; mantiene
-pausa y apuntado y no reanuda una sesión detenida por pérdida de foco.
-Pruebas con MouseLease real confirman conservación del pulso hasta180ms,
-liberación por vigilancia a200ms y liberación inmediata al perder el foco.
-Estas pruebas usan remitentes simulados; no envían eventos al juego.
+Cronometro: al vencer durante seguimiento libera el clic, espera 1600 ms de
+cierre y respeta la picada pendiente si ya habia lanzado. Solicita 50 y
+reanuda los lanzamientos. Pruebas verifican cancelacion, perdida de foco,
+limites, coordenadas, escritura de cantidades y persistencia de ajustes.
+Probar compra usa cantidad independiente, sin OCR, observacion de pesca,
+umbral ni cronometro; no vuelve a lanzar al terminar.
 
-La comprobación de ventana bajo el cursor rechaza otra ventana superpuesta.
-El diagnóstico registra aceptación de down/up, duración e identifica el
-proceso/ventana que tomó el foco, sin guardar títulos, rutas ni capturas.
-Se conservan los métodos de clic de la0.5.3; esta versión no afirma resolver
-ni verificar todavía la recepción del clic inicial dentro de Roblox.
-La aceptación de SendInput no demuestra que el juego responda.
+Las dos nuevas imagenes reales: x4 (32x30), x3 (31x27), eran desconocidas
+con el lector anterior. Ahora ambas producen el numero correcto con
+referencias binarias completas del texto, en automatico, en-US, es-ES y
+es-MX. El respaldo de x4 excluye una franja dorada fina separada del texto.
+Se rechazan verde, recortes incompletos y otros numeros/letras probados.
+Algunos escalados de x3 permanecen desconocidos; no se garantiza reconocer
+cualquier escala o fuente. Nunca se aporta cero desde esas referencias.
 
-Regresiones anteriores conservadas: pesca, umbral, cronómetro, MAX, cantidad
-de prueba, doble clic, idiomas, límites, cancelaciones y cierre de tres puntos.
-Interfaz renderizada sin activación ni atajos. No se enviaron clics o teclas
-a Roblox ni se gastó Peli. Cronómetro no verifica el aumento del inventario.
+Interfaz renderizada sin activacion ni atajos; Compra, Cronometro y Pruebas
+revisadas visualmente. Se conservan regresiones del lector de menus anterior,
+aunque la interfaz actual usa puntos y pausas. Todas las entradas de pruebas
+son simuladas. No se enviaron clics ni teclas a Roblox ni se gasto Peli.
+La respuesta real del juego y las compras siguen pendientes de prueba manual.
 
-Microsoft Defender completó el análisis del ejecutable: found no threats.
-Esto no es una garantía absoluta ni una certificación. Sin firma comercial.
-Se conserva NOTICE.md, sin licencia concedida por ahora.
-No se incluyen capturas privadas, preferencias, registros personales ni credenciales.
-Los PNG de documentación son renders y ejemplos sintéticos.
+Microsoft Defender completo el analisis del ejecutable: found no threats.
+No es una garantia absoluta ni certificacion. Ejecutable sin firma comercial.
+Se conserva NOTICE.md, sin licencia concedida por ahora. No se distribuyen
+capturas privadas, ajustes, registros personales, credenciales ni rutas locales.
+La documentacion visual contiene renders y ejemplos sinteticos.
 
 SHA256 DEL EJECUTABLE
-AF01C68719ADC874185CC2A5D84BF21E9F708916318AE5FC83C621C2BCF8F24C  SomeFishingGPO.exe
+E75BE6D67706C8CA4C49926A4ED6A39457594BACE07B317D54081423B50A26B8  SomeFishingGPO.exe
 
 PRUEBAS INTEGRADAS
 OK: Windows INPUT structure matches the platform ABI
@@ -471,10 +469,290 @@ OK: An enumerated installed OCR language is selectable: en-US
 OK: An enumerated installed OCR language is selectable: es-ES
 OK: An enumerated installed OCR language is selectable: es-MX
 OK: Unavailable OCR language is a read error, not a closed dialogue
+OK: Direct purchase uses the three marked points; Yes/Buy share left and Quantity/Close share middle
+OK: Marked buttons support valid negative monitor coordinates without recalculating percentages
+OK: Direct flow completes one order of 298, preserving its start-time quantity
+OK: Direct completion explicitly leaves the purchase result unverified
+OK: Direct flow never reads shop/bait/fishing images and never casts or jumps
+OK: Direct flow clicks Yes once, the number twice, Buy once and closing once
+OK: All direct click destinations use the marked positions captured at start
+OK: Direct flow aims at each required button and never clicks No/Cancelar
+OK: Direct typing sends E, Ctrl+A, Backspace and exactly the digits 298
+OK: Direct number double-click allows its 180 ms pulse to release before the next press
+OK: Direct completion releases every key and each mouse pulse
+OK: Completed direct orders cannot repeat, recast, restart or emit future inputs
+OK: Direct explicit quantity 1 is typed once without an invented MAX or inventory reading
+OK: Direct explicit quantity 50 is typed once without an invented MAX or inventory reading
+OK: Direct explicit quantity 9999 is typed once without an invented MAX or inventory reading
+OK: Direct flow sustains E for its full configured duration
+OK: Direct flow waits at least 1500 ms after E before targeting Yes
+OK: Direct Yes waits for the configured pointer settling time
+OK: Direct flow waits for the quantity dialog after its single Yes click
+OK: Direct second number click does not happen before its 250 ms deadline
+OK: Direct typing waits after the second number click
+OK: Direct selection starts Ctrl only after the field settling pause
+OK: Direct menu wait honors a configured pause longer than 1500 ms
+OK: Direct long menu wait ends at its own deadline
+OK: A delayed direct tick releases E without catching up through future actions
+OK: F10 between number clicks releases the first pulse and cancels the second click and all typing
+OK: Focus loss while E is held stops a direct order and releases E
+OK: Focus loss during direct Ctrl selection releases it and prevents A, typing and Buy
+OK: Stopping after direct Buy preserves the submitted flag without another Buy or closing click
+OK: A direct input exception releases an uncertain mouse press and cannot retry it
+OK: A direct order cannot start when the game is inactive
+OK: The 90 second direct timeout releases E without sending overdue clicks
+OK: A backwards direct clock terminates safely
+OK: Invalid direct configuration 0 cannot emit input or read OCR
+OK: Invalid direct configuration 1 cannot emit input or read OCR
+OK: Invalid direct configuration 2 cannot emit input or read OCR
+OK: Invalid direct configuration 3 cannot emit input or read OCR
+OK: Invalid direct configuration 4 cannot emit input or read OCR
+OK: Invalid direct configuration 5 cannot emit input or read OCR
+OK: Invalid direct configuration 6 cannot emit input or read OCR
+OK: Invalid direct configuration 7 cannot emit input or read OCR
+OK: Invalid direct configuration 8 cannot emit input or read OCR
+OK: Invalid direct configuration 9 cannot emit input or read OCR
+OK: Invalid direct configuration 10 cannot emit input or read OCR
+OK: Invalid direct configuration 11 cannot emit input or read OCR
+OK: Tick before direct Start sends no input
+OK: Cancellation before direct Start prevents a later start on the same order
+OK: A single four-bait frame cannot announce a confirmed low count
+OK: Four bait is confirmed as approaching empty, never empty
+OK: The confirmed low-count detail includes four bait
+OK: A changed low count invalidates the previous four until confirmed
+OK: Three bait is an early indication, not an empty counter
+OK: Stale low readings cannot keep the early indication active
+OK: Two bait remains a distinct purchase threshold, not the early indication
+OK: Reset clears the early low-bait indication
+OK: Counter text accepts the complete x3 and x4 values
+OK: No text is not a low-bait value
+OK: A gold block is not a complete low-bait label
+OK: Low-count fallback rejects unrelated label x0 in Arial 10
+OK: Low-count fallback rejects unrelated label x1 in Arial 10
+OK: Low-count fallback rejects unrelated label x5 in Arial 10
+OK: Low-count fallback rejects unrelated label x6 in Arial 10
+OK: Low-count fallback rejects unrelated label x7 in Arial 10
+OK: Low-count fallback rejects unrelated label x8 in Arial 10
+OK: Low-count fallback rejects unrelated label x9 in Arial 10
+OK: Low-count fallback rejects unrelated label x20 in Arial 10
+OK: Low-count fallback rejects unrelated label x23 in Arial 10
+OK: Low-count fallback rejects unrelated label x24 in Arial 10
+OK: Low-count fallback rejects unrelated label x32 in Arial 10
+OK: Low-count fallback rejects unrelated label x42 in Arial 10
+OK: Low-count fallback rejects unrelated label x300 in Arial 10
+OK: Low-count fallback rejects unrelated label 3 in Arial 10
+OK: Low-count fallback rejects unrelated label 4 in Arial 10
+OK: Low-count fallback rejects unrelated label x in Arial 10
+OK: Low-count fallback rejects unrelated label xO in Arial 10
+OK: Low-count fallback rejects unrelated label xB in Arial 10
+OK: Low-count fallback rejects unrelated label xA in Arial 10
+OK: Low-count fallback rejects unrelated label x0 in Arial 14
+OK: Low-count fallback rejects unrelated label x1 in Arial 14
+OK: Low-count fallback rejects unrelated label x5 in Arial 14
+OK: Low-count fallback rejects unrelated label x6 in Arial 14
+OK: Low-count fallback rejects unrelated label x7 in Arial 14
+OK: Low-count fallback rejects unrelated label x8 in Arial 14
+OK: Low-count fallback rejects unrelated label x9 in Arial 14
+OK: Low-count fallback rejects unrelated label x20 in Arial 14
+OK: Low-count fallback rejects unrelated label x23 in Arial 14
+OK: Low-count fallback rejects unrelated label x24 in Arial 14
+OK: Low-count fallback rejects unrelated label x32 in Arial 14
+OK: Low-count fallback rejects unrelated label x42 in Arial 14
+OK: Low-count fallback rejects unrelated label x300 in Arial 14
+OK: Low-count fallback rejects unrelated label 3 in Arial 14
+OK: Low-count fallback rejects unrelated label 4 in Arial 14
+OK: Low-count fallback rejects unrelated label x in Arial 14
+OK: Low-count fallback rejects unrelated label xO in Arial 14
+OK: Low-count fallback rejects unrelated label xB in Arial 14
+OK: Low-count fallback rejects unrelated label xA in Arial 14
+OK: Low-count fallback rejects unrelated label x0 in Arial 20
+OK: Low-count fallback rejects unrelated label x1 in Arial 20
+OK: Low-count fallback rejects unrelated label x5 in Arial 20
+OK: Low-count fallback rejects unrelated label x6 in Arial 20
+OK: Low-count fallback rejects unrelated label x7 in Arial 20
+OK: Low-count fallback rejects unrelated label x8 in Arial 20
+OK: Low-count fallback rejects unrelated label x9 in Arial 20
+OK: Low-count fallback rejects unrelated label x20 in Arial 20
+OK: Low-count fallback rejects unrelated label x23 in Arial 20
+OK: Low-count fallback rejects unrelated label x24 in Arial 20
+OK: Low-count fallback rejects unrelated label x32 in Arial 20
+OK: Low-count fallback rejects unrelated label x42 in Arial 20
+OK: Low-count fallback rejects unrelated label x300 in Arial 20
+OK: Low-count fallback rejects unrelated label 3 in Arial 20
+OK: Low-count fallback rejects unrelated label 4 in Arial 20
+OK: Low-count fallback rejects unrelated label x in Arial 20
+OK: Low-count fallback rejects unrelated label xO in Arial 20
+OK: Low-count fallback rejects unrelated label xB in Arial 20
+OK: Low-count fallback rejects unrelated label xA in Arial 20
+OK: Low-count fallback rejects unrelated label x0 in Segoe UI 10
+OK: Low-count fallback rejects unrelated label x1 in Segoe UI 10
+OK: Low-count fallback rejects unrelated label x5 in Segoe UI 10
+OK: Low-count fallback rejects unrelated label x6 in Segoe UI 10
+OK: Low-count fallback rejects unrelated label x7 in Segoe UI 10
+OK: Low-count fallback rejects unrelated label x8 in Segoe UI 10
+OK: Low-count fallback rejects unrelated label x9 in Segoe UI 10
+OK: Low-count fallback rejects unrelated label x20 in Segoe UI 10
+OK: Low-count fallback rejects unrelated label x23 in Segoe UI 10
+OK: Low-count fallback rejects unrelated label x24 in Segoe UI 10
+OK: Low-count fallback rejects unrelated label x32 in Segoe UI 10
+OK: Low-count fallback rejects unrelated label x42 in Segoe UI 10
+OK: Low-count fallback rejects unrelated label x300 in Segoe UI 10
+OK: Low-count fallback rejects unrelated label 3 in Segoe UI 10
+OK: Low-count fallback rejects unrelated label 4 in Segoe UI 10
+OK: Low-count fallback rejects unrelated label x in Segoe UI 10
+OK: Low-count fallback rejects unrelated label xO in Segoe UI 10
+OK: Low-count fallback rejects unrelated label xB in Segoe UI 10
+OK: Low-count fallback rejects unrelated label xA in Segoe UI 10
+OK: Low-count fallback rejects unrelated label x0 in Segoe UI 14
+OK: Low-count fallback rejects unrelated label x1 in Segoe UI 14
+OK: Low-count fallback rejects unrelated label x5 in Segoe UI 14
+OK: Low-count fallback rejects unrelated label x6 in Segoe UI 14
+OK: Low-count fallback rejects unrelated label x7 in Segoe UI 14
+OK: Low-count fallback rejects unrelated label x8 in Segoe UI 14
+OK: Low-count fallback rejects unrelated label x9 in Segoe UI 14
+OK: Low-count fallback rejects unrelated label x20 in Segoe UI 14
+OK: Low-count fallback rejects unrelated label x23 in Segoe UI 14
+OK: Low-count fallback rejects unrelated label x24 in Segoe UI 14
+OK: Low-count fallback rejects unrelated label x32 in Segoe UI 14
+OK: Low-count fallback rejects unrelated label x42 in Segoe UI 14
+OK: Low-count fallback rejects unrelated label x300 in Segoe UI 14
+OK: Low-count fallback rejects unrelated label 3 in Segoe UI 14
+OK: Low-count fallback rejects unrelated label 4 in Segoe UI 14
+OK: Low-count fallback rejects unrelated label x in Segoe UI 14
+OK: Low-count fallback rejects unrelated label xO in Segoe UI 14
+OK: Low-count fallback rejects unrelated label xB in Segoe UI 14
+OK: Low-count fallback rejects unrelated label xA in Segoe UI 14
+OK: Low-count fallback rejects unrelated label x0 in Segoe UI 20
+OK: Low-count fallback rejects unrelated label x1 in Segoe UI 20
+OK: Low-count fallback rejects unrelated label x5 in Segoe UI 20
+OK: Low-count fallback rejects unrelated label x6 in Segoe UI 20
+OK: Low-count fallback rejects unrelated label x7 in Segoe UI 20
+OK: Low-count fallback rejects unrelated label x8 in Segoe UI 20
+OK: Low-count fallback rejects unrelated label x9 in Segoe UI 20
+OK: Low-count fallback rejects unrelated label x20 in Segoe UI 20
+OK: Low-count fallback rejects unrelated label x23 in Segoe UI 20
+OK: Low-count fallback rejects unrelated label x24 in Segoe UI 20
+OK: Low-count fallback rejects unrelated label x32 in Segoe UI 20
+OK: Low-count fallback rejects unrelated label x42 in Segoe UI 20
+OK: Low-count fallback rejects unrelated label x300 in Segoe UI 20
+OK: Low-count fallback rejects unrelated label 3 in Segoe UI 20
+OK: Low-count fallback rejects unrelated label 4 in Segoe UI 20
+OK: Low-count fallback rejects unrelated label x in Segoe UI 20
+OK: Low-count fallback rejects unrelated label xO in Segoe UI 20
+OK: Low-count fallback rejects unrelated label xB in Segoe UI 20
+OK: Low-count fallback rejects unrelated label xA in Segoe UI 20
+OK: Low-count fallback rejects unrelated label x0 in Comic Sans MS 10
+OK: Low-count fallback rejects unrelated label x1 in Comic Sans MS 10
+OK: Low-count fallback rejects unrelated label x5 in Comic Sans MS 10
+OK: Low-count fallback rejects unrelated label x6 in Comic Sans MS 10
+OK: Low-count fallback rejects unrelated label x7 in Comic Sans MS 10
+OK: Low-count fallback rejects unrelated label x8 in Comic Sans MS 10
+OK: Low-count fallback rejects unrelated label x9 in Comic Sans MS 10
+OK: Low-count fallback rejects unrelated label x20 in Comic Sans MS 10
+OK: Low-count fallback rejects unrelated label x23 in Comic Sans MS 10
+OK: Low-count fallback rejects unrelated label x24 in Comic Sans MS 10
+OK: Low-count fallback rejects unrelated label x32 in Comic Sans MS 10
+OK: Low-count fallback rejects unrelated label x42 in Comic Sans MS 10
+OK: Low-count fallback rejects unrelated label x300 in Comic Sans MS 10
+OK: Low-count fallback rejects unrelated label 3 in Comic Sans MS 10
+OK: Low-count fallback rejects unrelated label 4 in Comic Sans MS 10
+OK: Low-count fallback rejects unrelated label x in Comic Sans MS 10
+OK: Low-count fallback rejects unrelated label xO in Comic Sans MS 10
+OK: Low-count fallback rejects unrelated label xB in Comic Sans MS 10
+OK: Low-count fallback rejects unrelated label xA in Comic Sans MS 10
+OK: Low-count fallback rejects unrelated label x0 in Comic Sans MS 14
+OK: Low-count fallback rejects unrelated label x1 in Comic Sans MS 14
+OK: Low-count fallback rejects unrelated label x5 in Comic Sans MS 14
+OK: Low-count fallback rejects unrelated label x6 in Comic Sans MS 14
+OK: Low-count fallback rejects unrelated label x7 in Comic Sans MS 14
+OK: Low-count fallback rejects unrelated label x8 in Comic Sans MS 14
+OK: Low-count fallback rejects unrelated label x9 in Comic Sans MS 14
+OK: Low-count fallback rejects unrelated label x20 in Comic Sans MS 14
+OK: Low-count fallback rejects unrelated label x23 in Comic Sans MS 14
+OK: Low-count fallback rejects unrelated label x24 in Comic Sans MS 14
+OK: Low-count fallback rejects unrelated label x32 in Comic Sans MS 14
+OK: Low-count fallback rejects unrelated label x42 in Comic Sans MS 14
+OK: Low-count fallback rejects unrelated label x300 in Comic Sans MS 14
+OK: Low-count fallback rejects unrelated label 3 in Comic Sans MS 14
+OK: Low-count fallback rejects unrelated label 4 in Comic Sans MS 14
+OK: Low-count fallback rejects unrelated label x in Comic Sans MS 14
+OK: Low-count fallback rejects unrelated label xO in Comic Sans MS 14
+OK: Low-count fallback rejects unrelated label xB in Comic Sans MS 14
+OK: Low-count fallback rejects unrelated label xA in Comic Sans MS 14
+OK: Low-count fallback rejects unrelated label x0 in Comic Sans MS 20
+OK: Low-count fallback rejects unrelated label x1 in Comic Sans MS 20
+OK: Low-count fallback rejects unrelated label x5 in Comic Sans MS 20
+OK: Low-count fallback rejects unrelated label x6 in Comic Sans MS 20
+OK: Low-count fallback rejects unrelated label x7 in Comic Sans MS 20
+OK: Low-count fallback rejects unrelated label x8 in Comic Sans MS 20
+OK: Low-count fallback rejects unrelated label x9 in Comic Sans MS 20
+OK: Low-count fallback rejects unrelated label x20 in Comic Sans MS 20
+OK: Low-count fallback rejects unrelated label x23 in Comic Sans MS 20
+OK: Low-count fallback rejects unrelated label x24 in Comic Sans MS 20
+OK: Low-count fallback rejects unrelated label x32 in Comic Sans MS 20
+OK: Low-count fallback rejects unrelated label x42 in Comic Sans MS 20
+OK: Low-count fallback rejects unrelated label x300 in Comic Sans MS 20
+OK: Low-count fallback rejects unrelated label 3 in Comic Sans MS 20
+OK: Low-count fallback rejects unrelated label 4 in Comic Sans MS 20
+OK: Low-count fallback rejects unrelated label x in Comic Sans MS 20
+OK: Low-count fallback rejects unrelated label xO in Comic Sans MS 20
+OK: Low-count fallback rejects unrelated label xB in Comic Sans MS 20
+OK: Low-count fallback rejects unrelated label xA in Comic Sans MS 20
+OK: Unfamiliar lettering for x2 is unknown or correct, never another low count
+OK: Green progress text cannot become the yellow x2 counter
+OK: Unfamiliar lettering for x3 is unknown or correct, never another low count
+OK: Green progress text cannot become the yellow x3 counter
+OK: Unfamiliar lettering for x4 is unknown or correct, never another low count
+OK: Green progress text cannot become the yellow x4 counter
+OK: Simple timer keeps fishing until its deadline
+OK: Simple timer expiration pauses tracking and releases the fishing click before opening the shop
+OK: A visible fish menu prevents E and all purchase clicks while paused
+OK: The simple timer requires 1600 ms of a clear fishing area
+OK: A clear area starts one timed purchase after the pause
+OK: Simple timed purchasing sends 50 and returns to preparing after the one-shot sequence
+OK: Simple timer reads neither menu OCR nor bait OCR and restarts its full interval after buying
+OK: Resuming after a simple purchase respects the one second preparation pause
+OK: Simple timer resumes automatic casting after completing its sequence
+OK: Focus loss while pausing cancels E, clicks and future simple purchases
+OK: F10 during the fishing pause prevents a later shop sequence
+OK: Cast-in-flight fixture begins its cast before the timer is due
+OK: A timer expiring during a cast preserves the full pending bite window before buying
+OK: A cast without a fish can buy only after its pending bite window expires
+OK: A timer expiring during Waiting retains that cast's existing bite deadline
+OK: Waiting can enter the shop at the preserved bite deadline
+OK: Confirmed 4 and 3 bait do not trigger a threshold-2 purchase
+OK: One low-counter frame cannot pause fishing or authorize spending
+OK: Two confirmed frames at 2 bait pause fishing before replenishment
+OK: The normal simple mode computes 300 minus 2 as an order of 298
+OK: Normal simple purchasing uses no shop OCR and pauses counter reads while typing 298
+OK: An unchanged low count after the order cannot cause repeated buying
+OK: Observing bait above the threshold rearms a later low-counter purchase
+OK: Two zero readings are insufficient to authorize a 300-bait order
+OK: Three confirmed zero readings compute a 300-bait replenishment
+OK: Zero replenishment types 300 once
+OK: A count changing from 2 to 1 before E is recalculated as 299 at the actual purchase start
+OK: The recalculated normal order actually types 299
+OK: An unknown counter during the pause cannot invent the missing replenishment amount
+OK: Fresh confirmed counter data can finish the waiting pause without a guessed MAX
+OK: A disappeared counter cannot authorize a simple purchase or invent MAX/capacity as the current count
+OK: A never-readable counter does not spend on normal automatic replenishment
+OK: Direct PurchaseTest sends its explicit quantity 1 once and terminates
+OK: Direct PurchaseTest does not inspect fish/menu/counter areas or start fishing
+OK: Direct PurchaseTest sends its explicit quantity 17 once and terminates
+OK: Direct PurchaseTest does not inspect fish/menu/counter areas or start fishing
+OK: A marked-button normal setup with capacity 300 validates without a shop OCR rectangle
+OK: Creating a 298-bait order preserves the saved 50-bait timer settings
+OK: Capacity at or below the threshold is rejected
+OK: Capacity above 9999 is rejected
+OK: Unmarked purchase buttons prevent a normal session
+OK: All three marked points, including No/Cancelar, must fit within the target bounds
+OK: Overlapping or unordered marked buttons fail validation
+OK: Capacity and all marked buttons survive settings serialization
+OK: The two purchase modes preserve 50 bait, 40 minutes and threshold 2 in settings
 UI: rendered off-screen non-activating form; no hotkeys registered and no clicks sent.
-PASS: 390 checks.
+PASS: 670 checks.
 
-VALIDACIÓN CON CAPTURAS NO DISTRIBUIDAS
+VALIDACION CON CAPTURAS NO DISTRIBUIDAS
 OK: Windows INPUT structure matches the platform ABI
 OK: Detect cyan bar, interior gap and thin white marker
 OK: Target center agrees with synthetic image
@@ -866,7 +1144,7 @@ OK: The x2 preview survives reconstructed size {Width=52, Height=45}
 OK: The x2 preview survives reconstructed size {Width=104, Height=91}
 OK: The positive visual fallback requires the x, not just a partial digit
 OK: A substantially obscured x2 counter remains unmatched
-TINY COUNTER LIMIT: fallback matches only the full supplied x2 glyph shape. It cannot supply zero; other digits still use OCR. The 38x33 case is reconstructed from the enlarged preview, not a native game capture.
+TINY COUNTER LIMIT: visual fallback supports complete x2/x3/x4 references, never zero. The 38x33 x2 case is reconstructed from an enlarged preview; x3/x4 have optional native samples. Other shapes or scales can remain unknown.
 OK: New purchase values are 50 bait every 40 minutes, with automation opt-in
 OK: Timer mode accepts an unconfigured counter even if the old reader checkbox was enabled
 OK: Zero minute intervals cannot create a purchase loop
@@ -996,5 +1274,311 @@ OK: The tighter519x199 selection also recognizes MAX294 and quantity1: es-ES
 OK: The new post-Yes image reads MAX294 and quantity1: es-MX
 OK: The new image keeps the numeric click at its central1 and Buy separately
 OK: The tighter519x199 selection also recognizes MAX294 and quantity1: es-MX
+OK: Direct purchase uses the three marked points; Yes/Buy share left and Quantity/Close share middle
+OK: Marked buttons support valid negative monitor coordinates without recalculating percentages
+OK: Direct flow completes one order of 298, preserving its start-time quantity
+OK: Direct completion explicitly leaves the purchase result unverified
+OK: Direct flow never reads shop/bait/fishing images and never casts or jumps
+OK: Direct flow clicks Yes once, the number twice, Buy once and closing once
+OK: All direct click destinations use the marked positions captured at start
+OK: Direct flow aims at each required button and never clicks No/Cancelar
+OK: Direct typing sends E, Ctrl+A, Backspace and exactly the digits 298
+OK: Direct number double-click allows its 180 ms pulse to release before the next press
+OK: Direct completion releases every key and each mouse pulse
+OK: Completed direct orders cannot repeat, recast, restart or emit future inputs
+OK: Direct explicit quantity 1 is typed once without an invented MAX or inventory reading
+OK: Direct explicit quantity 50 is typed once without an invented MAX or inventory reading
+OK: Direct explicit quantity 9999 is typed once without an invented MAX or inventory reading
+OK: Direct flow sustains E for its full configured duration
+OK: Direct flow waits at least 1500 ms after E before targeting Yes
+OK: Direct Yes waits for the configured pointer settling time
+OK: Direct flow waits for the quantity dialog after its single Yes click
+OK: Direct second number click does not happen before its 250 ms deadline
+OK: Direct typing waits after the second number click
+OK: Direct selection starts Ctrl only after the field settling pause
+OK: Direct menu wait honors a configured pause longer than 1500 ms
+OK: Direct long menu wait ends at its own deadline
+OK: A delayed direct tick releases E without catching up through future actions
+OK: F10 between number clicks releases the first pulse and cancels the second click and all typing
+OK: Focus loss while E is held stops a direct order and releases E
+OK: Focus loss during direct Ctrl selection releases it and prevents A, typing and Buy
+OK: Stopping after direct Buy preserves the submitted flag without another Buy or closing click
+OK: A direct input exception releases an uncertain mouse press and cannot retry it
+OK: A direct order cannot start when the game is inactive
+OK: The 90 second direct timeout releases E without sending overdue clicks
+OK: A backwards direct clock terminates safely
+OK: Invalid direct configuration 0 cannot emit input or read OCR
+OK: Invalid direct configuration 1 cannot emit input or read OCR
+OK: Invalid direct configuration 2 cannot emit input or read OCR
+OK: Invalid direct configuration 3 cannot emit input or read OCR
+OK: Invalid direct configuration 4 cannot emit input or read OCR
+OK: Invalid direct configuration 5 cannot emit input or read OCR
+OK: Invalid direct configuration 6 cannot emit input or read OCR
+OK: Invalid direct configuration 7 cannot emit input or read OCR
+OK: Invalid direct configuration 8 cannot emit input or read OCR
+OK: Invalid direct configuration 9 cannot emit input or read OCR
+OK: Invalid direct configuration 10 cannot emit input or read OCR
+OK: Invalid direct configuration 11 cannot emit input or read OCR
+OK: Tick before direct Start sends no input
+OK: Cancellation before direct Start prevents a later start on the same order
+OK: A single four-bait frame cannot announce a confirmed low count
+OK: Four bait is confirmed as approaching empty, never empty
+OK: The confirmed low-count detail includes four bait
+OK: A changed low count invalidates the previous four until confirmed
+OK: Three bait is an early indication, not an empty counter
+OK: Stale low readings cannot keep the early indication active
+OK: Two bait remains a distinct purchase threshold, not the early indication
+OK: Reset clears the early low-bait indication
+OK: Counter text accepts the complete x3 and x4 values
+OK: No text is not a low-bait value
+OK: A gold block is not a complete low-bait label
+OK: Low-count fallback rejects unrelated label x0 in Arial 10
+OK: Low-count fallback rejects unrelated label x1 in Arial 10
+OK: Low-count fallback rejects unrelated label x5 in Arial 10
+OK: Low-count fallback rejects unrelated label x6 in Arial 10
+OK: Low-count fallback rejects unrelated label x7 in Arial 10
+OK: Low-count fallback rejects unrelated label x8 in Arial 10
+OK: Low-count fallback rejects unrelated label x9 in Arial 10
+OK: Low-count fallback rejects unrelated label x20 in Arial 10
+OK: Low-count fallback rejects unrelated label x23 in Arial 10
+OK: Low-count fallback rejects unrelated label x24 in Arial 10
+OK: Low-count fallback rejects unrelated label x32 in Arial 10
+OK: Low-count fallback rejects unrelated label x42 in Arial 10
+OK: Low-count fallback rejects unrelated label x300 in Arial 10
+OK: Low-count fallback rejects unrelated label 3 in Arial 10
+OK: Low-count fallback rejects unrelated label 4 in Arial 10
+OK: Low-count fallback rejects unrelated label x in Arial 10
+OK: Low-count fallback rejects unrelated label xO in Arial 10
+OK: Low-count fallback rejects unrelated label xB in Arial 10
+OK: Low-count fallback rejects unrelated label xA in Arial 10
+OK: Low-count fallback rejects unrelated label x0 in Arial 14
+OK: Low-count fallback rejects unrelated label x1 in Arial 14
+OK: Low-count fallback rejects unrelated label x5 in Arial 14
+OK: Low-count fallback rejects unrelated label x6 in Arial 14
+OK: Low-count fallback rejects unrelated label x7 in Arial 14
+OK: Low-count fallback rejects unrelated label x8 in Arial 14
+OK: Low-count fallback rejects unrelated label x9 in Arial 14
+OK: Low-count fallback rejects unrelated label x20 in Arial 14
+OK: Low-count fallback rejects unrelated label x23 in Arial 14
+OK: Low-count fallback rejects unrelated label x24 in Arial 14
+OK: Low-count fallback rejects unrelated label x32 in Arial 14
+OK: Low-count fallback rejects unrelated label x42 in Arial 14
+OK: Low-count fallback rejects unrelated label x300 in Arial 14
+OK: Low-count fallback rejects unrelated label 3 in Arial 14
+OK: Low-count fallback rejects unrelated label 4 in Arial 14
+OK: Low-count fallback rejects unrelated label x in Arial 14
+OK: Low-count fallback rejects unrelated label xO in Arial 14
+OK: Low-count fallback rejects unrelated label xB in Arial 14
+OK: Low-count fallback rejects unrelated label xA in Arial 14
+OK: Low-count fallback rejects unrelated label x0 in Arial 20
+OK: Low-count fallback rejects unrelated label x1 in Arial 20
+OK: Low-count fallback rejects unrelated label x5 in Arial 20
+OK: Low-count fallback rejects unrelated label x6 in Arial 20
+OK: Low-count fallback rejects unrelated label x7 in Arial 20
+OK: Low-count fallback rejects unrelated label x8 in Arial 20
+OK: Low-count fallback rejects unrelated label x9 in Arial 20
+OK: Low-count fallback rejects unrelated label x20 in Arial 20
+OK: Low-count fallback rejects unrelated label x23 in Arial 20
+OK: Low-count fallback rejects unrelated label x24 in Arial 20
+OK: Low-count fallback rejects unrelated label x32 in Arial 20
+OK: Low-count fallback rejects unrelated label x42 in Arial 20
+OK: Low-count fallback rejects unrelated label x300 in Arial 20
+OK: Low-count fallback rejects unrelated label 3 in Arial 20
+OK: Low-count fallback rejects unrelated label 4 in Arial 20
+OK: Low-count fallback rejects unrelated label x in Arial 20
+OK: Low-count fallback rejects unrelated label xO in Arial 20
+OK: Low-count fallback rejects unrelated label xB in Arial 20
+OK: Low-count fallback rejects unrelated label xA in Arial 20
+OK: Low-count fallback rejects unrelated label x0 in Segoe UI 10
+OK: Low-count fallback rejects unrelated label x1 in Segoe UI 10
+OK: Low-count fallback rejects unrelated label x5 in Segoe UI 10
+OK: Low-count fallback rejects unrelated label x6 in Segoe UI 10
+OK: Low-count fallback rejects unrelated label x7 in Segoe UI 10
+OK: Low-count fallback rejects unrelated label x8 in Segoe UI 10
+OK: Low-count fallback rejects unrelated label x9 in Segoe UI 10
+OK: Low-count fallback rejects unrelated label x20 in Segoe UI 10
+OK: Low-count fallback rejects unrelated label x23 in Segoe UI 10
+OK: Low-count fallback rejects unrelated label x24 in Segoe UI 10
+OK: Low-count fallback rejects unrelated label x32 in Segoe UI 10
+OK: Low-count fallback rejects unrelated label x42 in Segoe UI 10
+OK: Low-count fallback rejects unrelated label x300 in Segoe UI 10
+OK: Low-count fallback rejects unrelated label 3 in Segoe UI 10
+OK: Low-count fallback rejects unrelated label 4 in Segoe UI 10
+OK: Low-count fallback rejects unrelated label x in Segoe UI 10
+OK: Low-count fallback rejects unrelated label xO in Segoe UI 10
+OK: Low-count fallback rejects unrelated label xB in Segoe UI 10
+OK: Low-count fallback rejects unrelated label xA in Segoe UI 10
+OK: Low-count fallback rejects unrelated label x0 in Segoe UI 14
+OK: Low-count fallback rejects unrelated label x1 in Segoe UI 14
+OK: Low-count fallback rejects unrelated label x5 in Segoe UI 14
+OK: Low-count fallback rejects unrelated label x6 in Segoe UI 14
+OK: Low-count fallback rejects unrelated label x7 in Segoe UI 14
+OK: Low-count fallback rejects unrelated label x8 in Segoe UI 14
+OK: Low-count fallback rejects unrelated label x9 in Segoe UI 14
+OK: Low-count fallback rejects unrelated label x20 in Segoe UI 14
+OK: Low-count fallback rejects unrelated label x23 in Segoe UI 14
+OK: Low-count fallback rejects unrelated label x24 in Segoe UI 14
+OK: Low-count fallback rejects unrelated label x32 in Segoe UI 14
+OK: Low-count fallback rejects unrelated label x42 in Segoe UI 14
+OK: Low-count fallback rejects unrelated label x300 in Segoe UI 14
+OK: Low-count fallback rejects unrelated label 3 in Segoe UI 14
+OK: Low-count fallback rejects unrelated label 4 in Segoe UI 14
+OK: Low-count fallback rejects unrelated label x in Segoe UI 14
+OK: Low-count fallback rejects unrelated label xO in Segoe UI 14
+OK: Low-count fallback rejects unrelated label xB in Segoe UI 14
+OK: Low-count fallback rejects unrelated label xA in Segoe UI 14
+OK: Low-count fallback rejects unrelated label x0 in Segoe UI 20
+OK: Low-count fallback rejects unrelated label x1 in Segoe UI 20
+OK: Low-count fallback rejects unrelated label x5 in Segoe UI 20
+OK: Low-count fallback rejects unrelated label x6 in Segoe UI 20
+OK: Low-count fallback rejects unrelated label x7 in Segoe UI 20
+OK: Low-count fallback rejects unrelated label x8 in Segoe UI 20
+OK: Low-count fallback rejects unrelated label x9 in Segoe UI 20
+OK: Low-count fallback rejects unrelated label x20 in Segoe UI 20
+OK: Low-count fallback rejects unrelated label x23 in Segoe UI 20
+OK: Low-count fallback rejects unrelated label x24 in Segoe UI 20
+OK: Low-count fallback rejects unrelated label x32 in Segoe UI 20
+OK: Low-count fallback rejects unrelated label x42 in Segoe UI 20
+OK: Low-count fallback rejects unrelated label x300 in Segoe UI 20
+OK: Low-count fallback rejects unrelated label 3 in Segoe UI 20
+OK: Low-count fallback rejects unrelated label 4 in Segoe UI 20
+OK: Low-count fallback rejects unrelated label x in Segoe UI 20
+OK: Low-count fallback rejects unrelated label xO in Segoe UI 20
+OK: Low-count fallback rejects unrelated label xB in Segoe UI 20
+OK: Low-count fallback rejects unrelated label xA in Segoe UI 20
+OK: Low-count fallback rejects unrelated label x0 in Comic Sans MS 10
+OK: Low-count fallback rejects unrelated label x1 in Comic Sans MS 10
+OK: Low-count fallback rejects unrelated label x5 in Comic Sans MS 10
+OK: Low-count fallback rejects unrelated label x6 in Comic Sans MS 10
+OK: Low-count fallback rejects unrelated label x7 in Comic Sans MS 10
+OK: Low-count fallback rejects unrelated label x8 in Comic Sans MS 10
+OK: Low-count fallback rejects unrelated label x9 in Comic Sans MS 10
+OK: Low-count fallback rejects unrelated label x20 in Comic Sans MS 10
+OK: Low-count fallback rejects unrelated label x23 in Comic Sans MS 10
+OK: Low-count fallback rejects unrelated label x24 in Comic Sans MS 10
+OK: Low-count fallback rejects unrelated label x32 in Comic Sans MS 10
+OK: Low-count fallback rejects unrelated label x42 in Comic Sans MS 10
+OK: Low-count fallback rejects unrelated label x300 in Comic Sans MS 10
+OK: Low-count fallback rejects unrelated label 3 in Comic Sans MS 10
+OK: Low-count fallback rejects unrelated label 4 in Comic Sans MS 10
+OK: Low-count fallback rejects unrelated label x in Comic Sans MS 10
+OK: Low-count fallback rejects unrelated label xO in Comic Sans MS 10
+OK: Low-count fallback rejects unrelated label xB in Comic Sans MS 10
+OK: Low-count fallback rejects unrelated label xA in Comic Sans MS 10
+OK: Low-count fallback rejects unrelated label x0 in Comic Sans MS 14
+OK: Low-count fallback rejects unrelated label x1 in Comic Sans MS 14
+OK: Low-count fallback rejects unrelated label x5 in Comic Sans MS 14
+OK: Low-count fallback rejects unrelated label x6 in Comic Sans MS 14
+OK: Low-count fallback rejects unrelated label x7 in Comic Sans MS 14
+OK: Low-count fallback rejects unrelated label x8 in Comic Sans MS 14
+OK: Low-count fallback rejects unrelated label x9 in Comic Sans MS 14
+OK: Low-count fallback rejects unrelated label x20 in Comic Sans MS 14
+OK: Low-count fallback rejects unrelated label x23 in Comic Sans MS 14
+OK: Low-count fallback rejects unrelated label x24 in Comic Sans MS 14
+OK: Low-count fallback rejects unrelated label x32 in Comic Sans MS 14
+OK: Low-count fallback rejects unrelated label x42 in Comic Sans MS 14
+OK: Low-count fallback rejects unrelated label x300 in Comic Sans MS 14
+OK: Low-count fallback rejects unrelated label 3 in Comic Sans MS 14
+OK: Low-count fallback rejects unrelated label 4 in Comic Sans MS 14
+OK: Low-count fallback rejects unrelated label x in Comic Sans MS 14
+OK: Low-count fallback rejects unrelated label xO in Comic Sans MS 14
+OK: Low-count fallback rejects unrelated label xB in Comic Sans MS 14
+OK: Low-count fallback rejects unrelated label xA in Comic Sans MS 14
+OK: Low-count fallback rejects unrelated label x0 in Comic Sans MS 20
+OK: Low-count fallback rejects unrelated label x1 in Comic Sans MS 20
+OK: Low-count fallback rejects unrelated label x5 in Comic Sans MS 20
+OK: Low-count fallback rejects unrelated label x6 in Comic Sans MS 20
+OK: Low-count fallback rejects unrelated label x7 in Comic Sans MS 20
+OK: Low-count fallback rejects unrelated label x8 in Comic Sans MS 20
+OK: Low-count fallback rejects unrelated label x9 in Comic Sans MS 20
+OK: Low-count fallback rejects unrelated label x20 in Comic Sans MS 20
+OK: Low-count fallback rejects unrelated label x23 in Comic Sans MS 20
+OK: Low-count fallback rejects unrelated label x24 in Comic Sans MS 20
+OK: Low-count fallback rejects unrelated label x32 in Comic Sans MS 20
+OK: Low-count fallback rejects unrelated label x42 in Comic Sans MS 20
+OK: Low-count fallback rejects unrelated label x300 in Comic Sans MS 20
+OK: Low-count fallback rejects unrelated label 3 in Comic Sans MS 20
+OK: Low-count fallback rejects unrelated label 4 in Comic Sans MS 20
+OK: Low-count fallback rejects unrelated label x in Comic Sans MS 20
+OK: Low-count fallback rejects unrelated label xO in Comic Sans MS 20
+OK: Low-count fallback rejects unrelated label xB in Comic Sans MS 20
+OK: Low-count fallback rejects unrelated label xA in Comic Sans MS 20
+OK: Unfamiliar lettering for x2 is unknown or correct, never another low count
+OK: Green progress text cannot become the yellow x2 counter
+OK: Unfamiliar lettering for x3 is unknown or correct, never another low count
+OK: Green progress text cannot become the yellow x3 counter
+OK: Unfamiliar lettering for x4 is unknown or correct, never another low count
+OK: Green progress text cannot become the yellow x4 counter
+OK: Simple timer keeps fishing until its deadline
+OK: Simple timer expiration pauses tracking and releases the fishing click before opening the shop
+OK: A visible fish menu prevents E and all purchase clicks while paused
+OK: The simple timer requires 1600 ms of a clear fishing area
+OK: A clear area starts one timed purchase after the pause
+OK: Simple timed purchasing sends 50 and returns to preparing after the one-shot sequence
+OK: Simple timer reads neither menu OCR nor bait OCR and restarts its full interval after buying
+OK: Resuming after a simple purchase respects the one second preparation pause
+OK: Simple timer resumes automatic casting after completing its sequence
+OK: Focus loss while pausing cancels E, clicks and future simple purchases
+OK: F10 during the fishing pause prevents a later shop sequence
+OK: Cast-in-flight fixture begins its cast before the timer is due
+OK: A timer expiring during a cast preserves the full pending bite window before buying
+OK: A cast without a fish can buy only after its pending bite window expires
+OK: A timer expiring during Waiting retains that cast's existing bite deadline
+OK: Waiting can enter the shop at the preserved bite deadline
+OK: Confirmed 4 and 3 bait do not trigger a threshold-2 purchase
+OK: One low-counter frame cannot pause fishing or authorize spending
+OK: Two confirmed frames at 2 bait pause fishing before replenishment
+OK: The normal simple mode computes 300 minus 2 as an order of 298
+OK: Normal simple purchasing uses no shop OCR and pauses counter reads while typing 298
+OK: An unchanged low count after the order cannot cause repeated buying
+OK: Observing bait above the threshold rearms a later low-counter purchase
+OK: Two zero readings are insufficient to authorize a 300-bait order
+OK: Three confirmed zero readings compute a 300-bait replenishment
+OK: Zero replenishment types 300 once
+OK: A count changing from 2 to 1 before E is recalculated as 299 at the actual purchase start
+OK: The recalculated normal order actually types 299
+OK: An unknown counter during the pause cannot invent the missing replenishment amount
+OK: Fresh confirmed counter data can finish the waiting pause without a guessed MAX
+OK: A disappeared counter cannot authorize a simple purchase or invent MAX/capacity as the current count
+OK: A never-readable counter does not spend on normal automatic replenishment
+OK: Direct PurchaseTest sends its explicit quantity 1 once and terminates
+OK: Direct PurchaseTest does not inspect fish/menu/counter areas or start fishing
+OK: Direct PurchaseTest sends its explicit quantity 17 once and terminates
+OK: Direct PurchaseTest does not inspect fish/menu/counter areas or start fishing
+OK: A marked-button normal setup with capacity 300 validates without a shop OCR rectangle
+OK: Creating a 298-bait order preserves the saved 50-bait timer settings
+OK: Capacity at or below the threshold is rejected
+OK: Capacity above 9999 is rejected
+OK: Unmarked purchase buttons prevent a normal session
+OK: All three marked points, including No/Cancelar, must fit within the target bounds
+OK: Overlapping or unordered marked buttons fail validation
+OK: Capacity and all marked buttons survive settings serialization
+OK: The two purchase modes preserve 50 bait, 40 minutes and threshold 2 in settings
+OK: The supplied complete x3 image matches its own low-count shape
+OK: The supplied x3 image is readable with automatic OCR language
+OK: The supplied x3 image is readable with en-US
+OK: The supplied x3 image is readable with es-ES
+OK: The supplied x3 image is readable with es-MX
+OK: Rescaled x3 is correct or unknown, never another low count at scale 0,8
+OK: Rescaled x3 is correct or unknown, never another low count at scale 1
+OK: Rescaled x3 is correct or unknown, never another low count at scale 1,25
+OK: Rescaled x3 is correct or unknown, never another low count at scale 1,5
+OK: Rescaled x3 is correct or unknown, never another low count at scale 2
+OK: Rescaled x3 is correct or unknown, never another low count at scale 3
+OK: The supplied x3 image cannot match when its x prefix is hidden
+OK: The supplied x3 shape in green cannot become a yellow bait reading
+OK: The supplied complete x4 image matches its own low-count shape
+OK: The supplied x4 image is readable with automatic OCR language
+OK: The supplied x4 image is readable with en-US
+OK: The supplied x4 image is readable with es-ES
+OK: The supplied x4 image is readable with es-MX
+OK: Rescaled x4 is correct or unknown, never another low count at scale 0,8
+OK: Rescaled x4 is correct or unknown, never another low count at scale 1
+OK: Rescaled x4 is correct or unknown, never another low count at scale 1,25
+OK: Rescaled x4 is correct or unknown, never another low count at scale 1,5
+OK: Rescaled x4 is correct or unknown, never another low count at scale 2
+OK: Rescaled x4 is correct or unknown, never another low count at scale 3
+OK: The supplied x4 image cannot match when its x prefix is hidden
+OK: The supplied x4 shape in green cannot become a yellow bait reading
 UI: rendered off-screen non-activating form; no hotkeys registered and no clicks sent.
-PASS: 477 checks.
+PASS: 783 checks.

@@ -56,10 +56,14 @@ namespace SomeFishingGPO
         private NumericUpDown buyQuantity, purchaseLimit, shopOpenTime, purchaseMinutes, testBuyQuantity;
         private ComboBox purchaseMode;
         private Label purchaseCountdown, purchaseModeHint;
-        private NumericUpDown baitThreshold, shopSettle;
+        private NumericUpDown baitThreshold, shopSettle, baitCapacity;
         private ComboBox ocrLanguage;
         private readonly System.Collections.Generic.List<string> ocrTags=new System.Collections.Generic.List<string>();
         private Panel timerCondition, ocrCondition;
+        private Panel purchaseQuantityCondition, capacityCondition;
+        private Button[] shopPointButtons;
+        private Label[] shopPointLabels;
+        private int selectedShopPoints;
         private Button shopAreaButton, shopPreviewButton;
         private Label shopAreaLabel, shopDetail;
         private PictureBox shopPreview;
@@ -88,7 +92,7 @@ namespace SomeFishingGPO
             string loadWarning = null;
             try { settings = testMode ? new Settings() : Settings.Load(settingsPath); }
             catch (Exception error) { settings = new Settings(); loadWarning = "No se pudieron cargar los ajustes: " + error.Message; }
-            Text = "SomeFishing GPO · v0.5.4";
+            Text = "SomeFishing GPO · v0.6.0";
             ClientSize = new Size(1080, 730);
             AutoScaleMode = AutoScaleMode.None;
             Font = new Font("Segoe UI", 10);
@@ -117,6 +121,8 @@ namespace SomeFishingGPO
             monitorBait.Checked = settings.MonitorBait; idleJump.Checked = settings.IdleJumpEnabled;
             SetNumber(jumpSeconds, settings.IdleJumpSeconds);
             autoBuy.Checked=settings.AutoBuyBait;buyMaximum.Checked=settings.BuyMaximum;
+            selectedShopPoints=settings.ShopButtonsSet?7:0;
+            SetNumber(baitCapacity,settings.BaitCapacity);
             SetNumber(buyQuantity,settings.BuyQuantity);SetNumber(purchaseLimit,settings.PurchaseLimit);
             SetNumber(purchaseMinutes,settings.PurchaseIntervalMinutes);SetNumber(testBuyQuantity,settings.TestBuyQuantity);
             purchaseMode.SelectedIndex=settings.PurchaseByTimer?1:0;UpdatePurchaseControls(true);
@@ -137,9 +143,12 @@ namespace SomeFishingGPO
                 RestMilliseconds = (int)restTime.Value, Tolerance = (int)tolerance.Value,
                 AnticipationMilliseconds = (int)anticipation.Value,
                 BlueArgb = settings.BlueArgb, MarkerArgb = settings.MarkerArgb,
-                MonitorBait = monitorBait.Checked, BaitArea = settings.BaitArea,
+                MonitorBait = monitorBait.Checked||(autoBuy.Checked&&purchaseMode.SelectedIndex==0), BaitArea = settings.BaitArea,
                 IdleJumpEnabled = idleJump.Checked, IdleJumpSeconds = (int)jumpSeconds.Value,
-                AutoBuyBait=autoBuy.Checked,ShopArea=settings.ShopArea,BuyMaximum=buyMaximum.Checked,
+                AutoBuyBait=autoBuy.Checked,ShopArea=settings.ShopArea,BuyMaximum=false,
+                UseDirectShopFlow=true,ShopButtonsSet=settings.ShopButtonsSet,
+                ShopLeftPoint=settings.ShopLeftPoint,ShopMiddlePoint=settings.ShopMiddlePoint,ShopRightPoint=settings.ShopRightPoint,
+                BaitCapacity=(int)baitCapacity.Value,
                 BuyQuantity=(int)buyQuantity.Value,PurchaseLimit=(int)purchaseLimit.Value,ShopOpenMilliseconds=(int)shopOpenTime.Value,
                 PurchaseByTimer=purchaseMode.SelectedIndex==1,PurchaseIntervalMinutes=(int)purchaseMinutes.Value,TestBuyQuantity=(int)testBuyQuantity.Value,
                 BuyBaitAt=(int)baitThreshold.Value,ShopSettleMilliseconds=(int)shopSettle.Value,OcrLanguage=ocrLanguage.SelectedIndex>=0?ocrTags[ocrLanguage.SelectedIndex]:"" };
@@ -156,11 +165,18 @@ namespace SomeFishingGPO
             blueButton.Invalidate();markerButton.Invalidate();
             baitAreaLabel.Text=settings.BaitArea.IsEmpty?"Sin seleccionar":string.Format("Zona: {0} × {1} px",settings.BaitArea.Width,settings.BaitArea.Height);
             baitAreaLabel.ForeColor=settings.BaitArea.IsEmpty?muted:accent;
-            shopAreaLabel.Text=settings.ShopArea.IsEmpty?"Sin seleccionar":string.Format("Zona: {0} × {1} px",settings.ShopArea.Width,settings.ShopArea.Height);
-            shopAreaLabel.ForeColor=settings.ShopArea.IsEmpty?muted:accent;
+            string pointIssue=settings.ShopButtonsSet?settings.ValidateShopButtons(SystemInformation.VirtualScreen):null;
+            shopAreaLabel.Text=settings.ShopButtonsSet?(pointIssue??"Los 3 botones están listos."):"Marca los 3 botones antes de comprar.";
+            shopAreaLabel.ForeColor=settings.ShopButtonsSet&&pointIssue==null?accent:muted;
+            Point[] positions={settings.ShopLeftPoint,settings.ShopMiddlePoint,settings.ShopRightPoint};
+            for(int i=0;i<shopPointLabels.Length;i++){
+                bool marked=(selectedShopPoints&(1<<i))!=0;
+                shopPointLabels[i].Text=marked?"Punto guardado: "+positions[i].X+", "+positions[i].Y:"Sin marcar";
+                shopPointLabels[i].ForeColor=marked?accent:muted;
+            }
             Hint(areaLabel,"Zona del minijuego: "+settings.Area);
             Hint(castLabel,settings.CastPointSet?"Punto en el agua: "+settings.CastPoint:"Equipa la caña y elige un punto sobre el agua.");
-            Hint(baitAreaLabel,"Zona del contador: "+settings.BaitArea);Hint(shopAreaLabel,"Zona de compra: "+settings.ShopArea);
+            Hint(baitAreaLabel,"Zona del contador: "+settings.BaitArea);
         }
         protected override void OnHandleCreated(EventArgs e)
         {
@@ -192,6 +208,25 @@ namespace SomeFishingGPO
             base.WndProc(ref message);
         }
         private bool IsRunning { get { return engine != null && engine.Running; } }
+        private void SelectShopPoint(int index)
+        {
+            if(activePicker!=null)return;
+            string[] names={"IZQUIERDA · SÍ / COMPRAR","CENTRO · NÚMERO / …","DERECHA · NO / CANCELAR"};
+            StopAll("Marcando botón de compra…");Hide();
+            try{using(var picker=new SelectionOverlay(true)){
+                picker.PointTitle="MARCA "+names[index];
+                picker.PointHelp="Haz clic en el centro de ese botón. Solo guarda el punto; no pulsa en el juego. Esc cancela.";
+                activePicker=picker;
+                if(picker.ShowDialog()==DialogResult.OK){
+                    Point point=picker.Selection.Location;
+                    if(index==0)settings.ShopLeftPoint=point;else if(index==1)settings.ShopMiddlePoint=point;else settings.ShopRightPoint=point;
+                    selectedShopPoints|=1<<index;settings.ShopButtonsSet=selectedShopPoints==7;
+                    UpdateAreaLabels();ReadSettings().Save(settingsPath);
+                    string issue=settings.ShopButtonsSet?settings.ValidateShopButtons(SystemInformation.VirtualScreen):null;
+                    statusLabel.Text=issue??(settings.ShopButtonsSet?"Tres puntos guardados. Cierra el diálogo y prueba una compra.":"Punto guardado. Marca los botones que faltan.");
+                }else statusLabel.Text="Selección cancelada. Se conserva el punto anterior.";
+            }}catch(Exception error){statusLabel.Text=error.Message;}finally{activePicker=null;Show();Activate();}
+        }
         private void SelectShopArea()
         {
             if(activePicker!=null)return;StopAll("Seleccionando diálogo de compra…");Hide();
@@ -239,7 +274,8 @@ namespace SomeFishingGPO
         {
             baitValueLabel.Text = "Cebos: " + (count.HasValue ? count.Value.ToString() : "—");
             baitValueLabel.ForeColor = count.HasValue && count.Value <= 10 ? Color.FromArgb(174,85,15) : ink;
-            baitDetailLabel.Text = detail ?? "Esperando lectura…";
+            baitDetailLabel.Text = count.HasValue&&autoBuy.Checked&&purchaseMode.SelectedIndex==0&&count.Value>(int)baitThreshold.Value&&count.Value<=(int)baitThreshold.Value+2?
+                "Compra próxima · se activa con "+baitThreshold.Value+" cebos o menos.":detail ?? "Esperando lectura…";
         }
         private void SelectArea()
         {
@@ -317,16 +353,16 @@ namespace SomeFishingGPO
         {
             StopAll("Preparando prueba…");
             diagnosticLog.Clear();lastDiagnosticStep=null;
-            AppendDiagnostic("SomeFishing GPO 0.5.4 · "+DiagnosticName(kind));
+            AppendDiagnostic("SomeFishing GPO 0.6.0 · "+DiagnosticName(kind));
             if(testMode){AppendDiagnostic("Render de interfaz: entradas reales desactivadas.");return;}
             if(!CanStartDiagnostic(kind))return;
             Settings selected=ReadSettings().ForDiagnostic(kind);
             AppendDiagnostic("Compra: "+selected.AutoBuyBait+" · saltos: "+selected.IdleJumpEnabled+" · lector: "+selected.UsesBaitCounter+" · modo: "+(selected.PurchaseByTimer?"Cronómetro":"Contador OCR"));
-            AppendDiagnostic("Idioma OCR: "+(string.IsNullOrEmpty(selected.OcrLanguage)?"Automático":selected.OcrLanguage)+" · umbral: "+selected.BuyBaitAt+" · pausa entre pasos: "+selected.ShopSettleMilliseconds+" ms");
-            if(selected.AutoBuyBait)AppendDiagnostic("Mantener E: "+selected.ShopOpenMilliseconds+" ms. El diálogo debe abrirse antes de pulsar Sí.");
+            AppendDiagnostic("Tres puntos manuales · pausa entre pasos: "+selected.ShopSettleMilliseconds+" ms");
+            if(selected.AutoBuyBait)AppendDiagnostic("Mantener E: "+selected.ShopOpenMilliseconds+" ms · cantidad de prueba: "+selected.BuyQuantity);
             if(selected.Area.IsEmpty)AppendDiagnostic("Sin zona de pesca: comprueba manualmente que no esté abierto el minijuego.");
-            if(selected.AutoBuyBait&&!selected.UsesBaitCounter)AppendDiagnostic(selected.PurchaseByTimer?"Prueba inmediata, sin esperar el intervalo. Comprueba el cierre del diálogo; inventario sin verificar por OCR.":"Lector apagado: podrá enviar Comprar, pero no confirmar la reposición.");
-            AppendDiagnostic("Preparada. Vuelve a Roblox en 3 s. F10/F8 cancela. Como máximo 1 compra de "+selected.BuyQuantity+" cebos (limitada por MAX) o 1 salto.");
+            if(selected.AutoBuyBait)AppendDiagnostic("Prueba inmediata, sin OCR de menús. Comprueba la cantidad y el cierre del diálogo en el juego.");
+            AppendDiagnostic("Preparada. Vuelve a Roblox en 3 s. F10/F8 cancela. Como máximo 1 compra de "+selected.BuyQuantity+" cebos o 1 salto.");
             armedKind=kind;diagnosticPending=true;armedUntil=clock.Elapsed.TotalMilliseconds+3000;SetEditable(false);
             statusLabel.Text="Prueba preparada · vuelve a Roblox en 3 s. F10 cancela.";
         }
@@ -379,7 +415,8 @@ namespace SomeFishingGPO
                 tolerance, anticipation, holdUp, blueButton, markerButton, allowClicks,
                 monitorBait, idleJump, jumpSeconds, baitAreaButton, baitPreviewButton,
                 autoBuy,buyMaximum,buyQuantity,purchaseLimit,shopOpenTime,shopAreaButton,shopPreviewButton,
-                purchaseMode,purchaseMinutes,testBuyQuantity,baitThreshold,shopSettle,ocrLanguage,emptyTestButton,purchaseTestButton }) control.Enabled = value;
+                purchaseMode,purchaseMinutes,testBuyQuantity,baitThreshold,shopSettle,baitCapacity,ocrLanguage,emptyTestButton,purchaseTestButton }) control.Enabled = value;
+            foreach(var button in shopPointButtons)button.Enabled=value;
             UpdatePurchaseControls(value);
         }
         private void StopAll(string reason)
@@ -404,7 +441,7 @@ namespace SomeFishingGPO
             }
             if (hadSession && !testMode)
             {
-                lastStop = string.Format("SomeFishing GPO 0.5.4 · {0:yyyy-MM-dd HH:mm:ss}\r\n\r\n{1}\r\n\r\n" +
+                lastStop = string.Format("SomeFishing GPO 0.6.0 · {0:yyyy-MM-dd HH:mm:ss}\r\n\r\n{1}\r\n\r\n" +
                     "Estado al parar: {2}\r\nRondas terminadas: {3}\r\nDuración: {4:F1} s\r\n" +
                     "Mayor intervalo entre revisiones: {5:F0} ms\r\nLanzamiento: {6} ms · Espera: {7} s\r\n" +
                     "Anticipación: {8} ms · Tolerancia: {9}\r\nÚltima detección: {10}\r\n" +
@@ -597,6 +634,8 @@ namespace SomeFishingGPO
         private bool dragging;
         private Rectangle draft;
         private string selectionHint;
+        internal string PointTitle="ELIGE EL PUNTO DE LANZAMIENTO";
+        internal string PointHelp="Haz clic sobre el agua. Esc cancela.";
         public Rectangle Selection { get; private set; }
         public SelectionOverlay(bool pointOnly) : this(pointOnly, Rectangle.Empty) { }
         public SelectionOverlay(bool pointOnly, Rectangle initialArea)
@@ -677,8 +716,8 @@ namespace SomeFishingGPO
             {
                 int bannerWidth = Math.Min(1080, monitor.Width - 40);
                 e.Graphics.FillRectangle(background, monitor.Left + 20, monitor.Top + 20, bannerWidth, 106);
-                e.Graphics.DrawString(pointOnly ? "ELIGE EL PUNTO DE LANZAMIENTO" : shopOnly?"SELECCIONAR DIÁLOGO DE COMPRA":counterOnly ? "SELECCIONAR CONTADOR DE CEBO" : "SELECCIONAR ZONA DE PESCA", font, Brushes.White, monitor.Left + 35, monitor.Top + 32);
-                string help = selectionHint ?? (pointOnly ? "Haz clic sobre el agua. Esc cancela." :
+                e.Graphics.DrawString(pointOnly ? PointTitle : shopOnly?"SELECCIONAR DIÁLOGO DE COMPRA":counterOnly ? "SELECCIONAR CONTADOR DE CEBO" : "SELECCIONAR ZONA DE PESCA", font, Brushes.White, monitor.Left + 35, monitor.Top + 32);
+                string help = selectionHint ?? (pointOnly ? PointHelp :
                     shopOnly?"Rodea la burbuja entera y su fila de botones (Sí/No o Comprar/cantidad/Cancelar), con poco margen.\nEnter o F6: guardar · Esc: cancelar":counterOnly ? "Rodea solo x y la cantidad del cebo equipado (por ejemplo, x300), sin nombres ni otros números.\nEnter o F6: guardar · Esc: cancelar" :
                     "Incluye toda la altura de la barra azul y margen lateral para el balanceo. La verde se ignora.\nEnter o F6: guardar la selección · Esc: cancelar");
                 e.Graphics.DrawString(help, helpFont, selectionHint == null ? Brushes.White : Brushes.Salmon,

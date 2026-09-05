@@ -213,7 +213,7 @@ namespace SomeFishingGPO
                 if (Native.InStopCorner())
                 { safetyReason = "Detenida: el ratón llegó a la esquina superior izquierda."; return false; }
                 Rectangle client = Native.ClientBounds(target);
-                bool inside = ((!requireFishingArea&&settings.Area.IsEmpty)||Settings.ContainsSafely(client, settings.Area)) && (!settings.UsesBaitCounter || Settings.ContainsSafely(client, settings.BaitArea)) && (!settings.AutoBuyBait || Settings.ContainsSafely(client,settings.ShopArea)) && (!settings.AutoCast ||
+                bool inside = ((!requireFishingArea&&settings.Area.IsEmpty)||Settings.ContainsSafely(client, settings.Area)) && (!settings.UsesBaitCounter || Settings.ContainsSafely(client, settings.BaitArea)) && (!settings.AutoBuyBait || (settings.UseDirectShopFlow?settings.ValidateShopButtons(client)==null:Settings.ContainsSafely(client,settings.ShopArea))) && (!settings.AutoCast ||
                     (settings.CastPointSet && Settings.ContainsSafely(client, new Rectangle(settings.CastPoint, new Size(1, 1)))));
                 if (!inside) safetyReason = "Detenida: la zona o el punto de lanzamiento quedó fuera de la ventana de Roblox.";
                 return inside;
@@ -257,13 +257,13 @@ namespace SomeFishingGPO
         }
         public void ShopAim(Point point)
         {
-            Guard();if(!settings.AutoBuyBait||!Settings.ContainsSafely(settings.ShopArea,new Rectangle(point,new Size(1,1))))throw new InvalidOperationException("Clic de compra fuera de la zona autorizada.");
+            Guard();if(!ShopPointAllowed(point))throw new InvalidOperationException("Clic de compra fuera de los botones autorizados.");
             Release();if(PendingRelease)throw new InvalidOperationException("Hay una entrada pendiente de liberación.");
             if(sendClicks)Native.MovePointer(point);
         }
         public void ShopClick(Point point,ShopClickKind kind)
         {
-            Guard();if(!settings.AutoBuyBait||!Settings.ContainsSafely(settings.ShopArea,new Rectangle(point,new Size(1,1))))throw new InvalidOperationException("Clic de compra fuera de la zona autorizada.");
+            Guard();if(!ShopPointAllowed(point))throw new InvalidOperationException("Clic de compra fuera de los botones autorizados.");
             Point actual=Cursor.Position;
             if(sendClicks&&(Math.Abs(actual.X-point.X)>3||Math.Abs(actual.Y-point.Y)>3))throw new InvalidOperationException("El puntero no llegó al botón o se movió. Clic cancelado; suelta el ratón durante la prueba.");
             IntPtr below=Native.WindowAt(actual);
@@ -271,6 +271,12 @@ namespace SomeFishingGPO
             Release();if(PendingRelease)throw new InvalidOperationException("Hay una entrada pendiente de liberación.");
             shopMouseDownPoint=point;shopMouseDownKind=kind;
             try{mouse.Pulse(180);}finally{shopMouseDownPoint=null;}
+        }
+        private bool ShopPointAllowed(Point point)
+        {
+            return settings.AutoBuyBait&&(settings.UseDirectShopFlow?
+                settings.ShopButtonsSet&&(point==settings.ShopLeftPoint||point==settings.ShopMiddlePoint||point==settings.ShopRightPoint):
+                Settings.ContainsSafely(settings.ShopArea,new Rectangle(point,new Size(1,1))));
         }
         public void ShopKey(int key,bool held)
         {
