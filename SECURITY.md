@@ -4,10 +4,11 @@ El objetivo de SomeFishing GPO es que se pueda revisar qué hace el programa y c
 
 ## Qué hace
 
-- Lee los píxeles de la zona elegida por la persona que lo utiliza.
+- Lee los píxeles de la zona del minijuego elegida por la persona que lo utiliza y, si habilita la lectura de cebo, de una segunda zona pequeña para el contador.
 - Identifica la ventana de Roblox en primer plano y comprueba los límites del área seleccionada.
 - Registra F6, F8 y F10 como atajos; consulta F10 para la protección de parada. No registra lo que escribes.
 - Envía movimientos del ratón al punto de lanzamiento y clics normales mediante las funciones de Windows.
+- Si habilitas los saltos durante la espera, envía pulsaciones breves de Espacio. No envía teclas de dirección ni verifica que el personaje haya saltado.
 - Guarda `ajustes.xml` y un único informe `ultima-parada.txt` junto al ejecutable.
 - Procesa las capturas del juego en memoria; no las guarda durante el uso normal.
 
@@ -15,15 +16,18 @@ El objetivo de SomeFishing GPO es que se pueda revisar qué hace el programa y c
 
 La aplicación no tiene funciones de red, descargas, actualizaciones automáticas, lectura de credenciales, suscripciones, ejecución de comandos externos, inicio automático ni cambios en el antivirus. No lee la memoria del juego ni inyecta código. No requiere privilegios de administrador.
 
-El script de compilación ejecuta el compilador local de .NET Framework. El modo `--self-test` crea imágenes sintéticas, renders de la interfaz e informes en la carpeta indicada, sin enviar clics al juego.
+El lector de cebo usa la API de OCR local de Windows sobre imágenes en memoria. No transmite capturas a un servicio externo. Necesita un idioma OCR disponible en el perfil de Windows y no lo instala automáticamente. Una tarea separada procesa como máximo una captura pendiente por lector; no envía entradas al juego. Al cerrar el lector se descarta cualquier resultado pendiente.
+
+El script de compilación ejecuta el compilador local de .NET Framework y utiliza los metadatos del Windows SDK instalado. El modo `--self-test` crea imágenes sintéticas, renders de la interfaz e informes en la carpeta indicada, sin enviar clics ni teclas al juego.
 
 ## Límites de protección
 
-F10, perder el foco de Roblox o llevar el ratón a la esquina superior izquierda detiene la macro. Una comprobación independiente intenta soltar el clic si la interfaz no responde durante más de 500 ms. Si Windows rechaza soltarlo, se mantiene el intento pendiente y se reintenta. Estas protecciones requieren que Windows y el proceso sigan funcionando; no cubren un cierre forzado del proceso.
+F10, F8 durante la ejecución, perder el foco de Roblox o llevar el ratón a la esquina superior izquierda detiene la macro y libera tanto el clic como Espacio. Una comprobación independiente intenta soltar las entradas si la interfaz no responde durante más de 500 ms; también limita cada pulsación de Espacio a unos 100–150 ms. Si Windows rechaza liberar una entrada, el programa conserva el intento pendiente y reintenta sin autorizar otra pulsación. Estas protecciones requieren que Windows y el proceso sigan funcionando; no cubren un cierre forzado del proceso.
+
+La lectura de cebo requiere coincidencia entre dos escalas y confirmación en varias capturas. La ausencia de lectura no equivale a cero. Estas comprobaciones reducen lecturas erróneas, pero no garantizan la exactitud del OCR. La función de espera puede activarse también tras tres lanzamientos sin minijuego. El cierre normal de una ronda no basta para activarla. No se garantiza evitar expulsiones por inactividad ni conservar objetos ante una desconexión.
 
 Los análisis locales de Microsoft Defender y sus resultados se documentan en `docs/VERIFICACION.txt`. Un resultado sin amenazas detectadas no es una garantía absoluta ni una certificación externa. El ejecutable no tiene firma digital comercial. La huella SHA-256 de cada publicación identifica exactamente el archivo analizado.
 
 ## Informar de problemas
 
 Puedes abrir un issue para fallos de detección o funcionamiento. Evita publicar credenciales, capturas con datos personales o información privada. Si el problema implica datos sensibles, contacta primero con el titular del repositorio para acordar un canal privado.
-

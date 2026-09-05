@@ -1,26 +1,43 @@
-SOMEFISHING GPO 0.1.0 - PRIMERA PUBLICACIÓN
+SOMEFISHING GPO 0.2.0 - VERIFICACIÓN DE LA COMPILACIÓN LOCAL
+Fecha: 2026-09-05. Esta compilación todavía no está publicada en GitHub.
 
-Compilación local x64 con .NET Framework, sin advertencias.
-Nombre del producto: SomeFishing GPO. Versión del archivo: 0.1.0.0.
-El modo --self-test pasó 111 comprobaciones con los archivos incluidos en el repositorio.
-La validación local pasó 159 comprobaciones al añadir tres capturas del desarrollo no publicadas.
-No se enviaron clics al juego durante estas pruebas.
-Se inspeccionó el render de la interfaz con el nombre y versión nuevos.
+Compilación x64 local con C# 5 / .NET Framework y Windows SDK, sin advertencias.
+Producto: SomeFishing GPO. Versión del archivo: 0.2.0.0.
+162 comprobaciones integradas aprobadas sin capturas privadas.
+213 comprobaciones aprobadas al añadir cuatro capturas del desarrollo.
+Tres de las comprobaciones adicionales ejercitan el OCR nativo de Windows.
+Se revisaron visualmente los renders de todas las pestañas y el selector.
+No se enviaron clics ni pulsaciones de Espacio al juego durante las pruebas.
 
-Microsoft Defender completó el análisis del ejecutable con el resultado "found no threats".
-Ese resultado describe el análisis local de este binario, no una garantía absoluta de seguridad.
-El ejecutable no está firmado con un certificado comercial. Se publica el código completo.
-El proyecto se publica sin conceder una licencia por ahora, según NOTICE.md.
+El OCR reconoce 300 cebos comunes en la captura nueva. La tipografía del
+contador de 42 raros no se reconoce con fiabilidad: devuelve desconocido.
+Seleccionar ambas filas del contador se rechaza, sin sumar ni unir números.
+Las comprobaciones cubren confirmación del cero en tres capturas diferentes,
+lecturas ausentes y caducadas, repetición normal de pesca, última picada,
+espera tras tres lanzamientos fallidos, saltos simulados y reanudación.
+También cubren F10/parada, pérdida de foco y liberación de Espacio aunque
+se retrase la interfaz o el sistema rechace inicialmente soltar la tecla.
 
-Las capturas originales, los ajustes personales y los informes locales de uso no forman parte del repositorio.
-Las imágenes incluidas en docs/ son renders con ejemplos sintéticos.
-La detección y el controlador requieren validación adicional en partidas reales.
-El historial previo del prototipo no se presenta como una auditoría independiente de esta publicación.
+Microsoft Defender completó el análisis de este ejecutable con el resultado
+"found no threats". Esto documenta un análisis local, no una garantía absoluta
+de seguridad ni una certificación externa. El binario no tiene firma comercial.
+
+LIMITACIONES
+El contador y los saltos aún necesitan validarse durante una partida real.
+No se garantiza que el juego acepte Espacio o lo contabilice como actividad,
+ni que la función evite expulsiones, desconexiones o pérdidas de objetos.
+El OCR puede no reconocer otros dígitos, tamaños, idiomas o fondos.
+Los fallos de lectura nunca se interpretan automáticamente como cero.
+La lectura y los saltos están desactivados por defecto.
+
+Las capturas originales, los ajustes personales y los informes locales de uso
+no forman parte del paquete. docs/ contiene renders sintéticos de la interfaz.
+Se incluye el código completo, sin licencia concedida por ahora: ver NOTICE.md.
 
 SHA256 DEL EJECUTABLE
-616BA22B9ED36992B568BDDED1A60587A41A19C6A7A90F355BCACC55FDDE07D3  SomeFishingGPO.exe
+E30D86557A0E1D4C284A86A24685C0988E292D7997C7BED1A0673BE81A224D88  SomeFishingGPO.exe
 
-PRUEBAS INCLUIDAS EN EL REPOSITORIO
+PRUEBAS INTEGRADAS
 OK: Windows INPUT structure matches the platform ABI
 OK: Detect cyan bar, interior gap and thin white marker
 OK: Target center agrees with synthetic image
@@ -165,10 +182,62 @@ OK: Opening the selector does not commit the previous zone automatically
 OK: Confirming the visible rectangle preserves negative monitor coordinates
 OK: Canceling selection returns no replacement for the saved zone
 OK: An undersized rectangle stays open for correction instead of being saved
+OK: Read a single bait quantity: 300
+OK: Read a single bait quantity: x300
+OK: Read a single bait quantity: *300
+OK: Read a single bait quantity: ×300
+OK: Read a single bait quantity:  X300
+OK: A literal zero can be read
+OK: Ambiguous or missing OCR is not interpreted as bait:
+OK: Ambiguous or missing OCR is not interpreted as bait: null
+OK: Ambiguous or missing OCR is not interpreted as bait: O
+OK: Ambiguous or missing OCR is not interpreted as bait: xO
+OK: Ambiguous or missing OCR is not interpreted as bait: x3OO
+OK: Ambiguous or missing OCR is not interpreted as bait: x.300
+OK: Ambiguous or missing OCR is not interpreted as bait: 300 42
+OK: Ambiguous or missing OCR is not interpreted as bait: x300
+x42
+OK: Ambiguous or missing OCR is not interpreted as bait: -1
+OK: Ambiguous or missing OCR is not interpreted as bait: 123456
+OK: Ambiguous or missing OCR is not interpreted as bait: Cebo 300
+OK: Repeated reads of the same cached frame cannot confirm zero
+OK: Two zero frames are insufficient
+OK: Three fresh consecutive zero frames confirm exhaustion
+OK: A missing counter is unknown, never zero
+OK: Two consistent positive readings confirm the selected bait quantity
+OK: Stale OCR readings expire
+OK: Future-dated OCR is rejected
+OK: Restarting the reader clears old confirmations
+OK: Confirmed zero skips casting and enters idle wait
+OK: Idle wait does not jump before the initial grace period
+OK: Idle wait presses Space without holding the mouse
+OK: Space is released after its short pulse
+OK: No extra jump before the configured interval
+OK: A later jump follows the configured interval
+OK: Explicit stop cancels jumping and every later action
+OK: Losing Roblox focus during a jump releases Space and stops
+OK: A visible minigame interrupts jumping and resumes tracking
+OK: A visible but unreadable minigame suppresses idle jumps
+OK: Confirmed replenishment resumes fishing after an empty-bait wait
+OK: Three casts without a minigame enter jumping wait without more casts
+OK: Disabled idle jumps preserve the previous stop behavior
+OK: The last bait reaching zero does not interrupt its active fish
+OK: After the last fish closes, zero bait enters idle wait
+OK: Normal menu closure with bait casts again instead of jumping
+OK: Zero after a cast still waits for the last bite
+OK: The last bite is tracked even though the counter is zero
+OK: Space pulse is held for its intended duration
+OK: Watchdog releases Space at 100 ms without a UI tick
+OK: A rejected Space-up is retried without another key-down
+OK: A failed Space lease cannot send later key-down events
+OK: A small bait counter rectangle is accepted
+OK: A counter outside the screen is rejected
+OK: An excessively wide inventory selection is rejected
+OK: The counter selector allows a 17-pixel-high numeric region
 UI: rendered off-screen non-activating form; no hotkeys registered and no clicks sent.
-PASS: 111 checks.
+PASS: 162 checks.
 
-VALIDACIÓN LOCAL ADICIONAL CON CAPTURAS NO PUBLICADAS
+VALIDACIÓN LOCAL ADICIONAL CON CAPTURAS NO DISTRIBUIDAS
 OK: Windows INPUT structure matches the platform ABI
 OK: Detect cyan bar, interior gap and thin white marker
 OK: Target center agrees with synthetic image
@@ -366,5 +435,62 @@ OK: Opening the selector does not commit the previous zone automatically
 OK: Confirming the visible rectangle preserves negative monitor coordinates
 OK: Canceling selection returns no replacement for the saved zone
 OK: An undersized rectangle stays open for correction instead of being saved
+OK: Read a single bait quantity: 300
+OK: Read a single bait quantity: x300
+OK: Read a single bait quantity: *300
+OK: Read a single bait quantity: ×300
+OK: Read a single bait quantity:  X300
+OK: A literal zero can be read
+OK: Ambiguous or missing OCR is not interpreted as bait:
+OK: Ambiguous or missing OCR is not interpreted as bait: null
+OK: Ambiguous or missing OCR is not interpreted as bait: O
+OK: Ambiguous or missing OCR is not interpreted as bait: xO
+OK: Ambiguous or missing OCR is not interpreted as bait: x3OO
+OK: Ambiguous or missing OCR is not interpreted as bait: x.300
+OK: Ambiguous or missing OCR is not interpreted as bait: 300 42
+OK: Ambiguous or missing OCR is not interpreted as bait: x300
+x42
+OK: Ambiguous or missing OCR is not interpreted as bait: -1
+OK: Ambiguous or missing OCR is not interpreted as bait: 123456
+OK: Ambiguous or missing OCR is not interpreted as bait: Cebo 300
+OK: Repeated reads of the same cached frame cannot confirm zero
+OK: Two zero frames are insufficient
+OK: Three fresh consecutive zero frames confirm exhaustion
+OK: A missing counter is unknown, never zero
+OK: Two consistent positive readings confirm the selected bait quantity
+OK: Stale OCR readings expire
+OK: Future-dated OCR is rejected
+OK: Restarting the reader clears old confirmations
+OK: Confirmed zero skips casting and enters idle wait
+OK: Idle wait does not jump before the initial grace period
+OK: Idle wait presses Space without holding the mouse
+OK: Space is released after its short pulse
+OK: No extra jump before the configured interval
+OK: A later jump follows the configured interval
+OK: Explicit stop cancels jumping and every later action
+OK: Losing Roblox focus during a jump releases Space and stops
+OK: A visible minigame interrupts jumping and resumes tracking
+OK: A visible but unreadable minigame suppresses idle jumps
+OK: Confirmed replenishment resumes fishing after an empty-bait wait
+OK: Three casts without a minigame enter jumping wait without more casts
+OK: Disabled idle jumps preserve the previous stop behavior
+OK: The last bait reaching zero does not interrupt its active fish
+OK: After the last fish closes, zero bait enters idle wait
+OK: Normal menu closure with bait casts again instead of jumping
+OK: Zero after a cast still waits for the last bite
+OK: The last bite is tracked even though the counter is zero
+OK: Space pulse is held for its intended duration
+OK: Watchdog releases Space at 100 ms without a UI tick
+OK: A rejected Space-up is retried without another key-down
+OK: A failed Space lease cannot send later key-down events
+OK: A small bait counter rectangle is accepted
+OK: A counter outside the screen is rejected
+OK: An excessively wide inventory selection is rejected
+OK: The counter selector allows a 17-pixel-high numeric region
+OK: Windows OCR reads 300 common bait in the user's new screenshot
+OK: The difficult rare-bait lettering is unknown instead of guessed as a number or zero
+OK: Selecting both bait rows is rejected instead of combining the quantities
+OCR: two image scales agree on 300; the rare bait row is outside the selected region.
+OCR LIMIT: the 42 rare-bait crop was not recognized reliably; the reader reports unknown. Both rows together are rejected.
 UI: rendered off-screen non-activating form; no hotkeys registered and no clicks sent.
-PASS: 159 checks.
+PASS: 213 checks.

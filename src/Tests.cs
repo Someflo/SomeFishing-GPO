@@ -156,6 +156,7 @@ namespace SomeFishingGPO
                 AuditRegressions(output, args);
                 TestWideArea(output, args);
                 TestSelection(output);
+                TestBaitAndIdle(args);
 
                 using (var form = new MainForm(true)) form.RenderExample(Path.Combine(output, "interfaz.png"));
                 results.Add("UI: rendered off-screen non-activating form; no hotkeys registered and no clicks sent.");
@@ -441,16 +442,138 @@ namespace SomeFishingGPO
             Check(newQuiet < oldQuiet*.75,"Stationary-fish mean error falls by at least 25 percent across ten synthetic cases");
             results.Add(string.Format("STATIONARY: aggregate mean error reduced by {0:P1}; synthetic physics only.",1-newQuiet/oldQuiet));
         }
+        private static BaitReading Reading(int? count, long sequence, double now)
+        { return new BaitReading { Count=count, Sequence=sequence, SampledAt=now }; }
+        private static FishingEngine EmptyBaitEngine(FakeGame game)
+        {
+            var engine=new FishingEngine(new Settings { MonitorBait=true,IdleJumpEnabled=true },game);
+            engine.Start(0);
+            game.Bait=Reading(0,1,0);engine.Tick(0);
+            game.Bait=Reading(0,2,100);engine.Tick(100);
+            game.Bait=Reading(0,3,200);engine.Tick(200);engine.Tick(1000);
+            return engine;
+        }
+        private static void TestBaitAndIdle(string[] args)
+        {
+            foreach(string text in new[]{"300","x300","*300","×300"," X300 "})
+                Check(BaitText.Parse(text)==300,"Read a single bait quantity: "+text);
+            Check(BaitText.Parse("x0")==0,"A literal zero can be read");
+            foreach(string text in new[]{"",null,"O","xO","x3OO","x.300","300 42","x300\nx42","-1","123456","Cebo 300"})
+                Check(!BaitText.Parse(text).HasValue,"Ambiguous or missing OCR is not interpreted as bait: "+(text??"null"));
+            var monitor=new BaitMonitor();
+            monitor.Update(Reading(0,1,0),0);monitor.Update(Reading(0,1,0),50);monitor.Update(Reading(0,1,0),100);
+            Check(!monitor.Empty,"Repeated reads of the same cached frame cannot confirm zero");
+            monitor.Update(Reading(0,2,150),150);Check(!monitor.Empty,"Two zero frames are insufficient");
+            monitor.Update(Reading(0,3,200),200);Check(monitor.Empty,"Three fresh consecutive zero frames confirm exhaustion");
+            monitor.Update(Reading(null,4,250),250);Check(!monitor.Empty&&!monitor.Count.HasValue,"A missing counter is unknown, never zero");
+            monitor.Update(Reading(42,5,300),300);monitor.Update(Reading(42,6,350),350);
+            Check(monitor.Count==42,"Two consistent positive readings confirm the selected bait quantity");
+            monitor.Update(Reading(42,6,350),6000);Check(!monitor.Count.HasValue,"Stale OCR readings expire");
+            monitor.Update(Reading(0,7,7000),6500);Check(!monitor.Empty,"Future-dated OCR is rejected");
+            monitor.Reset();monitor.Update(Reading(0,1,0),0);Check(!monitor.Empty,"Restarting the reader clears old confirmations");
+
+            var game=new FakeGame();var engine=EmptyBaitEngine(game);
+            Check(engine.State==Phase.IdleWaiting && game.Moves==0 && !game.Held,"Confirmed zero skips casting and enters idle wait");
+            engine.Tick(2950);Check(game.Jumps==0,"Idle wait does not jump before the initial grace period");
+            engine.Tick(3000);Check(game.JumpHeld && game.Jumps==1 && !game.Held,"Idle wait presses Space without holding the mouse");
+            engine.Tick(3100);Check(!game.JumpHeld && engine.State==Phase.IdleWaiting,"Space is released after its short pulse");
+            engine.Tick(63000);Check(game.Jumps==1,"No extra jump before the configured interval");
+            engine.Tick(63100);Check(game.Jumps==2,"A later jump follows the configured interval");
+            engine.Stop("F10");int jumps=game.Jumps;engine.Tick(100000);
+            Check(!game.JumpHeld&&!game.Held&&game.Jumps==jumps,"Explicit stop cancels jumping and every later action");
+
+            game=new FakeGame();engine=EmptyBaitEngine(game);engine.Tick(3000);game.Active=false;engine.Tick(3050);
+            Check(!engine.Running&&!game.JumpHeld,"Losing Roblox focus during a jump releases Space and stops");
+            game=new FakeGame();engine=EmptyBaitEngine(game);engine.Tick(3000);
+            game.Current=new Observation {Found=true,MenuVisible=true,FishY=100,GapY=200};engine.Tick(3050);engine.Tick(3100);
+            Check(!game.JumpHeld&&engine.State==Phase.Tracking,"A visible minigame interrupts jumping and resumes tracking");
+            engine.Stop("test");
+
+            game=new FakeGame();engine=EmptyBaitEngine(game);
+            game.Current=new Observation {MenuVisible=true};engine.Tick(3000);engine.Tick(100000);
+            Check(game.Jumps==0&&game.Moves==0,"A visible but unreadable minigame suppresses idle jumps");engine.Stop("test");
+            game=new FakeGame();engine=EmptyBaitEngine(game);
+            game.Bait=Reading(12,4,2000);engine.Tick(2000);
+            game.Bait=Reading(12,5,3500);engine.Tick(3500);
+            Check(engine.State==Phase.Preparing&&!game.JumpHeld,"Confirmed replenishment resumes fishing after an empty-bait wait");engine.Stop("test");
+
+            game=new FakeGame();engine=new FishingEngine(new Settings {IdleJumpEnabled=true},game);engine.Start(0);
+            for(int now=0;now<=55000;now+=50)engine.Tick(now);
+            Check(engine.Running&&game.Moves==3&&game.Jumps>0,"Three casts without a minigame enter jumping wait without more casts");
+            engine.Stop("test");
+            game=new FakeGame();engine=new FishingEngine(new Settings {IdleJumpEnabled=false},game);engine.Start(0);
+            for(int now=0;now<=60000;now+=50)engine.Tick(now);
+            Check(!engine.Running&&game.Jumps==0,"Disabled idle jumps preserve the previous stop behavior");
+
+            game=new FakeGame {Current=new Observation{Found=true,MenuVisible=true,FishY=100,GapY=200}};
+            engine=new FishingEngine(new Settings {MonitorBait=true,IdleJumpEnabled=true},game);engine.Start(0);
+            game.Bait=Reading(0,1,0);engine.Tick(0);game.Bait=Reading(0,2,50);engine.Tick(50);
+            game.Bait=Reading(0,3,100);engine.Tick(100);
+            Check(engine.State==Phase.Tracking&&game.Jumps==0,"The last bait reaching zero does not interrupt its active fish");
+            game.Current=new Observation();engine.Tick(150);engine.Tick(1800);engine.Tick(3600);
+            Check(engine.State==Phase.IdleWaiting&&game.Moves==0,"After the last fish closes, zero bait enters idle wait");engine.Stop("test");
+
+            game=new FakeGame {Current=new Observation{Found=true,MenuVisible=true,FishY=100,GapY=200}};
+            engine=new FishingEngine(new Settings {MonitorBait=true,IdleJumpEnabled=true},game);engine.Start(0);
+            game.Bait=Reading(30,1,0);engine.Tick(0);game.Bait=Reading(30,2,50);engine.Tick(50);
+            game.Current=new Observation();engine.Tick(150);engine.Tick(1800);engine.Tick(3600);
+            Check(engine.State==Phase.Casting&&game.Moves==1&&game.Jumps==0,"Normal menu closure with bait casts again instead of jumping");engine.Stop("test");
+
+            game=new FakeGame();engine=new FishingEngine(new Settings {MonitorBait=true,IdleJumpEnabled=true},game);
+            engine.Start(0);engine.Tick(1000);engine.Tick(1250);
+            game.Bait=Reading(0,1,1300);engine.Tick(1300);game.Bait=Reading(0,2,1350);engine.Tick(1350);
+            game.Bait=Reading(0,3,1400);engine.Tick(1400);
+            Check(engine.State==Phase.Waiting&&game.Jumps==0,"Zero after a cast still waits for the last bite");
+            game.Current=new Observation{Found=true,MenuVisible=true,FishY=100,GapY=200};engine.Tick(1500);engine.Tick(1550);
+            Check(engine.State==Phase.Tracking&&game.Jumps==0,"The last bite is tracked even though the counter is zero");engine.Stop("test");
+
+            double time=0;bool keyDown=false;int keyPresses=0,failUps=0;
+            var key=new MouseLease(delegate(bool down){if(!down&&failUps-->0)throw new IOException("rejected key-up");keyDown=down;if(down)keyPresses++;},delegate{return true;},delegate{return time;},null,"Espacio");
+            key.Pulse(100);time=99;key.Watchdog();Check(keyDown,"Space pulse is held for its intended duration");
+            time=100;key.Watchdog();Check(!keyDown&&!key.PendingRelease&&key.Fault==null,"Watchdog releases Space at 100 ms without a UI tick");
+            key.Beat();key.Pulse(100);failUps=1;time=200;key.Watchdog();
+            Check(!keyDown&&!key.PendingRelease&&key.Fault!=null,"A rejected Space-up is retried without another key-down");
+            int before=keyPresses;bool rejected=false;try{key.Pulse(100);}catch{rejected=true;}
+            Check(rejected&&keyPresses==before,"A failed Space lease cannot send later key-down events");
+
+            var desktop=new Rectangle(0,0,1920,1080);
+            Check(Settings.ValidateBaitArea(new Rectangle(200,300,30,17),desktop)==null,"A small bait counter rectangle is accepted");
+            Check(Settings.ValidateBaitArea(new Rectangle(1910,300,30,17),desktop)!=null,"A counter outside the screen is rejected");
+            Check(Settings.ValidateBaitArea(new Rectangle(20,20,500,100),desktop)!=null,"An excessively wide inventory selection is rejected");
+            using(var background=new Bitmap(600,400))
+            using(var selector=new SelectionOverlay(false,new Rectangle(50,50,30,17),background,new Rectangle(0,0,600,400),true))
+                Check(selector.TryConfirm()&&selector.Selection.Size==new Size(30,17),"The counter selector allows a 17-pixel-high numeric region");
+            if(args.Length>5)
+            using(var source=new Bitmap(args[5]))
+            {
+                using(var cropped=source.Clone(new Rectangle(208,119,30,17),PixelFormat.Format32bppArgb))
+                    Check(WindowsBaitReader.ReadImage(cropped).Count==300,"Windows OCR reads 300 common bait in the user's new screenshot");
+                using(var cropped=source.Clone(new Rectangle(207,81,33,20),PixelFormat.Format32bppArgb))
+                    Check(!WindowsBaitReader.ReadImage(cropped).Count.HasValue,"The difficult rare-bait lettering is unknown instead of guessed as a number or zero");
+                using(var cropped=source.Clone(new Rectangle(205,80,35,58),PixelFormat.Format32bppArgb))
+                    Check(!WindowsBaitReader.ReadImage(cropped).Count.HasValue,"Selecting both bait rows is rejected instead of combining the quantities");
+                results.Add("OCR: two image scales agree on 300; the rare bait row is outside the selected region.");
+                results.Add("OCR LIMIT: the 42 rare-bait crop was not recognized reliably; the reader reports unknown. Both rows together are rejected.");
+            }
+        }
         private sealed class FakeGame : IGameRuntime
         {
-            public bool Active = true, Held;
-            public int Moves, Presses;
+            public bool Active = true, Held, JumpHeld;
+            public int Moves, Presses, Jumps;
+            public BaitReading Bait = new BaitReading();
             public Observation Current = new Observation();
             public bool IsActive { get { return Active; } }
             public void MoveToCastPoint() { if (!Active) throw new Exception("Inactive input"); Moves++; }
             public void SetHeld(bool held) { if (held && !Active) throw new Exception("Inactive input"); if (held && !Held) Presses++; Held = held; }
-            public void Release() { Held = false; }
+            public void Release() { Held = false; JumpHeld = false; }
             public Observation Observe() { return Current; }
+            public BaitReading ReadBait(double now) { return Bait; }
+            public void SetJumpHeld(bool held)
+            {
+                if(held && !Active)throw new Exception("Inactive jump");
+                if(held && !JumpHeld)Jumps++;
+                JumpHeld=held;
+            }
         }
     }
 }

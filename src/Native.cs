@@ -36,6 +36,14 @@ namespace SomeFishingGPO
             if (SendInput(1, new[] { input }, Marshal.SizeOf(typeof(Input))) != 1)
                 throw new Win32Exception(Marshal.GetLastWin32Error(), "Windows no aceptó el clic. Ejecuta ambos programas como usuario normal.");
         }
+        internal static void JumpKey(bool down)
+        {
+            // Physical scan code for Space; no direction, inventory or chat key.
+            var input = new Input { Type = 1, Data = new InputUnion {
+                Keyboard = new KeyboardInput { Scan = 0x39, Flags = down ? 0x0008u : 0x000Au } } };
+            if (SendInput(1, new[] { input }, Marshal.SizeOf(typeof(Input))) != 1)
+                throw new Win32Exception(Marshal.GetLastWin32Error(), "Windows no aceptó la tecla Espacio.");
+        }
         internal static Rectangle ClientBounds(IntPtr window)
         {
             Rect rect; var point = new NativePoint();
@@ -78,27 +86,38 @@ namespace SomeFishingGPO
         private readonly IntPtr target;
         private readonly bool sendClicks;
         private readonly MouseLease mouse;
+        private readonly MouseLease jump;
+        private readonly WindowsBaitReader baitReader = new WindowsBaitReader();
         private readonly System.Threading.Timer watchdog;
         private readonly Stopwatch clock = Stopwatch.StartNew();
         private volatile bool closing;
         private volatile string safetyReason = "Parada de protección: no se pudo comprobar la ventana de Roblox.";
         public Bitmap LastFrame { get; private set; }
-        internal bool PendingRelease { get { return mouse.PendingRelease; } }
-        internal string FaultReason { get { return mouse.Fault; } }
+        internal bool PendingRelease { get { return mouse.PendingRelease || jump.PendingRelease; } }
+        internal string FaultReason { get { return mouse.Fault ?? jump.Fault; } }
         internal GameRuntime(Settings settings, IntPtr target, bool sendClicks)
         {
             this.settings = settings; this.target = target; this.sendClicks = sendClicks;
             mouse = new MouseLease(delegate(bool down) { if (sendClicks) Native.MouseButton(down); },
                 delegate { return ForegroundAllowed; }, delegate { return clock.Elapsed.TotalMilliseconds; }, delegate { return safetyReason; });
+            jump = new MouseLease(delegate(bool down) { if (sendClicks) Native.JumpKey(down); },
+                delegate { return ForegroundAllowed; }, delegate { return clock.Elapsed.TotalMilliseconds; }, delegate { return safetyReason; }, "Espacio");
             watchdog = new System.Threading.Timer(delegate
             {
-                mouse.Watchdog();
-                if (closing && !mouse.PendingRelease && watchdog != null) watchdog.Dispose();
+                mouse.Watchdog(); jump.Watchdog();
+                if (closing && !PendingRelease && watchdog != null) watchdog.Dispose();
             }, null, 50, 50);
         }
 
         public bool IsActive
-        { get { return !closing && mouse.Beat(); } }
+        {
+            get
+            {
+                bool active = !closing && mouse.Beat() && jump.Beat();
+                if (!active) { mouse.Release(); jump.Release(); }
+                return active;
+            }
+        }
         private bool ForegroundAllowed
         {
             get
@@ -112,7 +131,7 @@ namespace SomeFishingGPO
                 if (Native.InStopCorner())
                 { safetyReason = "Detenida: el ratón llegó a la esquina superior izquierda."; return false; }
                 Rectangle client = Native.ClientBounds(target);
-                bool inside = Settings.ContainsSafely(client, settings.Area) && (!settings.AutoCast ||
+                bool inside = Settings.ContainsSafely(client, settings.Area) && (!settings.MonitorBait || Settings.ContainsSafely(client, settings.BaitArea)) && (!settings.AutoCast ||
                     (settings.CastPointSet && Settings.ContainsSafely(client, new Rectangle(settings.CastPoint, new Size(1, 1)))));
                 if (!inside) safetyReason = "Detenida: la zona o el punto de lanzamiento quedó fuera de la ventana de Roblox.";
                 return inside;
@@ -128,13 +147,31 @@ namespace SomeFishingGPO
         }
         public void SetHeld(bool value)
         {
-            if (!value) { Release(); return; }
+            if (!value) { mouse.Release(); return; }
             Guard();
+            jump.Release();
+            if (jump.PendingRelease) throw new InvalidOperationException("Espacio sigue pendiente de liberación.");
             mouse.SetHeld(true);
+        }
+        public void SetJumpHeld(bool value)
+        {
+            if (!value) { jump.Release(); return; }
+            Guard();
+            if (!settings.IdleJumpEnabled) throw new InvalidOperationException("Los saltos de espera están desactivados.");
+            mouse.Release();
+            if (mouse.PendingRelease) throw new InvalidOperationException("El clic sigue pendiente de liberación.");
+            jump.Pulse(100);
         }
         public void Release()
         {
-            mouse.Release();
+            mouse.Release(); jump.Release();
+        }
+        public BaitReading ReadBait(double now)
+        {
+            Guard();
+            if (!settings.MonitorBait) return new BaitReading();
+            if (baitReader.Due(now)) baitReader.Submit(Native.Capture(settings.BaitArea), now);
+            return baitReader.Latest;
         }
         public Observation Observe()
         {
@@ -146,8 +183,8 @@ namespace SomeFishingGPO
         }
         public void Dispose()
         {
-            closing = true; mouse.Stop();
-            if (!mouse.PendingRelease) watchdog.Dispose();
+            closing = true; mouse.Stop(); jump.Stop(); baitReader.Dispose();
+            if (!PendingRelease) watchdog.Dispose();
             // If Windows rejected button-up, the timer retains this object and retries
             // until it is accepted. The UI blocks a new run while release is pending.
             if (LastFrame != null) LastFrame.Dispose(); LastFrame = null;

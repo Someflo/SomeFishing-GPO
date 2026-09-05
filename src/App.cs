@@ -44,6 +44,14 @@ namespace SomeFishingGPO
         private string lastStop;
         private Phase phaseBeforeTick;
         private SelectionOverlay activePicker;
+        private CheckBox monitorBait, idleJump;
+        private NumericUpDown jumpSeconds;
+        private Button baitAreaButton, baitPreviewButton;
+        private Label baitAreaLabel, baitValueLabel, baitDetailLabel;
+        private PictureBox baitPreview;
+        private WindowsBaitReader previewReader;
+        private readonly BaitMonitor previewBaitMonitor = new BaitMonitor();
+        private bool previewingBait;
 
         public MainForm(bool testMode)
         {
@@ -61,7 +69,7 @@ namespace SomeFishingGPO
             string loadWarning = null;
             try { settings = testMode ? new Settings() : Settings.Load(settingsPath); }
             catch (Exception error) { settings = new Settings(); loadWarning = "No se pudieron cargar los ajustes: " + error.Message; }
-            Text = "SomeFishing GPO · v0.1.0";
+            Text = "SomeFishing GPO · v0.2.0";
             ClientSize = new Size(1040, 760);
             AutoScaleMode = AutoScaleMode.None;
             Font = new Font("Segoe UI", 10);
@@ -105,12 +113,13 @@ namespace SomeFishingGPO
         {
             LabelAt(this, "SOMEFISHING GPO", 24, 17, 620, 43, 25, true);
             LabelAt(this, "Mantener para subir. Soltar para bajar. Repetir a tu ritmo.", 26, 63, 760, 28, 11, false).ForeColor = muted;
-            LabelAt(this, "CÓDIGO INCLUIDO  /  v0.1.0", 771, 35, 250, 26, 10, true).ForeColor = accent;
+            LabelAt(this, "CÓDIGO INCLUIDO  /  v0.2.0", 771, 35, 250, 26, 10, true).ForeColor = accent;
             var tabs = new TabControl { Location = new Point(24, 105), Size = new Size(992, 567), Padding = new Point(22, 9) };
             var fishing = new TabPage("Pesca") { BackColor = Color.White };
             var calibration = new TabPage("Calibración") { BackColor = Color.White };
             var guide = new TabPage("Guía rápida") { BackColor = Color.White };
-            tabs.TabPages.AddRange(new[] { fishing, calibration, guide }); Controls.Add(tabs);
+            var baitTab = new TabPage("Cebo y espera") { BackColor = Color.White };
+            tabs.TabPages.AddRange(new[] { fishing, calibration, baitTab, guide }); Controls.Add(tabs);
 
             LabelAt(fishing, "01  ELIGE LA BARRA", 20, 18, 410, 28, 12, true);
             LabelAt(fishing, "Barra azul completa y margen para su balanceo.", 20, 52, 430, 24, 10, false).ForeColor = muted;
@@ -125,7 +134,7 @@ namespace SomeFishingGPO
             castLabel.ForeColor = muted;
             castTime = NumberAt(fishing, "Mantener al lanzar (ms)", 20, 325, 50, 3000, 220);
             biteTime = NumberAt(fishing, "Espera de picada (s)", 239, 325, 5, 120, 15);
-            allowClicks = CheckAt(fishing, "Permitir clics al iniciar la macro", 20, 399, 425);
+            allowClicks = CheckAt(fishing, "Permitir clics y saltos al iniciar", 20, 399, 425);
             startButton = ButtonAt(fishing, "Preparar inicio · 3 segundos", 20, 439, 410, delegate { Arm(); }, true);
             var stopLink = new LinkLabel { Text = "Ver última parada", Location = new Point(20, 490),
                 Size = new Size(410, 25), LinkColor = accent };
@@ -140,6 +149,24 @@ namespace SomeFishingGPO
             previewButton = ButtonAt(fishing, "Ver detector", 470, 439, 228, delegate { TogglePreview(); }, false);
             ButtonAt(fishing, "Mostrar ejemplo", 714, 439, 242, delegate { ShowExample(); }, false);
             cycleLabel = LabelAt(fishing, "Rondas terminadas: 0", 470, 488, 480, 24, 9, false);
+
+            LabelAt(baitTab, "Cebo disponible y espera con saltos", 22, 20, 920, 40, 18, true);
+            monitorBait = CheckAt(baitTab, "Leer cantidad de cebo en pantalla", 22, 74, 430);
+            LabelAt(baitTab, "Selecciona solo x300 (o el número actual) del cebo\nque tienes equipado. Una segunda zona pequeña.",
+                22, 111, 435, 55, 10, false).ForeColor = muted;
+            baitAreaButton = ButtonAt(baitTab, "Seleccionar contador de cebo", 22, 177, 412, delegate { SelectBaitArea(); }, true);
+            baitAreaLabel = LabelAt(baitTab, "Contador sin zona", 22, 223, 430, 30, 9, false);
+            baitPreview = new PictureBox { Location = new Point(470, 75), Size = new Size(486, 91),
+                BackColor = Color.FromArgb(40,40,40), SizeMode = PictureBoxSizeMode.Zoom };
+            baitTab.Controls.Add(baitPreview);
+            baitPreviewButton = ButtonAt(baitTab, "Probar lectura · sin teclas", 470, 177, 486, delegate { ToggleBaitPreview(); }, false);
+            baitValueLabel = LabelAt(baitTab, "Cebos: —", 470, 224, 480, 34, 17, true);
+            baitDetailLabel = LabelAt(baitTab, "El lector debe confirmar el número antes de usarlo.", 470, 263, 480, 46, 10, false);
+            idleJump = CheckAt(baitTab, "Saltar en espera si el cebo llega a 0 o fallan 3 lanzamientos", 22, 321, 930);
+            jumpSeconds = NumberAt(baitTab, "Segundos entre saltos", 22, 365, 15, 300, 60);
+            LabelAt(baitTab, "Pulsa solo Espacio, sin mover al personaje con WASD.\nF10, F8 y cambiar de ventana detienen también los saltos.\nNo guarda objetos ni garantiza evitar una desconexión.",
+                250, 369, 710, 84, 10, false).ForeColor = muted;
+            ButtonAt(baitTab, "Guardar ajustes", 22, 470, 250, delegate { SaveSettings(); }, true);
 
             LabelAt(calibration, "Ajusta lo que ve y cómo responde", 22, 23, 900, 40, 18, true);
             LabelAt(calibration, "Deja margen a los lados para el balanceo. La barra verde puede quedar dentro: se excluye del seguimiento.",
@@ -179,6 +206,8 @@ namespace SomeFishingGPO
             SetNumber(castTime, settings.CastMilliseconds); SetNumber(biteTime, settings.BiteSeconds);
             SetNumber(restTime, settings.RestMilliseconds); SetNumber(tolerance, settings.Tolerance);
             SetNumber(anticipation, settings.AnticipationMilliseconds);
+            monitorBait.Checked = settings.MonitorBait; idleJump.Checked = settings.IdleJumpEnabled;
+            SetNumber(jumpSeconds, settings.IdleJumpSeconds);
             UpdateAreaLabels();
         }
         private static void SetNumber(NumericUpDown control, int value)
@@ -190,7 +219,9 @@ namespace SomeFishingGPO
                 CastMilliseconds = (int)castTime.Value, BiteSeconds = (int)biteTime.Value,
                 RestMilliseconds = (int)restTime.Value, Tolerance = (int)tolerance.Value,
                 AnticipationMilliseconds = (int)anticipation.Value,
-                BlueArgb = settings.BlueArgb, MarkerArgb = settings.MarkerArgb };
+                BlueArgb = settings.BlueArgb, MarkerArgb = settings.MarkerArgb,
+                MonitorBait = monitorBait.Checked, BaitArea = settings.BaitArea,
+                IdleJumpEnabled = idleJump.Checked, IdleJumpSeconds = (int)jumpSeconds.Value };
         }
         private void UpdateAreaLabels()
         {
@@ -202,6 +233,8 @@ namespace SomeFishingGPO
                 "Equipa la caña manualmente antes de iniciar." : string.Format("Punto de lanzamiento: {0}, {1} · caña equipada", settings.CastPoint.X, settings.CastPoint.Y);
             blueButton.BackColor = Color.FromArgb(settings.BlueArgb); blueButton.ForeColor = Color.Black;
             markerButton.BackColor = Color.FromArgb(settings.MarkerArgb); markerButton.ForeColor = Color.Black;
+            baitAreaLabel.Text = settings.BaitArea.IsEmpty ? "Contador sin zona" :
+                string.Format("Contador: {0} × {1} px · posición {2}, {3}", settings.BaitArea.Width, settings.BaitArea.Height, settings.BaitArea.X, settings.BaitArea.Y);
         }
         protected override void OnHandleCreated(EventArgs e)
         {
@@ -233,6 +266,42 @@ namespace SomeFishingGPO
             base.WndProc(ref message);
         }
         private bool IsRunning { get { return engine != null && engine.Running; } }
+        private void SelectBaitArea()
+        {
+            if (activePicker != null) return;
+            StopAll("Seleccionando contador…"); Hide();
+            try
+            {
+                using (var picker = new SelectionOverlay(false, settings.BaitArea, null, SystemInformation.VirtualScreen, true))
+                {
+                    activePicker = picker;
+                    if (picker.ShowDialog() == DialogResult.OK)
+                    {
+                        settings.BaitArea = picker.Selection; monitorBait.Checked = true;
+                        UpdateAreaLabels(); ReadSettings().Save(settingsPath);
+                        statusLabel.Text = "Contador guardado. Usa «Probar lectura» antes de iniciar.";
+                    }
+                }
+            }
+            catch (Exception error) { statusLabel.Text = error.Message; }
+            finally { activePicker = null; Show(); Activate(); }
+        }
+        private void ToggleBaitPreview()
+        {
+            bool wasActive = previewingBait; StopAll("Lectura del contador detenida");
+            if (wasActive) return;
+            string problem = Settings.ValidateBaitArea(settings.BaitArea, SystemInformation.VirtualScreen);
+            if (problem != null) { statusLabel.Text = problem; return; }
+            previewReader = new WindowsBaitReader(); previewBaitMonitor.Reset(); previewingBait = true;
+            baitPreviewButton.Text = "Detener lectura";
+            statusLabel.Text = "Solo lectura del contador · sin clics ni saltos";
+        }
+        private void ShowBaitCount(int? count, string detail)
+        {
+            baitValueLabel.Text = "Cebos: " + (count.HasValue ? count.Value.ToString() : "—");
+            baitValueLabel.ForeColor = count.HasValue && count.Value <= 10 ? Color.FromArgb(174,85,15) : ink;
+            baitDetailLabel.Text = detail ?? "Esperando lectura…";
+        }
         private void SelectArea()
         {
             if (activePicker != null) return;
@@ -282,7 +351,7 @@ namespace SomeFishingGPO
             if (runtime != null && runtime.PendingRelease)
             { statusLabel.Text = "Hay una liberación de clic pendiente. Espera antes de iniciar otra ronda."; return false; }
             if (!stopHotkey) { statusLabel.Text = "F10 no está disponible. Cierra otras macros y vuelve a abrir SomeFishing GPO."; return false; }
-            if (!allowClicks.Checked) { statusLabel.Text = "Marca «Permitir clics» antes de iniciar. Puedes probar con «Ver detector»."; return false; }
+            if (!allowClicks.Checked) { statusLabel.Text = "Marca «Permitir clics y saltos» antes de iniciar. Puedes usar las vistas de prueba."; return false; }
             string problem = ReadSettings().Validate(SystemInformation.VirtualScreen, true);
             if (problem != null) { statusLabel.Text = problem; return false; }
             return true;
@@ -318,13 +387,16 @@ namespace SomeFishingGPO
         private void SetEditable(bool value)
         {
             foreach (Control control in new Control[] { areaButton, pointButton, autoCast, castTime, biteTime, restTime,
-                tolerance, anticipation, holdUp, blueButton, markerButton, allowClicks }) control.Enabled = value;
+                tolerance, anticipation, holdUp, blueButton, markerButton, allowClicks,
+                monitorBait, idleJump, jumpSeconds, baitAreaButton, baitPreviewButton }) control.Enabled = value;
         }
         private void StopAll(string reason)
         {
             bool hadSession = engine != null;
             Phase phase = hadSession ? (engine.Running ? engine.State : phaseBeforeTick) : Phase.Stopped;
             armedUntil = 0; previewing = false;
+            previewingBait = false;
+            if (previewReader != null) { previewReader.Dispose(); previewReader = null; }
             try { if (engine != null) engine.Stop(reason); }
             catch (Exception error) { reason += " · Revisa el botón del ratón: " + error.Message; }
             try { if (runtime != null) runtime.Dispose(); }
@@ -332,14 +404,16 @@ namespace SomeFishingGPO
             if (runtime != null && runtime.FaultReason != null) reason = runtime.FaultReason;
             if (hadSession && !testMode)
             {
-                lastStop = string.Format("SomeFishing GPO 0.1.0 · {0:yyyy-MM-dd HH:mm:ss}\r\n\r\n{1}\r\n\r\n" +
+                lastStop = string.Format("SomeFishing GPO 0.2.0 · {0:yyyy-MM-dd HH:mm:ss}\r\n\r\n{1}\r\n\r\n" +
                     "Estado al parar: {2}\r\nRondas terminadas: {3}\r\nDuración: {4:F1} s\r\n" +
                     "Mayor intervalo entre revisiones: {5:F0} ms\r\nLanzamiento: {6} ms · Espera: {7} s\r\n" +
-                    "Anticipación: {8} ms · Tolerancia: {9}\r\nÚltima detección: {10}\r\n",
+                    "Anticipación: {8} ms · Tolerancia: {9}\r\nÚltima detección: {10}\r\n" +
+                    "Cebos: {11} · Saltos habilitados: {12} · Espacios solicitados: {13}\r\n",
                     DateTime.Now, reason.Length > 2000 ? reason.Substring(0, 2000) : reason, phase, engine.Cycles,
                     (clock.Elapsed.TotalMilliseconds - runStarted) / 1000, maxTickGap,
                     settings.CastMilliseconds, settings.BiteSeconds, settings.AnticipationMilliseconds, settings.Tolerance,
-                    engine.LastObservation == null ? "Sin imagen" : engine.LastObservation.Detail);
+                    engine.LastObservation == null ? "Sin imagen" : engine.LastObservation.Detail,
+                    engine.BaitCount.HasValue ? engine.BaitCount.Value.ToString() : "Desconocido", settings.IdleJumpEnabled, engine.JumpRequests);
                 try { File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ultima-parada.txt"), lastStop); }
                 catch (Exception error) { reason += " · No se pudo guardar el informe: " + error.Message; }
             }
@@ -348,6 +422,7 @@ namespace SomeFishingGPO
             if (statusLabel != null) statusLabel.Text = reason;
             if (startButton != null) startButton.Text = "Preparar inicio · 3 segundos";
             if (previewButton != null) previewButton.Text = "Ver detector";
+            if (baitPreviewButton != null) baitPreviewButton.Text = "Probar lectura · sin teclas";
             if (areaButton != null) SetEditable(true);
         }
         private void ShowLastStop()
@@ -390,7 +465,8 @@ namespace SomeFishingGPO
                     engine.Tick(now);
                     if (runtime.LastFrame != null && now >= nextPreview)
                     { SetPreview(runtime.LastFrame, engine.LastObservation); nextPreview = now + 150; }
-                    cycleLabel.Text = "Rondas terminadas: " + engine.Cycles + "  ·  no confirma capturas";
+                    cycleLabel.Text = "Rondas: " + engine.Cycles + " · Cebos: " + (engine.BaitCount.HasValue ? engine.BaitCount.Value.ToString() : "—");
+                    ShowBaitCount(engine.BaitCount, engine.BaitStatus);
                     statusLabel.Text = engine.Status;
                     if (!engine.Running) { string reason = engine.Status; StopAll(reason); }
                 }
@@ -400,6 +476,17 @@ namespace SomeFishingGPO
                     string issue = current.Validate(SystemInformation.VirtualScreen, false);
                     if (issue != null) { StopAll(issue); return; }
                     using (Bitmap frame = Native.Capture(current.Area)) SetPreview(frame, Detector.Analyze(frame, current));
+                }
+                else if (previewingBait && previewReader != null)
+                {
+                    if (previewReader.Due(now))
+                    {
+                        Bitmap frame = Native.Capture(settings.BaitArea);
+                        Image old = baitPreview.Image; baitPreview.Image = (Bitmap)frame.Clone(); if (old != null) old.Dispose();
+                        previewReader.Submit(frame, now);
+                    }
+                    previewBaitMonitor.Update(previewReader.Latest, now);
+                    ShowBaitCount(previewBaitMonitor.Count, previewBaitMonitor.Detail);
                 }
             }
             catch (Exception error) { StopAll("Error: " + error.Message); }
@@ -456,6 +543,8 @@ namespace SomeFishingGPO
             {
                 timer.Dispose();
                 if (runtime != null) runtime.Dispose();
+                if (previewReader != null) previewReader.Dispose();
+                if (baitPreview != null && baitPreview.Image != null) { baitPreview.Image.Dispose(); baitPreview.Image = null; }
                 if (preview != null && preview.Image != null) { preview.Image.Dispose(); preview.Image = null; }
             }
             base.Dispose(disposing);
@@ -487,6 +576,7 @@ namespace SomeFishingGPO
     internal sealed class SelectionOverlay : Form
     {
         private readonly bool pointOnly;
+        private readonly bool counterOnly;
         private readonly Bitmap screenshot;
         private Point origin, current;
         private bool dragging;
@@ -496,9 +586,9 @@ namespace SomeFishingGPO
         public SelectionOverlay(bool pointOnly) : this(pointOnly, Rectangle.Empty) { }
         public SelectionOverlay(bool pointOnly, Rectangle initialArea)
             : this(pointOnly, initialArea, null, SystemInformation.VirtualScreen) { }
-        internal SelectionOverlay(bool pointOnly, Rectangle initialArea, Bitmap background, Rectangle desktop)
+        internal SelectionOverlay(bool pointOnly, Rectangle initialArea, Bitmap background, Rectangle desktop, bool counterOnly = false)
         {
-            this.pointOnly = pointOnly;
+            this.pointOnly = pointOnly; this.counterOnly = counterOnly;
             FormBorderStyle = FormBorderStyle.None; StartPosition = FormStartPosition.Manual;
             Bounds = desktop; TopMost = true; ShowInTaskbar = false;
             Cursor = Cursors.Cross; KeyPreview = true; DoubleBuffered = true;
@@ -516,7 +606,7 @@ namespace SomeFishingGPO
         {
             if (pointOnly || dragging) return false;
             Rectangle proposed = draft; proposed.Offset(Bounds.Location);
-            selectionHint = new Settings { Area = proposed, AutoCast = false }.Validate(Bounds, false);
+            selectionHint = counterOnly ? Settings.ValidateBaitArea(proposed, Bounds) : new Settings { Area = proposed, AutoCast = false }.Validate(Bounds, false);
             if (selectionHint != null) { Invalidate(); return false; }
             Selection = proposed; DialogResult = DialogResult.OK; Close(); return true;
         }
@@ -572,8 +662,9 @@ namespace SomeFishingGPO
             {
                 int bannerWidth = Math.Min(1080, monitor.Width - 40);
                 e.Graphics.FillRectangle(background, monitor.Left + 20, monitor.Top + 20, bannerWidth, 106);
-                e.Graphics.DrawString(pointOnly ? "ELIGE EL PUNTO DE LANZAMIENTO" : "SELECCIONAR ZONA DE PESCA", font, Brushes.White, monitor.Left + 35, monitor.Top + 32);
+                e.Graphics.DrawString(pointOnly ? "ELIGE EL PUNTO DE LANZAMIENTO" : counterOnly ? "SELECCIONAR CONTADOR DE CEBO" : "SELECCIONAR ZONA DE PESCA", font, Brushes.White, monitor.Left + 35, monitor.Top + 32);
                 string help = selectionHint ?? (pointOnly ? "Haz clic sobre el agua. Esc cancela." :
+                    counterOnly ? "Rodea solo x y la cantidad del cebo equipado (por ejemplo, x300), sin nombres ni otros números.\nEnter o F6: guardar · Esc: cancelar" :
                     "Incluye toda la altura de la barra azul y margen lateral para el balanceo. La verde se ignora.\nEnter o F6: guardar la selección · Esc: cancelar");
                 e.Graphics.DrawString(help, helpFont, selectionHint == null ? Brushes.White : Brushes.Salmon,
                     new RectangleF(monitor.Left + 35, monitor.Top + 66, bannerWidth - 30, 55));

@@ -21,6 +21,10 @@ namespace SomeFishingGPO
         public int Tolerance = 38;
         public bool HoldMovesUp = true;
         public int AnticipationMilliseconds = 80;
+        public bool MonitorBait;
+        public Rectangle BaitArea;
+        public bool IdleJumpEnabled;
+        public int IdleJumpSeconds = 60;
 
         public string Validate(Rectangle desktop, bool sending)
         {
@@ -32,7 +36,15 @@ namespace SomeFishingGPO
             if (CastMilliseconds < 50 || CastMilliseconds > 3000 || BiteSeconds < 5 || BiteSeconds > 120 || RestMilliseconds < 500 || RestMilliseconds > 10000)
                 return "Revisa los tiempos de lanzamiento y espera.";
             if (sending && AutoCast && (!CastPointSet || !ContainsSafely(desktop, new Rectangle(CastPoint, new Size(1, 1))))) return "Selecciona un punto sobre el agua para lanzar.";
+            if (IdleJumpSeconds < 15 || IdleJumpSeconds > 300) return "El intervalo de saltos debe estar entre 15 y 300 segundos.";
+            if (MonitorBait) { string problem = ValidateBaitArea(BaitArea, desktop); if (problem != null) return problem; }
             return null;
+        }
+        public static string ValidateBaitArea(Rectangle area, Rectangle desktop)
+        {
+            if (area.Width < 10 || area.Height < 6 || area.Width > 400 || area.Height > 120 || (long)area.Width * area.Height > 30000)
+                return "Rodea solo la cantidad de cebo: entre 10 × 6 y 400 × 120 px, hasta 30 000 píxeles.";
+            return ContainsSafely(desktop, area) ? null : "El contador queda fuera de la pantalla.";
         }
         public static bool ContainsSafely(Rectangle outer, Rectangle inner)
         {
@@ -333,11 +345,13 @@ namespace SomeFishingGPO
         private readonly Func<bool> allowed;
         private readonly Func<double> clock;
         private readonly Func<string> safetyReason;
+        private readonly string inputName;
         private double lastBeat;
+        private double releaseAt = double.PositiveInfinity;
         private bool held, stopped;
         private string fault;
-        internal MouseLease(Action<bool> send, Func<bool> allowed, Func<double> clock, Func<string> safetyReason = null)
-        { this.send = send; this.allowed = allowed; this.clock = clock; this.safetyReason = safetyReason; lastBeat = clock(); }
+        internal MouseLease(Action<bool> send, Func<bool> allowed, Func<double> clock, Func<string> safetyReason = null, string inputName = "el clic")
+        { this.send = send; this.allowed = allowed; this.clock = clock; this.safetyReason = safetyReason; this.inputName = inputName; lastBeat = clock(); }
         internal bool PendingRelease { get { lock (gate) return held; } }
         internal string Fault { get { lock (gate) return fault; } }
         private bool Allowed()
@@ -345,13 +359,14 @@ namespace SomeFishingGPO
         private void ReleaseLocked()
         {
             if (!held) return;
-            try { send(false); held = false; }
-            catch (Exception error) { stopped = true; fault = "Windows no aceptó soltar el clic; reintentando. " + error.Message; }
+            try { send(false); held = false; releaseAt = double.PositiveInfinity; }
+            catch (Exception error) { stopped = true; fault = "Windows no aceptó soltar " + inputName + "; reintentando. " + error.Message; }
         }
         private void Trip(string reason)
         { stopped = true; if (fault == null) fault = reason; ReleaseLocked(); }
         private bool CheckLocked()
         {
+            if (held && clock() >= releaseAt) ReleaseLocked();
             if (stopped) { ReleaseLocked(); return false; }
             double elapsed = clock() - lastBeat;
             if (elapsed > 500 || elapsed < 0)
@@ -382,6 +397,11 @@ namespace SomeFishingGPO
             }
         }
         internal void Release() { lock (gate) ReleaseLocked(); }
+        internal void Pulse(int milliseconds)
+        {
+            if (milliseconds < 1 || milliseconds > 500) throw new ArgumentOutOfRangeException("milliseconds");
+            lock (gate) { SetHeld(true); releaseAt = clock() + milliseconds; }
+        }
         internal void Stop() { lock (gate) { stopped = true; ReleaseLocked(); } }
         internal void Watchdog() { lock (gate) CheckLocked(); }
     }
@@ -393,9 +413,11 @@ namespace SomeFishingGPO
         void SetHeld(bool held);
         void Release();
         Observation Observe();
+        BaitReading ReadBait(double now);
+        void SetJumpHeld(bool held);
     }
 
-    public enum Phase { Stopped, Preparing, Casting, Waiting, Tracking, Resting }
+    public enum Phase { Stopped, Preparing, Casting, Waiting, Tracking, Resting, IdleWaiting, Jumping }
 
     // Nonblocking state machine. A GUI timer drives this; no delayed background click
     // can survive Stop(). Every tick checks game focus before any action.
@@ -406,6 +428,13 @@ namespace SomeFishingGPO
         private readonly Controller controller = new Controller();
         private double deadline, missingSince = -1, invalidSince = -1, trackingStarted;
         private int stableFrames, failures;
+        private readonly BaitMonitor bait = new BaitMonitor();
+        private double nextJump, jumpUntil, idleMenuMissingSince;
+        private bool waitingForBait;
+        private string idleReason;
+        public int? BaitCount { get { return bait.Count; } }
+        public string BaitStatus { get { return settings.MonitorBait ? bait.Detail : "Lectura de cebo desactivada"; } }
+        public int JumpRequests { get; private set; }
         public Phase State { get; private set; }
         public string Status { get; private set; }
         public int Cycles { get; private set; }
@@ -419,6 +448,8 @@ namespace SomeFishingGPO
         {
             if (!runtime.IsActive) throw new InvalidOperationException("Roblox debe estar en primer plano.");
             failures = 0; Cycles = 0; stableFrames = 0; missingSince = invalidSince = -1; controller.Reset();
+            bait.Reset();
+            JumpRequests = 0;
             State = Phase.Preparing; deadline = now + 1000; Status = "Preparando la pesca…";
         }
         public void Stop(string reason)
@@ -429,10 +460,48 @@ namespace SomeFishingGPO
         private void BeginCast(double now)
         {
             controller.Reset(); stableFrames = 0; missingSince = invalidSince = -1;
+            if (settings.MonitorBait && bait.Empty) { EnterIdle(now, "Sin cebo confirmado", true); return; }
             if (!settings.AutoCast)
             { State = Phase.Waiting; deadline = double.PositiveInfinity; Status = "Esperando a que lances manualmente…"; return; }
             runtime.MoveToCastPoint(); runtime.SetHeld(true);
             State = Phase.Casting; deadline = now + settings.CastMilliseconds; Status = "Lanzando la caña";
+        }
+        private void EnterIdle(double now, string reason, bool noBait)
+        {
+            runtime.Release(); controller.Reset(); SuggestedHold = false;
+            if (!settings.IdleJumpEnabled) { Stop(reason + " · saltos de espera desactivados"); return; }
+            State = Phase.IdleWaiting; idleReason = reason; waitingForBait = noBait;
+            stableFrames = 0; idleMenuMissingSince = now; nextJump = now + 2000;
+            Status = reason + " · espera con saltos";
+        }
+        private void TickIdle(double now)
+        {
+            LastObservation = runtime.Observe();
+            if (LastObservation.Found || LastObservation.MenuVisible)
+            {
+                runtime.SetJumpHeld(false); State = Phase.IdleWaiting;
+                idleMenuMissingSince = -1; nextJump = now + settings.IdleJumpSeconds * 1000;
+                if (LastObservation.Found && ++stableFrames >= 2)
+                { State = Phase.Tracking; trackingStarted = now; controller.Reset(); failures = 0; }
+                else if (!LastObservation.Found) stableFrames = 0;
+                Status = "Menú visible · saltos suspendidos"; return;
+            }
+            stableFrames = 0;
+            if (idleMenuMissingSince < 0) idleMenuMissingSince = now;
+            if (waitingForBait && bait.Count.HasValue && bait.Count.Value > 0)
+            {
+                runtime.Release(); failures = 0; State = Phase.Preparing; deadline = now + 1000;
+                Status = "Cebo disponible · reanudando pesca"; return;
+            }
+            if (State == Phase.Jumping)
+            {
+                if (now >= jumpUntil)
+                { runtime.SetJumpHeld(false); State = Phase.IdleWaiting; nextJump = now + settings.IdleJumpSeconds * 1000; }
+                return;
+            }
+            Status = idleReason + " · próximo salto en " + Math.Max(0, Math.Ceiling((nextJump - now) / 1000)) + " s";
+            if (now >= nextJump && now - idleMenuMissingSince >= 1600)
+            { runtime.SetJumpHeld(true); JumpRequests++; State = Phase.Jumping; jumpUntil = now + 100; Status = idleReason + " · salto en espera"; }
         }
         public void Tick(double now)
         {
@@ -440,6 +509,8 @@ namespace SomeFishingGPO
             try
             {
                 if (!runtime.IsActive) { Stop("Detenida: cambiaste de ventana o activaste la parada con el ratón."); return; }
+                if (settings.MonitorBait) bait.Update(runtime.ReadBait(now), now);
+                if (State == Phase.IdleWaiting || State == Phase.Jumping) { TickIdle(now); return; }
                 if (State == Phase.Tracking && now - trackingStarted > 120000)
                 { Stop("Detenida: la ronda superó 2 minutos. Revisa la detección."); return; }
                 if (State == Phase.Preparing)
@@ -497,7 +568,9 @@ namespace SomeFishingGPO
                         runtime.SetHeld(false);
                         if (LastObservation.MenuVisible || LastObservation.Found)
                         { Stop("Detenida: el minijuego está visible, pero no pude seguirlo. Revisa la zona."); return; }
-                        if (++failures >= 3) { Stop("Detenida tras 3 intentos sin detectar la barra. Revisa la zona y el lanzamiento."); return; }
+                        if (settings.MonitorBait && bait.Empty) { EnterIdle(now, "Sin cebo confirmado", true); return; }
+                        if (++failures >= 3)
+                        { EnterIdle(now, bait.Empty ? "Sin cebo confirmado" : "3 intentos sin minijuego", bait.Empty); return; }
                         State = Phase.Resting; deadline = now + settings.RestMilliseconds; Status = "Sin picada · preparando otro intento";
                     }
                 }
