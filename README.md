@@ -1,6 +1,6 @@
 # SomeFishing GPO
 
-Macro visual de pesca para GPO en Windows, con código disponible para revisar y compilar. **Versión local 0.6.0.**
+Macro visual de pesca para GPO en Windows, con código disponible para revisar y compilar. **Versión local 0.6.1.**
 
 ![Interfaz con un ejemplo sintético](docs/Vista-previa.png)
 
@@ -40,6 +40,10 @@ Cuando toca comprar, suelta el clic de pesca y espera que cierre el minijuego. S
 
 La secuencia usa los puntos guardados, **sin OCR de los menús**. No verifica que el juego haya aceptado el número, el pago o el cierre; muestra que la secuencia se envió. No hay reintentos dentro de una compra. El tope de intentos por sesión es ajustable (10 inicialmente). En modo contador, el disparador solo se rearma tras confirmar una cantidad superior al umbral; un número bajo persistente no encadena compras.
 
+Desde 0.6.1 mueve el ratón con desplazamientos relativos, revisa su llegada y espera la pausa completa antes del clic. Todas las pulsaciones van separadas del movimiento, incluidas las dos del número. No modifica la velocidad del ratón de Windows.
+
+Comprueba **verde en Comprar, blanco en el número y rojo en Cancelar**, en dos imágenes nuevas de los tres puntos. Lo hace después de Sí, antes del doble clic, antes de escribir y antes de Comprar. Si falta esa combinación durante ocho segundos, se detiene en ese paso. No lee letras ni números: reconoce el aspecto del menú, sin confirmar el foco del campo ni la cantidad escrita. Los puntos deben caer sobre el centro del texto de cada botón.
+
 ## Contador y aviso previo
 
 En **Cebo**, selecciona solo el contador del cebo equipado, por ejemplo `x300`, dejando margen para tres dígitos. Evita el borde del botón y otros números. **Probar lectura** solo observa.
@@ -60,7 +64,7 @@ Los saltos de espera son opcionales. Tras falta de cebo o tres intentos sin mini
 
 En ambas pruebas, termina el minijuego y cierra los diálogos antes de empezar. F10 cancela. El registro queda en `ultima-prueba.txt`; **Copiar resultado** solo lo copia cuando pulsas el botón.
 
-Si E no abre el diálogo, comprueba que estás al alcance del barril y aumenta **Mantener E**. Si la secuencia avanza demasiado pronto, aumenta **Pausa entre pasos**. Prueba con una unidad y comprueba visualmente los cinco clics antes de activar compras repetidas.
+Si E no abre el diálogo, comprueba que estás al alcance del barril y aumenta **Mantener E**. Si no confirma el menú de cantidad, revisa el clic en Sí y que los puntos coincidan con el texto de Comprar, el número y Cancelar. El registro muestra los colores detectados y las teclas enviadas. Prueba con una unidad y comprueba visualmente los cinco clics antes de activar compras repetidas.
 
 ## Compilar y revisar
 
@@ -70,6 +74,7 @@ Ejecuta `compilar.cmd` con .NET Framework 4.8 y Windows 10/11 SDK instalados. Us
 
 - `src/Core.cs`: ajustes, seguimiento de pesca, contador y cronómetro.
 - `src/DirectPurchase.cs`: secuencia de compra por puntos.
+- `src/RelativePointer.cs`, `src/ShopVisual.cs`: movimiento con corrección de posición y comprobación del menú por colores.
 - `src/Native.cs`: captura e inputs de Windows, comprobaciones de foco y liberación.
 - `src/WindowsBaitReader.cs`, `src/CounterGlyphs.cs`: lectura local de cebo.
 - `src/App.cs`, `src/Interface.cs`: interfaz y selección.

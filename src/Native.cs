@@ -74,13 +74,17 @@ namespace SomeFishingGPO
         internal static Input ShopClickInput(Point point,Rectangle desktop,ShopClickKind kind)
         {
             if(!Settings.ContainsSafely(desktop,new Rectangle(point,new Size(1,1))))throw new InvalidOperationException("El botón está fuera del escritorio.");
-            // The original plain press opened Yes in the user's 0.5.1 run.
-            // Restrict the combined-coordinate event to the numeric field.
-            // Safety button-up remains position-free for every click kind.
-            if(kind==ShopClickKind.Button)return MouseButtonInput(true);
-            if(kind==ShopClickKind.Quantity)return PointerInput(point,desktop,true);
+            // Move and settle before every click. Neither half of a numeric
+            // double click carries another position update in its button event.
+            if(kind==ShopClickKind.Button||kind==ShopClickKind.Quantity)return MouseButtonInput(true);
             throw new ArgumentOutOfRangeException("kind");
         }
+        internal static Input RelativeInput(Point delta)
+        {
+            if((delta.X==0&&delta.Y==0)||Math.Abs((long)delta.X)>64||Math.Abs((long)delta.Y)>64)throw new ArgumentOutOfRangeException("delta");
+            return new Input{Type=0,Data=new InputUnion{Mouse=new MouseInput{X=delta.X,Y=delta.Y,Flags=0x2001}}};
+        }
+        internal static void MoveRelative(Point delta) { SendPointerInput(RelativeInput(delta)); }
         private static void SendPointerInput(Input input)
         {
             if(SendInput(1,new[]{input},Marshal.SizeOf(typeof(Input)))!=1)throw new Win32Exception(Marshal.GetLastWin32Error(),"Windows no aceptó la posición y entrada del ratón de compra.");
@@ -139,13 +143,19 @@ namespace SomeFishingGPO
         }
     }
 
-    internal sealed class GameRuntime : IGameRuntime, IShopRuntime, IDisposable
+    internal sealed class GameRuntime : IGameRuntime, IShopRuntime, IShopPointerRuntime, IShopVisualRuntime, IDisposable
     {
         private readonly Settings settings;
         private readonly IntPtr target;
         private readonly bool sendClicks;
         private readonly bool requireFishingArea;
         private readonly MouseLease mouse;
+        private readonly RelativePointer shopPointer;
+        private Point? settledShopPoint;
+        private Point shopAimTarget;
+        private ShopVisualReading lastShopVisual;
+        private double nextShopVisual;
+        private long shopVisualSequence;
         private Point? shopMouseDownPoint;
         private ShopClickKind shopMouseDownKind;
         private bool tracingShopPress;
@@ -179,10 +189,12 @@ namespace SomeFishingGPO
                 delegate { return ForegroundAllowed; }, delegate { return clock.Elapsed.TotalMilliseconds; }, delegate { return safetyReason; });
             jump = new MouseLease(delegate(bool down) { if (sendClicks) Native.JumpKey(down); },
                 delegate { return ForegroundAllowed; }, delegate { return clock.Elapsed.TotalMilliseconds; }, delegate { return safetyReason; }, "Espacio");
-            shopKey = new MouseLease(delegate(bool down){if(sendClicks)Native.PurchaseKey(currentShopKey,down);},
+            shopKey = new MouseLease(delegate(bool down){if(sendClicks)Native.PurchaseKey(currentShopKey,down);TraceKey(currentShopKey,down);},
                 delegate{return ForegroundAllowed;},delegate{return clock.Elapsed.TotalMilliseconds;},delegate{return safetyReason;},"la tecla de compra");
-            controlKey = new MouseLease(delegate(bool down){if(sendClicks)Native.PurchaseKey(0x11,down);},
+            controlKey = new MouseLease(delegate(bool down){if(sendClicks)Native.PurchaseKey(0x11,down);TraceKey(0x11,down);},
                 delegate{return ForegroundAllowed;},delegate{return clock.Elapsed.TotalMilliseconds;},delegate{return safetyReason;},"Ctrl");
+            shopPointer=new RelativePointer(delegate{return Cursor.Position;},delegate(Point delta){if(sendClicks)Native.MoveRelative(delta);},
+                delegate{return ForegroundAllowed;},delegate(Point point){return Settings.ContainsSafely(Native.ClientBounds(target),new Rectangle(point,new Size(1,1)));});
             watchdog = new System.Threading.Timer(delegate
             {
                 mouse.Watchdog(); jump.Watchdog(); shopKey.Watchdog(); controlKey.Watchdog();
@@ -246,6 +258,16 @@ namespace SomeFishingGPO
         }
         public void Release()
         {
+            if(shopPointer!=null)shopPointer.Cancel();settledShopPoint=null;
+            ReleaseInputs();
+        }
+        private void TraceKey(int key,bool down)
+        {
+            string name=key==0x11?"Ctrl":key==0x08?"Retroceso":((char)key).ToString();
+            inputStatus=(sendClicks?"Windows aceptó tecla ":"Tecla simulada ")+name+(down?" abajo":" arriba")+" · respuesta del juego sin verificar";
+        }
+        private void ReleaseInputs()
+        {
             mouse.Release(); jump.Release(); shopKey.Release(); controlKey.Release();
         }
         public ShopReading ReadShop(double now)
@@ -259,16 +281,28 @@ namespace SomeFishingGPO
         {
             Guard();if(!ShopPointAllowed(point))throw new InvalidOperationException("Clic de compra fuera de los botones autorizados.");
             Release();if(PendingRelease)throw new InvalidOperationException("Hay una entrada pendiente de liberación.");
-            if(sendClicks)Native.MovePointer(point);
+            if(settings.UseDirectShopFlow)
+            {shopAimTarget=point;shopPointer.Start(point,clock.Elapsed.TotalMilliseconds);inputStatus="Moviendo con desplazamientos relativos hacia "+point.X+", "+point.Y;}
+            else if(sendClicks)Native.MovePointer(point);
+        }
+        public bool TickShopAim(double now)
+        {
+            Guard();
+            if(!sendClicks){settledShopPoint=shopAimTarget;return true;}
+            shopPointer.Tick(clock.Elapsed.TotalMilliseconds);
+            inputStatus=shopPointer.Status;
+            if(shopPointer.Ready)settledShopPoint=shopAimTarget;
+            return shopPointer.Ready;
         }
         public void ShopClick(Point point,ShopClickKind kind)
         {
             Guard();if(!ShopPointAllowed(point))throw new InvalidOperationException("Clic de compra fuera de los botones autorizados.");
+            if(settings.UseDirectShopFlow&&settledShopPoint!=point)throw new InvalidOperationException("El movimiento al botón no terminó; clic cancelado.");
             Point actual=Cursor.Position;
             if(sendClicks&&(Math.Abs(actual.X-point.X)>3||Math.Abs(actual.Y-point.Y)>3))throw new InvalidOperationException("El puntero no llegó al botón o se movió. Clic cancelado; suelta el ratón durante la prueba.");
             IntPtr below=Native.WindowAt(actual);
             if(sendClicks&&below!=Native.RootWindow(target))throw new InvalidOperationException("El clic quedó sobre otra ventana: "+Native.WindowDescription(below)+". Despeja el diálogo de Roblox y repite la prueba.");
-            Release();if(PendingRelease)throw new InvalidOperationException("Hay una entrada pendiente de liberación.");
+            ReleaseInputs();if(PendingRelease)throw new InvalidOperationException("Hay una entrada pendiente de liberación.");
             shopMouseDownPoint=point;shopMouseDownKind=kind;
             try{mouse.Pulse(180);}finally{shopMouseDownPoint=null;}
         }
@@ -277,6 +311,24 @@ namespace SomeFishingGPO
             return settings.AutoBuyBait&&(settings.UseDirectShopFlow?
                 settings.ShopButtonsSet&&(point==settings.ShopLeftPoint||point==settings.ShopMiddlePoint||point==settings.ShopRightPoint):
                 Settings.ContainsSafely(settings.ShopArea,new Rectangle(point,new Size(1,1))));
+        }
+        public ShopVisualReading ReadShopVisual(double now)
+        {
+            Guard();if(lastShopVisual!=null&&now<nextShopVisual)return lastShopVisual;
+            Rectangle client=Native.ClientBounds(target);
+            var points=new[]{settings.ShopLeftPoint,settings.ShopMiddlePoint,settings.ShopRightPoint};
+            var regions=new Rectangle[3];
+            for(int i=0;i<3;i++)
+            {
+                regions[i]=ShopVisual.Region(points[i]);
+                if(!Settings.ContainsSafely(client,regions[i]))throw new InvalidOperationException("Marca el centro de los botones, con margen dentro de Roblox.");
+            }
+            using(Bitmap left=Native.Capture(regions[0]))
+            using(Bitmap middle=Native.Capture(regions[1]))
+            using(Bitmap right=Native.Capture(regions[2]))
+            {lastShopVisual=ShopVisual.Analyze(left,middle,right);}
+            lastShopVisual.Sequence=++shopVisualSequence;lastShopVisual.SampledAt=now;nextShopVisual=now+150;
+            return lastShopVisual;
         }
         public void ShopKey(int key,bool held)
         {
@@ -309,6 +361,7 @@ namespace SomeFishingGPO
         }
         public void Dispose()
         {
+            shopPointer.Cancel();settledShopPoint=null;
             closing = true; mouse.Stop(); jump.Stop(); shopKey.Stop(); controlKey.Stop(); baitReader.Dispose(); shopReader.Dispose();
             if (!PendingRelease) watchdog.Dispose();
             // If Windows rejected button-up, the timer retains this object and retries

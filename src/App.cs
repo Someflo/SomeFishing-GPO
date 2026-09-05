@@ -92,7 +92,7 @@ namespace SomeFishingGPO
             string loadWarning = null;
             try { settings = testMode ? new Settings() : Settings.Load(settingsPath); }
             catch (Exception error) { settings = new Settings(); loadWarning = "No se pudieron cargar los ajustes: " + error.Message; }
-            Text = "SomeFishing GPO · v0.6.0";
+            Text = "SomeFishing GPO · v0.6.1";
             ClientSize = new Size(1080, 730);
             AutoScaleMode = AutoScaleMode.None;
             Font = new Font("Segoe UI", 10);
@@ -353,7 +353,7 @@ namespace SomeFishingGPO
         {
             StopAll("Preparando prueba…");
             diagnosticLog.Clear();lastDiagnosticStep=null;
-            AppendDiagnostic("SomeFishing GPO 0.6.0 · "+DiagnosticName(kind));
+            AppendDiagnostic("SomeFishing GPO 0.6.1 · "+DiagnosticName(kind));
             if(testMode){AppendDiagnostic("Render de interfaz: entradas reales desactivadas.");return;}
             if(!CanStartDiagnostic(kind))return;
             Settings selected=ReadSettings().ForDiagnostic(kind);
@@ -361,7 +361,7 @@ namespace SomeFishingGPO
             AppendDiagnostic("Tres puntos manuales · pausa entre pasos: "+selected.ShopSettleMilliseconds+" ms");
             if(selected.AutoBuyBait)AppendDiagnostic("Mantener E: "+selected.ShopOpenMilliseconds+" ms · cantidad de prueba: "+selected.BuyQuantity);
             if(selected.Area.IsEmpty)AppendDiagnostic("Sin zona de pesca: comprueba manualmente que no esté abierto el minijuego.");
-            if(selected.AutoBuyBait)AppendDiagnostic("Prueba inmediata, sin OCR de menús. Comprueba la cantidad y el cierre del diálogo en el juego.");
+            if(selected.AutoBuyBait)AppendDiagnostic("Prueba inmediata, sin OCR de menús. Movimiento relativo y comprobación de botones verde/blanco/rojo. Comprueba la cantidad y el cierre en el juego.");
             AppendDiagnostic("Preparada. Vuelve a Roblox en 3 s. F10/F8 cancela. Como máximo 1 compra de "+selected.BuyQuantity+" cebos o 1 salto.");
             armedKind=kind;diagnosticPending=true;armedUntil=clock.Elapsed.TotalMilliseconds+3000;SetEditable(false);
             statusLabel.Text="Prueba preparada · vuelve a Roblox en 3 s. F10 cancela.";
@@ -441,7 +441,7 @@ namespace SomeFishingGPO
             }
             if (hadSession && !testMode)
             {
-                lastStop = string.Format("SomeFishing GPO 0.6.0 · {0:yyyy-MM-dd HH:mm:ss}\r\n\r\n{1}\r\n\r\n" +
+                lastStop = string.Format("SomeFishing GPO 0.6.1 · {0:yyyy-MM-dd HH:mm:ss}\r\n\r\n{1}\r\n\r\n" +
                     "Estado al parar: {2}\r\nRondas terminadas: {3}\r\nDuración: {4:F1} s\r\n" +
                     "Mayor intervalo entre revisiones: {5:F0} ms\r\nLanzamiento: {6} ms · Espera: {7} s\r\n" +
                     "Anticipación: {8} ms · Tolerancia: {9}\r\nÚltima detección: {10}\r\n" +

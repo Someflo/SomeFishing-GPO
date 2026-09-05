@@ -18,7 +18,7 @@ if not defined PESCA_RUNTIME (
   echo No se encontro System.Runtime. Requiere .NET Framework 4.8.
   exit /b 1
 )
-"%PESCA_CSC%" /nologo /target:winexe /platform:x64 /optimize+ /warn:4 /out:SomeFishingGPO.exe /win32manifest:src\app.manifest /reference:System.dll /reference:System.Core.dll /reference:System.Drawing.dll /reference:System.Windows.Forms.dll /reference:System.Xml.dll /reference:"%PESCA_WINMD%" /reference:"%WINDIR%\Microsoft.NET\Framework64\v4.0.30319\System.Runtime.WindowsRuntime.dll" /reference:"%PESCA_RUNTIME%" src\Core.cs src\Native.cs src\App.cs src\Interface.cs src\Tests.cs src\Bait.cs src\WindowsBaitReader.cs src\CounterGlyphs.cs src\Shop.cs src\ShopLabels.cs src\WindowsShopReader.cs src\DirectPurchase.cs src\DirectPurchaseTests.cs src\LowBaitTests.cs src\SimplePurchaseEngineTests.cs src\AssemblyInfo.cs
+"%PESCA_CSC%" /nologo /target:winexe /platform:x64 /optimize+ /warn:4 /out:SomeFishingGPO.exe /win32manifest:src\app.manifest /reference:System.dll /reference:System.Core.dll /reference:System.Drawing.dll /reference:System.Windows.Forms.dll /reference:System.Xml.dll /reference:"%PESCA_WINMD%" /reference:"%WINDIR%\Microsoft.NET\Framework64\v4.0.30319\System.Runtime.WindowsRuntime.dll" /reference:"%PESCA_RUNTIME%" src\Core.cs src\Native.cs src\App.cs src\Interface.cs src\Tests.cs src\Bait.cs src\WindowsBaitReader.cs src\CounterGlyphs.cs src\Shop.cs src\ShopLabels.cs src\WindowsShopReader.cs src\DirectPurchase.cs src\DirectPurchaseTests.cs src\LowBaitTests.cs src\SimplePurchaseEngineTests.cs src\RelativePointer.cs src\RelativePointerTests.cs src\ShopVisual.cs src\ShopVisualTests.cs src\ShopSynchronizationTests.cs src\AssemblyInfo.cs
 if errorlevel 1 exit /b 1
 echo Compilado: SomeFishingGPO.exe
 endlocal

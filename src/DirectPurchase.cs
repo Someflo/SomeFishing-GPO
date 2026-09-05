@@ -5,6 +5,10 @@ using System.Globalization;
 
 namespace SomeFishingGPO
 {
+    public interface IShopPointerRuntime
+    {
+        bool TickShopAim(double now);
+    }
     public interface IPurchaseFlow
     {
         PurchasePhase State { get; }
@@ -44,12 +48,13 @@ namespace SomeFishingGPO
         }
     }
 
-    // A one-shot order: delays and marked points replace menu reading.
+    // A one-shot order: marked points replace OCR. A visual runtime can require
+    // the quantity menu's green/white/red buttons before advancing.
     // Each tick runs at most one action. No catch-up loop can emit a burst of
     // inputs after a delayed tick, and no action survives a terminal state.
     public sealed class DirectPurchaseController : IPurchaseFlow
     {
-        private enum ActionKind { KeyDown, KeyUp, Aim, Click, Finish }
+        private enum ActionKind { KeyDown, KeyUp, Aim, Click, VerifyMenu, Finish }
         private sealed class Step
         {
             internal ActionKind Kind;
@@ -68,6 +73,10 @@ namespace SomeFishingGPO
         private int stepIndex;
         private bool started;
         private double startedAt,next,lastTick;
+        private bool waitingPointer;
+        private double pointerSettle, visualStarted=-1, visualFirst=-1;
+        private long visualSequence=-1;
+        private int visualFrames;
         private string lastAction="Sin entradas";
         public PurchasePhase State { get; private set; }
         public string Status { get; private set; }
@@ -116,6 +125,12 @@ namespace SomeFishingGPO
                 lastTick=now;
                 if(!game.IsActive){Fail("Roblox perdió el foco.");return;}
                 if(now-startedAt>90000){Fail("La secuencia superó 90 segundos.");return;}
+                if(waitingPointer)
+                {
+                    if(((IShopPointerRuntime)shop).TickShopAim(now))
+                    { waitingPointer=false;next=now+pointerSettle;Status="Puntero colocado · esperando antes del clic"; }
+                    return;
+                }
                 if(now<next)return;
                 RunStep(now);
             }
@@ -125,9 +140,30 @@ namespace SomeFishingGPO
         {
             if(stepIndex>=steps.Count){Fail("La secuencia no pudo finalizar.");return;}
             Step step=steps[stepIndex];if(step.Kind!=ActionKind.Finish)State=step.Phase;Status=step.Label;
+            if(step.Kind==ActionKind.VerifyMenu)
+            {
+                if(visualStarted<0){visualStarted=now;visualFirst=-1;visualFrames=0;visualSequence=-1;}
+                if(now-visualStarted>=8000){Fail("No confirmé el menú de cantidad. La secuencia se detuvo antes de escribir o seguir comprando. Revisa el clic en Sí y los tres puntos.");return;}
+                ShopVisualReading reading=((IShopVisualRuntime)shop).ReadShopVisual(now);
+                bool fresh=reading!=null&&reading.Sequence>visualSequence&&reading.SampledAt>=visualStarted&&reading.SampledAt<=now&&now-reading.SampledAt<=500;
+                if(fresh)
+                {
+                    visualSequence=reading.Sequence;
+                    if(reading.QuantityMenu)
+                    { if(visualFrames==0)visualFirst=reading.SampledAt;visualFrames++; }
+                    else{visualFrames=0;visualFirst=-1;}
+                }
+                else if(reading==null||reading.SampledAt<visualStarted||reading.SampledAt>now||now-reading.SampledAt>500)
+                { visualFrames=0;visualFirst=-1; }
+                lastAction=step.Label+" · "+(reading==null?"Sin imagen":reading.Detail);
+                if(!fresh||visualFrames<2||reading.SampledAt-visualFirst<100)return;
+                visualStarted=-1;stepIndex++;next=now+step.Delay;
+                Status="Menú de cantidad visible · comprobación por colores";return;
+            }
             if(step.Kind==ActionKind.KeyDown)shop.ShopKey(step.Key,true);
             else if(step.Kind==ActionKind.KeyUp)shop.ShopKey(step.Key,false);
-            else if(step.Kind==ActionKind.Aim)shop.ShopAim(step.Point);
+            else if(step.Kind==ActionKind.Aim)
+            {shop.ShopAim(step.Point);waitingPointer=shop is IShopPointerRuntime;pointerSettle=step.Delay;}
             else if(step.Kind==ActionKind.Click){shop.ShopClick(step.Point,step.ClickKind);if(step.IsBuy)Submitted=true;}
             else {game.Release();State=PurchasePhase.Complete;Status="Secuencia enviada; resultado sin verificar";}
             lastAction=step.Label+(step.Kind==ActionKind.Aim||step.Kind==ActionKind.Click?" en "+step.Point.X+", "+step.Point.Y:"");
@@ -142,9 +178,12 @@ namespace SomeFishingGPO
             Add(ActionKind.KeyUp,PurchasePhase.Confirming,"E liberada · esperando el diálogo",menuWait,0x45);
             Add(ActionKind.Aim,PurchasePhase.Confirming,"Apuntando a Sí",settle,point:p.Yes);
             Add(ActionKind.Click,PurchasePhase.Editing,"Sí enviado una vez · esperando cantidad",menuWait,point:p.Yes);
+            MenuGate(PurchasePhase.Editing,"Comprobando que Sí abrió el menú de cantidad");
             Add(ActionKind.Aim,PurchasePhase.Selecting,"Apuntando al número central",settle,point:p.Quantity);
+            MenuGate(PurchasePhase.Selecting,"Comprobando el menú antes del doble clic");
             Add(ActionKind.Click,PurchasePhase.Selecting,"Cantidad · primer clic",250,point:p.Quantity,clickKind:ShopClickKind.Quantity);
             Add(ActionKind.Click,PurchasePhase.Selecting,"Cantidad · segundo clic",Math.Max(300,settle),point:p.Quantity,clickKind:ShopClickKind.Quantity);
+            MenuGate(PurchasePhase.Selecting,"Comprobando el menú antes de escribir");
             Add(ActionKind.KeyDown,PurchasePhase.Selecting,"Seleccionando la cantidad · Ctrl",0,0x11);
             Add(ActionKind.KeyDown,PurchasePhase.Selecting,"Seleccionando la cantidad · A",100,0x41);
             Add(ActionKind.KeyUp,PurchasePhase.Selecting,"Soltando A",0,0x41);
@@ -157,10 +196,13 @@ namespace SomeFishingGPO
                 Add(ActionKind.KeyUp,PurchasePhase.Typing,"Soltando dígito · "+digit,100,0x30+digit-'0');
             }
             Add(ActionKind.Aim,PurchasePhase.Verifying,"Apuntando a Comprar · sin verificar el número",settle,point:p.Buy);
+            MenuGate(PurchasePhase.Verifying,"Comprobando el menú antes de Comprar");
             Add(ActionKind.Click,PurchasePhase.Finishing,"Comprar enviado una vez · esperando cierre",menuWait,point:p.Buy,isBuy:true);
             Add(ActionKind.Aim,PurchasePhase.Closing,"Apuntando al botón «…»",settle,point:p.Close);
             Add(ActionKind.Click,PurchasePhase.Closing,"Cierre «…» enviado una vez",menuWait,point:p.Close);
             Add(ActionKind.Finish,PurchasePhase.Complete,"Secuencia enviada; resultado sin verificar",0);
         }
+        private void MenuGate(PurchasePhase phase,string label)
+        { if(shop is IShopVisualRuntime)Add(ActionKind.VerifyMenu,phase,label,0); }
     }
 }

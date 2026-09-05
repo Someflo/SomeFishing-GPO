@@ -1,39 +1,46 @@
-SomeFishing GPO 0.6.0 - verificacion local, 2026-09-05
+SomeFishing GPO 0.6.1 - verificacion local, 2026-09-05
 
-670 comprobaciones integradas; 783 con catorce capturas privadas del usuario.
-El total incluye los idiomas OCR instalados en este equipo de desarrollo.
+743 comprobaciones integradas; 866 con quince capturas privadas del usuario.
+Incluye 28 comprobaciones del movimiento relativo, 27 de sincronizacion,
+16 sinteticas de los botones y 10 comprobaciones de parches en fotos reales.
+Todas las entradas son simuladas: no se enviaron clics o teclas a Roblox.
 
-Compra simplificada por tres puntos guardados expresamente. Izquierdo para
-Si/Comprar, central para numero/cierre, derecho solo validado. La secuencia
-no lee menus, MAX ni inventario. Una accion por tick; sin rafagas atrasadas,
-sin reintentos dentro de un pedido. Cantidad y cierre quedan sin verificar.
+Evidencia del fallo reportado en 0.6.0: Windows aceptaba los cinco clics;
+las liberaciones observadas tardaban entre 182 y 238 ms. El usuario veia
+que Si fallaba y el doble clic del numero terminaba adelantando el dialogo.
+Esto no prueba la causa interna de Roblox. Se cambia la mezcla anterior
+de movimiento absoluto, clic simple y movimiento combinado con pulsacion.
 
-Pruebas con runtime simulado: 4/3 no compran; 2 solicita 298; cero confirmado
-en tres lecturas solicita 300; si la lectura pasa de 2 a 1 mientras espera,
-resuelve 299 al comenzar. No calcula MAX si el contador es desconocido o
-desaparecido. Una lectura baja persistente no encadena pedidos; se rearma
-tras confirmar un numero superior al umbral.
+0.6.1 usa movimiento relativo con feedback de la posicion de Windows.
+Eventos sin fusion de movimiento, maximo 64 unidades por eje y uno cada
+50 ms. Aprende la respuesta de cada eje sin cambiar ajustes del raton.
+Requiere llegada a 2 pixeles, estabilidad100 ms y pausa completa despues.
+Un puntero ya colocado sale6 pixeles y vuelve antes de estar listo.
+Cancela por foco, limites, reloj, error o12 segundos sin llegar. Los eventos
+de down/up no mueven el cursor, incluidas ambas pulsaciones del numero.
+Las pruebas simulan ganancias0.5,1,2,3 y distintas respuestas por eje.
 
-Cronometro: al vencer durante seguimiento libera el clic, espera 1600 ms de
-cierre y respeta la picada pendiente si ya habia lanzado. Solicita 50 y
-reanuda los lanzamientos. Pruebas verifican cancelacion, perdida de foco,
-limites, coordenadas, escritura de cantidades y persistencia de ajustes.
-Probar compra usa cantidad independiente, sin OCR, observacion de pesca,
-umbral ni cronometro; no vuelve a lanzar al terminar.
+La posicion de Windows no demuestra que el juego haya aceptado el clic.
+Por ello se comprueba el menu de cantidad tras Si y antes del doble clic,
+la escritura y Comprar: verde izquierdo, blanco central, rojo derecho.
+Solo captura3 parches49x33 en los puntos marcados. No requiere OCR.
+Exige2 imagenes nuevas separadas al menos100 ms; rechaza muestras antiguas,
+futuras, repetidas o contradictorias. Si falta el menu durante8 segundos,
+se detiene en ese paso. Si no entro Si, no pulsa el numero ni el teclado.
+Si desaparece durante el movimiento al numero, tambien se bloquean ambos
+clics. Cada accion se envia una vez; no se reintenta una compra incierta.
 
-Las dos nuevas imagenes reales: x4 (32x30), x3 (31x27), eran desconocidas
-con el lector anterior. Ahora ambas producen el numero correcto con
-referencias binarias completas del texto, en automatico, en-US, es-ES y
-es-MX. El respaldo de x4 excluye una franja dorada fina separada del texto.
-Se rechazan verde, recortes incompletos y otros numeros/letras probados.
-Algunos escalados de x3 permanecen desconocidos; no se garantiza reconocer
-cualquier escala o fuente. Nunca se aporta cero desde esas referencias.
+La foto nueva MAX297 y las anteriores MAX294 y MAX5 pasan el detector por
+colores. Las fotos de la pregunta Si/No y del cierre no pasan. No se leen
+MAX, cantidad ni foco del campo: el numero escrito, pago y cierre siguen
+sin verificar dentro del juego. Se conserva ese limite en la interfaz.
+El registro ahora incluye teclas propias enviadas a Windows ademas de los
+clics y colores; no registra lo que escribe el usuario ni guarda capturas.
 
-Interfaz renderizada sin activacion ni atajos; Compra, Cronometro y Pruebas
-revisadas visualmente. Se conservan regresiones del lector de menus anterior,
-aunque la interfaz actual usa puntos y pausas. Todas las entradas de pruebas
-son simuladas. No se enviaron clics ni teclas a Roblox ni se gasto Peli.
-La respuesta real del juego y las compras siguen pendientes de prueba manual.
+Regresiones de pesca, umbral2/capacidad300, timer50/40min, x2/x3/x4,
+pruebas sin OCR de contador, persistencia, focus y liberaciones aprobadas.
+Interfaz renderizada sin activar ventanas ni registrar atajos; Compra
+revisada visualmente. No se modificaron ni borraron los puntos del usuario.
 
 Microsoft Defender completo el analisis del ejecutable: found no threats.
 No es una garantia absoluta ni certificacion. Ejecutable sin firma comercial.
@@ -42,7 +49,7 @@ capturas privadas, ajustes, registros personales, credenciales ni rutas locales.
 La documentacion visual contiene renders y ejemplos sinteticos.
 
 SHA256 DEL EJECUTABLE
-E75BE6D67706C8CA4C49926A4ED6A39457594BACE07B317D54081423B50A26B8  SomeFishingGPO.exe
+C4F50116A86ACA88AC674CD53CBACD1285A0CFF3572C0F087CA9ABB71E800C64  SomeFishingGPO.exe
 
 PRUEBAS INTEGRADAS
 OK: Windows INPUT structure matches the platform ABI
@@ -266,7 +273,7 @@ OK: The final ellipsis can close while the dialogue obscures the bait counter
 OK: Old positive bait readings cannot confirm a new purchase
 OK: A closed dialogue with fresh bait completes replenishment
 OK: Completed purchase cannot repeat any click
-OK: Full purchase routes Yes, Buy and closing through classic clicks; only the number uses coordinate presses
+OK: Full purchase distinguishes button clicks from the two numeric-field clicks
 OK: A fixed quantity is capped by the visible maximum
 OK: Losing game focus stops a purchase and releases keys
 OK: Repeated cached shop frames cannot authorize Yes
@@ -451,15 +458,17 @@ OK: Replaying the reported coordinates keeps Yes separate from both central clic
 OK: The initial Yes regression uses the classic event while preserving both numeric targets
 OK: A numeric target overlapping the purchase button blocks the double-click and typing
 OK: An unexpected final dialogue before quantity verification stops without another purchase
-OK: The click event itself carries the exact central target across the virtual desktop: {X=0,Y=0,Width=1920,Height=1080}
-OK: Aiming carries the same position without pressing or releasing a button
-OK: Yes uses the same separate movement and plain down flags as working version 0.5.1
-OK: The click event itself carries the exact central target across the virtual desktop: {X=-1920,Y=-200,Width=4480,Height=1640}
-OK: Aiming carries the same position without pressing or releasing a button
-OK: Yes uses the same separate movement and plain down flags as working version 0.5.1
-OK: The click event itself carries the exact central target across the virtual desktop: {X=0,Y=0,Width=3840,Height=2160}
-OK: Aiming carries the same position without pressing or releasing a button
-OK: Yes uses the same separate movement and plain down flags as working version 0.5.1
+OK: Numeric button-down has no movement or stale coordinates: {X=0,Y=0,Width=1920,Height=1080}
+OK: Legacy absolute movement still maps correctly without a button event
+OK: Yes and numeric clicks use identical position-free down events
+OK: Numeric button-down has no movement or stale coordinates: {X=-1920,Y=-200,Width=4480,Height=1640}
+OK: Legacy absolute movement still maps correctly without a button event
+OK: Yes and numeric clicks use identical position-free down events
+OK: Numeric button-down has no movement or stale coordinates: {X=0,Y=0,Width=3840,Height=2160}
+OK: Legacy absolute movement still maps correctly without a button event
+OK: Yes and numeric clicks use identical position-free down events
+OK: Relative movement sends bounded deltas without absolute, virtual-desktop or button flags
+OK: Oversized relative movement is rejected without integer overflow
 OK: Both purchase click modes release without moving the cursor after a safety stop
 OK: An invalid purchase click kind is rejected before sending input
 OK: Pointer input rejects a destination outside the desktop before sending an event
@@ -749,8 +758,79 @@ OK: All three marked points, including No/Cancelar, must fit within the target b
 OK: Overlapping or unordered marked buttons fail validation
 OK: Capacity and all marked buttons survive settings serialization
 OK: The two purchase modes preserve 50 bait, 40 minutes and threshold 2 in settings
+OK: Relative aiming starts without sending input at gain 0,5
+OK: Relative feedback reaches the marked button at gain 0,5
+OK: Relative events are spaced and capped at gain 0,5
+OK: Relative aiming starts without sending input at gain 1
+OK: Relative feedback reaches the marked button at gain 1
+OK: Relative events are spaced and capped at gain 1
+OK: Relative aiming starts without sending input at gain 2
+OK: Relative feedback reaches the marked button at gain 2
+OK: Relative events are spaced and capped at gain 2
+OK: Relative aiming starts without sending input at gain 3
+OK: Relative feedback reaches the marked button at gain 3
+OK: Relative events are spaced and capped at gain 3
+OK: Feedback learns horizontal and vertical gains independently
+OK: An already aligned pointer moves away and back before it is ready
+OK: Readiness waits for at least 100 ms after the final movement
+OK: Targets at integer limits use long differences without overflow
+OK: A cross-integer-range target produces a bounded movement in the correct direction
+OK: Repeated early ticks cannot send another relative event
+OK: A delayed tick sends one event instead of catching up with a burst
+OK: Cancel is idempotent and prevents future movement
+OK: A newly reached button is not ready before 100 ms of stability
+OK: Position drift resets the stable-button interval
+OK: Losing focus stops relative aiming before input
+OK: A failed pointer cannot resume sending events
+OK: A stalled pointer times out after 12 seconds without one last movement
+OK: A target outside the client is rejected before movement
+OK: Unexpected movement outside the client stops aiming
+OK: A backwards clock cancels relative aiming
+OK: Visual gate recognizes green left, white middle and red right without OCR
+OK: Visual diagnostics explain the button evidence without claiming a successful click
+OK: Missing green left cannot authorize the quantity field
+OK: Missing white center cannot authorize the quantity field
+OK: Missing red right cannot authorize the quantity field
+OK: A final dialog with only white central ink is not the quantity menu
+OK: White Yes and No buttons do not look like the quantity menu
+OK: Swapping green and red buttons is rejected
+OK: Yellow labels or bait counters do not replace the green Buy lettering
+OK: A flat green panel is not Buy lettering
+OK: A flat white panel is not quantity lettering
+OK: A flat red panel is not Cancel lettering
+OK: One colored pixel is insufficient to authorize quantity input
+OK: Unexpected patch size fails instead of silently widening the observed area
+OK: Marked-point patches preserve negative monitor coordinates
+OK: A patch with overflowing coordinates is rejected
+OK: Shop synchronization never clicks while pointer movement is pending
+OK: The full 700 ms settling delay starts after pointer arrival, not after requesting movement
+OK: The initial Yes click occurs only after the arrived pointer has settled
+OK: Fresh quantity-menu confirmations allow the complete synchronized purchase sequence
+OK: Synchronized direct buying verifies visual presence without any text OCR or fishing reads
+OK: Synchronization preserves the number's 250 ms double click and four explicit aiming stages
+OK: Buy and closing clicks also wait the full settling delay after arrival
+OK: Focus loss during movement cancels the pending aim and prevents later polling, clicks and keys
+OK: F10 during pointer movement cannot leave a delayed click behind
+OK: A failed pointer driver stops before Yes and releases all held keys
+OK: If Yes does not open the quantity menu, synchronization blocks the number, typing and Buy
+OK: A missing quantity menu fails after approximately eight seconds without retrying Yes
+OK: Failed visual confirmation cannot emit future inputs
+OK: A quantity menu lost during pointer movement to the field prevents both number clicks, typing and Buy
+OK: Losing the quantity menu after the double click prevents Ctrl+A and any typing
+OK: Losing the quantity menu after typing prevents Buy and releases the keyboard
+OK: Visual mode stale cannot authorize the number or keyboard from invalid/contradictory evidence
+OK: Visual mode future cannot authorize the number or keyboard from invalid/contradictory evidence
+OK: Visual mode same_frame cannot authorize the number or keyboard from invalid/contradictory evidence
+OK: Visual mode before_gate cannot authorize the number or keyboard from invalid/contradictory evidence
+OK: Visual mode single_then_missing cannot authorize the number or keyboard from invalid/contradictory evidence
+OK: Visual mode alternating cannot authorize the number or keyboard from invalid/contradictory evidence
+OK: A visual reader exception fails safely without proceeding to the field
+OK: One fresh quantity-menu frame does not authorize moving to the number
+OK: Reading the same cached visual frame again does not satisfy two-frame confirmation
+OK: Two visual samples separated by less than 100 ms cannot authorize the next stage
+OK: Two distinct fresh samples spaced by at least 100 ms advance to the number
 UI: rendered off-screen non-activating form; no hotkeys registered and no clicks sent.
-PASS: 670 checks.
+PASS: 743 checks.
 
 VALIDACION CON CAPTURAS NO DISTRIBUIDAS
 OK: Windows INPUT structure matches the platform ABI
@@ -1032,7 +1112,7 @@ OK: The final ellipsis can close while the dialogue obscures the bait counter
 OK: Old positive bait readings cannot confirm a new purchase
 OK: A closed dialogue with fresh bait completes replenishment
 OK: Completed purchase cannot repeat any click
-OK: Full purchase routes Yes, Buy and closing through classic clicks; only the number uses coordinate presses
+OK: Full purchase distinguishes button clicks from the two numeric-field clicks
 OK: A fixed quantity is capped by the visible maximum
 OK: Losing game focus stops a purchase and releases keys
 OK: Repeated cached shop frames cannot authorize Yes
@@ -1241,15 +1321,17 @@ OK: Replaying the reported coordinates keeps Yes separate from both central clic
 OK: The initial Yes regression uses the classic event while preserving both numeric targets
 OK: A numeric target overlapping the purchase button blocks the double-click and typing
 OK: An unexpected final dialogue before quantity verification stops without another purchase
-OK: The click event itself carries the exact central target across the virtual desktop: {X=0,Y=0,Width=1920,Height=1080}
-OK: Aiming carries the same position without pressing or releasing a button
-OK: Yes uses the same separate movement and plain down flags as working version 0.5.1
-OK: The click event itself carries the exact central target across the virtual desktop: {X=-1920,Y=-200,Width=4480,Height=1640}
-OK: Aiming carries the same position without pressing or releasing a button
-OK: Yes uses the same separate movement and plain down flags as working version 0.5.1
-OK: The click event itself carries the exact central target across the virtual desktop: {X=0,Y=0,Width=3840,Height=2160}
-OK: Aiming carries the same position without pressing or releasing a button
-OK: Yes uses the same separate movement and plain down flags as working version 0.5.1
+OK: Numeric button-down has no movement or stale coordinates: {X=0,Y=0,Width=1920,Height=1080}
+OK: Legacy absolute movement still maps correctly without a button event
+OK: Yes and numeric clicks use identical position-free down events
+OK: Numeric button-down has no movement or stale coordinates: {X=-1920,Y=-200,Width=4480,Height=1640}
+OK: Legacy absolute movement still maps correctly without a button event
+OK: Yes and numeric clicks use identical position-free down events
+OK: Numeric button-down has no movement or stale coordinates: {X=0,Y=0,Width=3840,Height=2160}
+OK: Legacy absolute movement still maps correctly without a button event
+OK: Yes and numeric clicks use identical position-free down events
+OK: Relative movement sends bounded deltas without absolute, virtual-desktop or button flags
+OK: Oversized relative movement is rejected without integer overflow
 OK: Both purchase click modes release without moving the cursor after a safety stop
 OK: An invalid purchase click kind is rejected before sending input
 OK: Pointer input rejects a destination outside the desktop before sending an event
@@ -1554,6 +1636,77 @@ OK: All three marked points, including No/Cancelar, must fit within the target b
 OK: Overlapping or unordered marked buttons fail validation
 OK: Capacity and all marked buttons survive settings serialization
 OK: The two purchase modes preserve 50 bait, 40 minutes and threshold 2 in settings
+OK: Relative aiming starts without sending input at gain 0,5
+OK: Relative feedback reaches the marked button at gain 0,5
+OK: Relative events are spaced and capped at gain 0,5
+OK: Relative aiming starts without sending input at gain 1
+OK: Relative feedback reaches the marked button at gain 1
+OK: Relative events are spaced and capped at gain 1
+OK: Relative aiming starts without sending input at gain 2
+OK: Relative feedback reaches the marked button at gain 2
+OK: Relative events are spaced and capped at gain 2
+OK: Relative aiming starts without sending input at gain 3
+OK: Relative feedback reaches the marked button at gain 3
+OK: Relative events are spaced and capped at gain 3
+OK: Feedback learns horizontal and vertical gains independently
+OK: An already aligned pointer moves away and back before it is ready
+OK: Readiness waits for at least 100 ms after the final movement
+OK: Targets at integer limits use long differences without overflow
+OK: A cross-integer-range target produces a bounded movement in the correct direction
+OK: Repeated early ticks cannot send another relative event
+OK: A delayed tick sends one event instead of catching up with a burst
+OK: Cancel is idempotent and prevents future movement
+OK: A newly reached button is not ready before 100 ms of stability
+OK: Position drift resets the stable-button interval
+OK: Losing focus stops relative aiming before input
+OK: A failed pointer cannot resume sending events
+OK: A stalled pointer times out after 12 seconds without one last movement
+OK: A target outside the client is rejected before movement
+OK: Unexpected movement outside the client stops aiming
+OK: A backwards clock cancels relative aiming
+OK: Visual gate recognizes green left, white middle and red right without OCR
+OK: Visual diagnostics explain the button evidence without claiming a successful click
+OK: Missing green left cannot authorize the quantity field
+OK: Missing white center cannot authorize the quantity field
+OK: Missing red right cannot authorize the quantity field
+OK: A final dialog with only white central ink is not the quantity menu
+OK: White Yes and No buttons do not look like the quantity menu
+OK: Swapping green and red buttons is rejected
+OK: Yellow labels or bait counters do not replace the green Buy lettering
+OK: A flat green panel is not Buy lettering
+OK: A flat white panel is not quantity lettering
+OK: A flat red panel is not Cancel lettering
+OK: One colored pixel is insufficient to authorize quantity input
+OK: Unexpected patch size fails instead of silently widening the observed area
+OK: Marked-point patches preserve negative monitor coordinates
+OK: A patch with overflowing coordinates is rejected
+OK: Shop synchronization never clicks while pointer movement is pending
+OK: The full 700 ms settling delay starts after pointer arrival, not after requesting movement
+OK: The initial Yes click occurs only after the arrived pointer has settled
+OK: Fresh quantity-menu confirmations allow the complete synchronized purchase sequence
+OK: Synchronized direct buying verifies visual presence without any text OCR or fishing reads
+OK: Synchronization preserves the number's 250 ms double click and four explicit aiming stages
+OK: Buy and closing clicks also wait the full settling delay after arrival
+OK: Focus loss during movement cancels the pending aim and prevents later polling, clicks and keys
+OK: F10 during pointer movement cannot leave a delayed click behind
+OK: A failed pointer driver stops before Yes and releases all held keys
+OK: If Yes does not open the quantity menu, synchronization blocks the number, typing and Buy
+OK: A missing quantity menu fails after approximately eight seconds without retrying Yes
+OK: Failed visual confirmation cannot emit future inputs
+OK: A quantity menu lost during pointer movement to the field prevents both number clicks, typing and Buy
+OK: Losing the quantity menu after the double click prevents Ctrl+A and any typing
+OK: Losing the quantity menu after typing prevents Buy and releases the keyboard
+OK: Visual mode stale cannot authorize the number or keyboard from invalid/contradictory evidence
+OK: Visual mode future cannot authorize the number or keyboard from invalid/contradictory evidence
+OK: Visual mode same_frame cannot authorize the number or keyboard from invalid/contradictory evidence
+OK: Visual mode before_gate cannot authorize the number or keyboard from invalid/contradictory evidence
+OK: Visual mode single_then_missing cannot authorize the number or keyboard from invalid/contradictory evidence
+OK: Visual mode alternating cannot authorize the number or keyboard from invalid/contradictory evidence
+OK: A visual reader exception fails safely without proceeding to the field
+OK: One fresh quantity-menu frame does not authorize moving to the number
+OK: Reading the same cached visual frame again does not satisfy two-frame confirmation
+OK: Two visual samples separated by less than 100 ms cannot authorize the next stage
+OK: Two distinct fresh samples spaced by at least 100 ms advance to the number
 OK: The supplied complete x3 image matches its own low-count shape
 OK: The supplied x3 image is readable with automatic OCR language
 OK: The supplied x3 image is readable with en-US
@@ -1580,5 +1733,15 @@ OK: Rescaled x4 is correct or unknown, never another low count at scale 2
 OK: Rescaled x4 is correct or unknown, never another low count at scale 3
 OK: The supplied x4 image cannot match when its x prefix is hidden
 OK: The supplied x4 shape in green cannot become a yellow bait reading
+OK: Latest quantity screenshot contains all three marked-point patches
+OK: Latest quantity screenshot: Botones de cantidad visibles · verde izquierdo: 364 · blanco central: 78 · rojo derecho: 326
+OK: MAX294 quantity screenshot contains all three marked-point patches
+OK: MAX294 quantity screenshot: Botones de cantidad visibles · verde izquierdo: 373 · blanco central: 55 · rojo derecho: 371
+OK: MAX5 quantity screenshot contains all three marked-point patches
+OK: MAX5 quantity screenshot: Botones de cantidad visibles · verde izquierdo: 392 · blanco central: 57 · rojo derecho: 359
+OK: Initial Yes No screenshot contains all three marked-point patches
+OK: Initial Yes No screenshot: Esperando botones de cantidad · verde izquierdo: 0 · blanco central: 0 · rojo derecho: 0
+OK: Final screenshot contains all three marked-point patches
+OK: Final screenshot: Esperando botones de cantidad · verde izquierdo: 0 · blanco central: 29 · rojo derecho: 0
 UI: rendered off-screen non-activating form; no hotkeys registered and no clicks sent.
-PASS: 783 checks.
+PASS: 866 checks.

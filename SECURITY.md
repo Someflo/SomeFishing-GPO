@@ -12,7 +12,13 @@ Los ajustes y registros se guardan junto al ejecutable: `ajustes.xml`, `ultima-p
 
 ## Compra por puntos
 
-La interfaz 0.6.0 usa tres puntos marcados expresamente. El izquierdo corresponde a Sí/Comprar; el central, al número y al cierre; el derecho se valida, sin pulsarlo. No deriva destinos de un rectángulo ni exige OCR de los menús. Los diálogos deben mantener esos destinos y estar cerrados antes de iniciar.
+La interfaz 0.6.1 usa tres puntos marcados expresamente. El izquierdo corresponde a Sí/Comprar; el central, al número y al cierre; el derecho se valida y observa, sin pulsarlo. No deriva destinos de un rectángulo ni exige OCR de los menús. Los diálogos deben mantener esos destinos y estar cerrados antes de iniciar.
+
+El movimiento de compra usa desplazamientos relativos de hasta 64 unidades por eje, como máximo uno cada 50 ms. Corrige el recorrido con la posición devuelta por Windows y estima la respuesta por eje; no cambia la configuración global del ratón. Exige llegada a dos píxeles del destino, estabilidad de 100 ms y después la pausa elegida. Si el puntero no llega en 12 segundos, sale del juego o se pierde el foco, cancela. Todas las pulsaciones, también las del número, usan eventos sin coordenadas ni movimiento. El clic de pesca conserva su comportamiento anterior.
+
+La elección de movimiento relativo con corrección responde a la distinción entre eventos relativos y absolutos y a los efectos de aceleración documentados en [MOUSEINPUT de Microsoft](https://learn.microsoft.com/en-us/windows/win32/api/winuser/ns-winuser-mouseinput). La posición del cursor de Windows no demuestra que el juego haya procesado el clic.
+
+Por ello observa tres parches de 49 × 33 píxeles alrededor de los puntos guardados y exige dos capturas nuevas, separadas al menos 100 ms, con texto verde a la izquierda, blanco en el centro y rojo a la derecha. Rechaza imágenes antiguas, repetidas, futuras, colores ausentes y rellenos planos. Se aplica tras Sí y antes del doble clic, la escritura y Comprar. Si no confirma la combinación en ocho segundos, detiene el paso sin repetirlo. No usa OCR ni lee la cantidad; no confirma foco del campo, número escrito, pago ni cierre. Las imágenes permanecen en memoria.
 
 Contador OCR compra la diferencia entre capacidad configurada y cantidad confirmada al alcanzar el umbral. Cronómetro compra la cantidad fija al vencer el intervalo. Pausa el seguimiento, libera el clic y espera el cierre del minijuego antes de E. Si había un lanzamiento pendiente, respeta su espera de picada. La pesca continúa al terminar la secuencia.
 

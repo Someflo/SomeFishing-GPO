@@ -169,7 +169,17 @@ namespace SomeFishingGPO
                 DirectPurchaseTests.Run(Check,output);
                 LowBaitTests.Run(Check,output);
                 SimplePurchaseEngineTests.Run(Check,output);
+                RelativePointerTests.Run(Check,output);
+                ShopVisualTests.Run(Check);
+                ShopSynchronizationTests.Run(Check,output);
                 if(args.Length>15)LowBaitTests.CheckSamples(Check,args[15],args[14]);
+                if(args.Length>16){
+                    ShopVisualTests.VerifySample(Check,args[16],new Point(340,393),new Point(490,394),new Point(632,395),true,"Latest quantity screenshot");
+                    ShopVisualTests.VerifySample(Check,args[13],new Point(184,225),new Point(338,225),new Point(482,225),true,"MAX294 quantity screenshot");
+                    ShopVisualTests.VerifySample(Check,args[7],new Point(151,204),new Point(314,204),new Point(471,204),true,"MAX5 quantity screenshot");
+                    ShopVisualTests.VerifySample(Check,args[6],new Point(180,532),new Point(329,532),new Point(480,532),false,"Initial Yes No screenshot");
+                    ShopVisualTests.VerifySample(Check,args[8],new Point(151,204),new Point(314,204),new Point(471,204),false,"Final screenshot");
+                }
 
                 using (var form = new MainForm(true)) form.RenderExample(Path.Combine(output, "interfaz.png"));
                 results.Add("UI: rendered off-screen non-activating form; no hotkeys registered and no clicks sent.");
@@ -638,7 +648,7 @@ namespace SomeFishingGPO
             FeedShop(p,game,ShopMenu.Unknown,14,10000,null,null,5,9950);
             Check(p.State==PurchasePhase.Complete&&game.KeysDown.Count==0,"A closed dialogue with fresh bait completes replenishment");
             p.Tick(11000,5,10900);Check(game.ShopClicks==5,"Completed purchase cannot repeat any click");
-            Check(game.ClickKinds.Count==5&&game.ClickKinds[0]==ShopClickKind.Button&&game.ClickKinds[1]==ShopClickKind.Quantity&&game.ClickKinds[2]==ShopClickKind.Quantity&&game.ClickKinds[3]==ShopClickKind.Button&&game.ClickKinds[4]==ShopClickKind.Button,"Full purchase routes Yes, Buy and closing through classic clicks; only the number uses coordinate presses");
+            Check(game.ClickKinds.Count==5&&game.ClickKinds[0]==ShopClickKind.Button&&game.ClickKinds[1]==ShopClickKind.Quantity&&game.ClickKinds[2]==ShopClickKind.Quantity&&game.ClickKinds[3]==ShopClickKind.Button&&game.ClickKinds[4]==ShopClickKind.Button,"Full purchase distinguishes button clicks from the two numeric-field clicks");
             game=new FakeGame();p=ReadyToVerify(game,new Settings{BuyMaximum=false,BuyQuantity=80});
             Check(p.Quantity==5,"A fixed quantity is capped by the visible maximum");
             game.Active=false;p.Tick(3600,null,0);Check(p.State==PurchasePhase.Failed&&game.KeysDown.Count==0,"Losing game focus stops a purchase and releases keys");
@@ -1073,12 +1083,16 @@ namespace SomeFishingGPO
 
             foreach(var desktop in new[]{new Rectangle(0,0,1920,1080),new Rectangle(-1920,-200,4480,1640),new Rectangle(0,0,3840,2160)}){
                 var target=new Point(1251,931);var down=Native.ShopClickInput(target,desktop,ShopClickKind.Quantity);var move=Native.PointerInput(target,desktop,false);
-                var received=new Point(desktop.Left+(int)((long)down.Data.Mouse.X*desktop.Width/65536),desktop.Top+(int)((long)down.Data.Mouse.Y*desktop.Height/65536));
-                Check(received==target&&(down.Data.Mouse.Flags&0xE003u)==0xE003u&&(down.Data.Mouse.Flags&4u)==0,"The click event itself carries the exact central target across the virtual desktop: "+desktop);
-                Check(move.Data.Mouse.X==down.Data.Mouse.X&&move.Data.Mouse.Y==down.Data.Mouse.Y&&(move.Data.Mouse.Flags&6u)==0,"Aiming carries the same position without pressing or releasing a button");
+                var received=new Point(desktop.Left+(int)((long)move.Data.Mouse.X*desktop.Width/65536),desktop.Top+(int)((long)move.Data.Mouse.Y*desktop.Height/65536));
+                Check(down.Data.Mouse.Flags==2&&down.Data.Mouse.X==0&&down.Data.Mouse.Y==0,"Numeric button-down has no movement or stale coordinates: "+desktop);
+                Check(received==target&&(move.Data.Mouse.Flags&6u)==0,"Legacy absolute movement still maps correctly without a button event");
                 var button=Native.ShopClickInput(new Point(1102,928),desktop,ShopClickKind.Button);
-                Check(button.Type==0&&button.Data.Mouse.Flags==2&&button.Data.Mouse.X==0&&button.Data.Mouse.Y==0&&move.Data.Mouse.Flags==0xC001u,"Yes uses the same separate movement and plain down flags as working version 0.5.1");
+                Check(button.Type==0&&button.Data.Mouse.Flags==down.Data.Mouse.Flags&&button.Data.Mouse.X==0&&button.Data.Mouse.Y==0,"Yes and numeric clicks use identical position-free down events");
             }
+            var relative=Native.RelativeInput(new Point(-13,7));
+            Check(relative.Type==0&&relative.Data.Mouse.X==-13&&relative.Data.Mouse.Y==7&&relative.Data.Mouse.Flags==0x2001,"Relative movement sends bounded deltas without absolute, virtual-desktop or button flags");
+            bool badDelta=false;try{Native.RelativeInput(new Point(int.MinValue,0));}catch(ArgumentOutOfRangeException){badDelta=true;}
+            Check(badDelta,"Oversized relative movement is rejected without integer overflow");
             var release=Native.MouseButtonInput(false);
             Check(release.Type==0&&release.Data.Mouse.Flags==4&&release.Data.Mouse.X==0&&release.Data.Mouse.Y==0,"Both purchase click modes release without moving the cursor after a safety stop");
             bool invalidClickKind=false;try{Native.ShopClickInput(new Point(250,180),new Rectangle(0,0,1920,1080),(ShopClickKind)9);}catch(ArgumentOutOfRangeException){invalidClickKind=true;}

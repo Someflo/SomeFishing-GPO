@@ -112,7 +112,7 @@ namespace SomeFishingGPO
             Hint(save,"Guarda las zonas y los ajustes actuales.");
             save.BackColor=Color.FromArgb(34,48,61);save.ForeColor=Color.White;
             ((ModernButton)save).BorderVisible=false;
-            LabelAt(rail,"Local  /  v0.6.0",22,657,145,23,9,false).ForeColor=Color.FromArgb(145,166,177);
+            LabelAt(rail,"Local  /  v0.6.1",22,657,145,23,9,false).ForeColor=Color.FromArgb(145,166,177);
             LabelAt(rail,"Código incluido",22,681,145,23,9,false).ForeColor=Color.FromArgb(145,166,177);
             pageTitle=LabelAt(this,"",212,15,800,49,25,true);
             pageSubtitle=LabelAt(this,"",214,69,820,27,10.5f,false);pageSubtitle.ForeColor=muted;
@@ -213,6 +213,7 @@ namespace SomeFishingGPO
             shopAreaButton=shopPointButtons[0];
             shopAreaLabel=LabelAt(shopView,"Marca los 3 botones antes de comprar.",20,322,416,34,9.5f,false);FullTextHint(shopAreaLabel);
             shopDetail=shopAreaLabel;
+            LabelAt(shopView,"Verifica verde, blanco y rojo; sin OCR.",20,353,416,20,9,false).ForeColor=muted;
             shopPreview=new PictureBox{Visible=false};shopPreviewButton=new Button{Visible=false};
             shopSettle=NumberAt(shopView,"Pausa entre pasos (ms)",20,374,200,3000,700,202);
             Hint(shopSettle,"Espera entre las acciones del diálogo. Si avanza antes de que cargue el menú, aumenta este valor. Doble clic solo en el número.");

@@ -1,5 +1,12 @@
 # Historial de cambios
 
+## 0.6.1 · Sincronización de los clics de compra
+
+- Sustituye el movimiento absoluto de compra por desplazamientos relativos con corrección de posición, estabilidad y pausa antes de pulsar.
+- Unifica los clics: Sí, número, Comprar y cierre ya no mezclan coordenadas nuevas con el evento de pulsación.
+- Verifica los colores de los tres botones en dos imágenes nuevas después de Sí y antes del doble clic, la escritura y Comprar; detiene el paso si no aparece el menú de cantidad. Sin OCR ni nuevas zonas.
+- Registra las teclas enviadas, además del ratón y los colores observados. Conserva puntos, ajustes y los dos modos de reposición.
+- Incluye regresiones del Sí fallido, menú que desaparece durante el movimiento, imágenes repetidas y cancelación. La recepción real de los clics y la cantidad escrita requieren comprobación en el juego.
 ## 0.6.0 · Compra simplificada y aviso de cebo bajo
 
 - Tres puntos marcados por el usuario: Sí/Comprar, número/…, No/Cancelar. No se calculan posiciones a partir de una zona ni se leen los menús para avanzar.
