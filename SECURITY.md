@@ -12,6 +12,7 @@ El objetivo de SomeFishing GPO es que se pueda revisar qué hace el programa y c
 - Si habilitas compras, pulsa E, hace clic dentro de la zona de compra, utiliza Ctrl+A y Retroceso para reemplazar la cantidad y escribe únicamente dígitos. Esto puede gastar Peli del juego. Hay un límite configurable de intentos por sesión; la compra empieza desactivada.
 - Guarda `ajustes.xml`, un informe `ultima-parada.txt` y el último registro de diagnóstico `ultima-prueba.txt` junto al ejecutable. No los sube a ningún servicio.
 - Procesa las capturas del juego en memoria; no las guarda durante el uso normal.
+- El botón Copiar resultado escribe el registro de la prueba en el portapapeles solo al pulsarlo. No lee el contenido previo del portapapeles ni lo envía a ningún servicio.
 
 ## Qué contiene la aplicación
 
@@ -27,7 +28,7 @@ El lector de compra usa el mismo OCR local en una tarea separada. El código inc
 
 El script de compilación ejecuta el compilador local de .NET Framework y utiliza los metadatos del Windows SDK instalado. El modo `--self-test` crea imágenes sintéticas, renders de la interfaz e informes en la carpeta indicada, sin enviar clics ni teclas al juego.
 
-Los botones de la pestaña **Pruebas** son acciones reales, distintas del modo automatizado `--self-test`: pulsarlos autoriza una prueba concreta tras tres segundos de cuenta atrás. La simulación de cero sigue las opciones de compra o salto configuradas; la prueba de compra puede gastar Peli aunque la compra automática esté apagada. Ambas limitan cualquier compra a una unidad y un intento, no guardan sus opciones temporales y terminan sin lanzar la caña. Las vistas de lectura siguen sin enviar entradas.
+Los botones de la sección **Pruebas** son acciones reales, distintas del modo automatizado `--self-test`: pulsarlos autoriza una prueba concreta tras tres segundos de cuenta atrás. La simulación de cero sigue las opciones de compra o salto configuradas; la prueba de compra puede gastar Peli aunque la compra automática esté apagada. Ambas limitan cualquier compra a una unidad y un intento, no guardan sus opciones temporales y terminan sin lanzar la caña. Las vistas de lectura siguen sin enviar entradas.
 
 El registro local de la última prueba contiene estados, cantidades resumidas y errores; no incluye capturas ni el texto libre reconocido por OCR. Está limitado a unos 32 000 caracteres y se reemplaza al iniciar otra prueba. La zona de pesca puede omitirse al probar; en ese caso se debe comprobar manualmente que el minijuego esté cerrado. Las zonas que sí están configuradas mantienen la validación de límites y foco.
 

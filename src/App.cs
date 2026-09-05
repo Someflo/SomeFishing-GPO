@@ -21,11 +21,11 @@ namespace SomeFishingGPO
         }
     }
 
-    internal sealed class MainForm : Form
+    internal sealed partial class MainForm : Form
     {
-        private readonly Color ink = Color.FromArgb(24, 42, 49);
-        private readonly Color muted = Color.FromArgb(89, 110, 115);
-        private readonly Color accent = Color.FromArgb(0, 113, 99);
+        private readonly Color ink = Color.FromArgb(32, 45, 60);
+        private readonly Color muted = Color.FromArgb(103, 119, 135);
+        private readonly Color accent = Color.FromArgb(20, 121, 101);
         private readonly bool testMode;
         private readonly string settingsPath;
         private Settings settings;
@@ -82,11 +82,11 @@ namespace SomeFishingGPO
             string loadWarning = null;
             try { settings = testMode ? new Settings() : Settings.Load(settingsPath); }
             catch (Exception error) { settings = new Settings(); loadWarning = "No se pudieron cargar los ajustes: " + error.Message; }
-            Text = "SomeFishing GPO · v0.3.3";
-            ClientSize = new Size(1040, 760);
+            Text = "SomeFishing GPO · v0.4.0";
+            ClientSize = new Size(1080, 730);
             AutoScaleMode = AutoScaleMode.None;
             Font = new Font("Segoe UI", 10);
-            ForeColor = ink; BackColor = Color.FromArgb(242, 246, 245);
+            ForeColor = ink; BackColor = Color.FromArgb(245, 247, 250);
             FormBorderStyle = FormBorderStyle.FixedSingle; MaximizeBox = false;
             StartPosition = FormStartPosition.CenterScreen;
             BuildInterface();
@@ -102,154 +102,6 @@ namespace SomeFishingGPO
             if (!testMode) timer.Start();
         }
 
-        private Label LabelAt(Control parent, string text, int x, int y, int width, int height, float size, bool bold)
-        {
-            var label = new Label { Text = text, Location = new Point(x, y), Size = new Size(width, height),
-                Font = new Font("Segoe UI", size, bold ? FontStyle.Bold : FontStyle.Regular), ForeColor = ink, BackColor = Color.Transparent };
-            parent.Controls.Add(label); return label;
-        }
-        private Button ButtonAt(Control parent, string text, int x, int y, int width, EventHandler action, bool primary)
-        {
-            var button = new Button { Text = text, Location = new Point(x, y), Size = new Size(width, 38),
-                FlatStyle = FlatStyle.Flat, BackColor = primary ? accent : Color.White,
-                ForeColor = primary ? Color.White : ink, Cursor = Cursors.Hand };
-            button.FlatAppearance.BorderColor = primary ? accent : Color.FromArgb(207, 220, 217);
-            button.Click += action; parent.Controls.Add(button); return button;
-        }
-        private CheckBox CheckAt(Control parent, string text, int x, int y, int width)
-        {
-            var item = new CheckBox { Text = text, Location = new Point(x, y), Size = new Size(width, 28), AutoSize = false };
-            parent.Controls.Add(item); return item;
-        }
-        private NumericUpDown NumberAt(Control parent, string title, int x, int y, int minimum, int maximum, int value)
-        {
-            LabelAt(parent, title, x, y, 196, 25, 9.5f, false).ForeColor = muted;
-            var item = new NumericUpDown { Minimum = minimum, Maximum = maximum, Value = value,
-                Location = new Point(x, y + 26), Size = new Size(185, 28), BorderStyle = BorderStyle.FixedSingle };
-            parent.Controls.Add(item); return item;
-        }
-        private void BuildInterface()
-        {
-            LabelAt(this, "SOMEFISHING GPO", 24, 17, 620, 43, 25, true);
-            LabelAt(this, "Mantener para subir. Soltar para bajar. Repetir a tu ritmo.", 26, 63, 760, 28, 11, false).ForeColor = muted;
-            LabelAt(this, "CÓDIGO INCLUIDO  /  v0.3.3", 771, 35, 250, 26, 10, true).ForeColor = accent;
-            var tabs = new TabControl { Location = new Point(24, 105), Size = new Size(992, 567), Padding = new Point(22, 9) };
-            var fishing = new TabPage("Pesca") { BackColor = Color.White };
-            var calibration = new TabPage("Calibración") { BackColor = Color.White };
-            var guide = new TabPage("Guía rápida") { BackColor = Color.White };
-            var baitTab = new TabPage("Cebo y espera") { BackColor = Color.White };
-            var shopTab = new TabPage("Comprar cebo") { BackColor = Color.White };
-            var diagnosticsTab = new TabPage("Pruebas") { BackColor = Color.White };
-            tabs.TabPages.AddRange(new[] { fishing, calibration, baitTab, shopTab, diagnosticsTab, guide }); Controls.Add(tabs);
-
-            LabelAt(fishing, "01  ELIGE LA BARRA", 20, 18, 410, 28, 12, true);
-            LabelAt(fishing, "Barra azul completa y margen para su balanceo.", 20, 52, 430, 24, 10, false).ForeColor = muted;
-            areaButton = ButtonAt(fishing, "SELECCIONAR ZONA · F6", 20, 81, 410, delegate { SelectArea(); }, true);
-            areaLabel = LabelAt(fishing, "Sin zona seleccionada", 20, 125, 420, 24, 9, false);
-            areaLabel.ForeColor = muted;
-
-            LabelAt(fishing, "02  PREPARA EL LANZAMIENTO", 20, 165, 440, 28, 12, true);
-            autoCast = CheckAt(fishing, "Volver a lanzar al terminar cada ronda", 20, 199, 425);
-            pointButton = ButtonAt(fishing, "Elegir punto sobre el agua", 20, 237, 410, delegate { SelectPoint(); }, false);
-            castLabel = LabelAt(fishing, "Equipa la caña manualmente antes de iniciar.", 20, 281, 430, 35, 9, false);
-            castLabel.ForeColor = muted;
-            castTime = NumberAt(fishing, "Mantener al lanzar (ms)", 20, 325, 50, 3000, 220);
-            biteTime = NumberAt(fishing, "Espera de picada (s)", 239, 325, 5, 120, 15);
-            allowClicks = CheckAt(fishing, "Permitir clics y teclas al iniciar", 20, 399, 425);
-            startButton = ButtonAt(fishing, "Preparar inicio · 3 segundos", 20, 439, 410, delegate { Arm(); }, true);
-            var stopLink = new LinkLabel { Text = "Ver última parada", Location = new Point(20, 490),
-                Size = new Size(410, 25), LinkColor = accent };
-            stopLink.LinkClicked += delegate { ShowLastStop(); }; fishing.Controls.Add(stopLink);
-
-            LabelAt(fishing, "VISTA DEL DETECTOR", 470, 18, 450, 28, 12, true);
-            LabelAt(fishing, "Celeste: barra  ·  Naranja: hueco  ·  Rosa: pez", 470, 52, 480, 24, 9.5f, false).ForeColor = muted;
-            preview = new PictureBox { Location = new Point(470, 84), Size = new Size(486, 300),
-                BackColor = Color.FromArgb(17, 31, 39), SizeMode = PictureBoxSizeMode.Zoom };
-            fishing.Controls.Add(preview);
-            detectionLabel = LabelAt(fishing, "Selecciona una zona y pulsa «Ver detector».", 470, 397, 480, 36, 10, false);
-            previewButton = ButtonAt(fishing, "Ver detector", 470, 439, 228, delegate { TogglePreview(); }, false);
-            ButtonAt(fishing, "Mostrar ejemplo", 714, 439, 242, delegate { ShowExample(); }, false);
-            cycleLabel = LabelAt(fishing, "Rondas terminadas: 0", 470, 488, 480, 24, 9, false);
-
-            LabelAt(baitTab, "Cebo disponible y espera con saltos", 22, 20, 920, 40, 18, true);
-            monitorBait = CheckAt(baitTab, "Leer cantidad de cebo en pantalla", 22, 74, 430);
-            LabelAt(baitTab, "Selecciona solo x300 (o el número actual) del cebo\nque tienes equipado. Una segunda zona pequeña.",
-                22, 111, 435, 55, 10, false).ForeColor = muted;
-            baitAreaButton = ButtonAt(baitTab, "Seleccionar contador de cebo", 22, 177, 412, delegate { SelectBaitArea(); }, true);
-            baitAreaLabel = LabelAt(baitTab, "Contador sin zona", 22, 223, 430, 30, 9, false);
-            baitPreview = new PictureBox { Location = new Point(470, 75), Size = new Size(486, 91),
-                BackColor = Color.FromArgb(40,40,40), SizeMode = PictureBoxSizeMode.Zoom };
-            baitTab.Controls.Add(baitPreview);
-            baitPreviewButton = ButtonAt(baitTab, "Probar lectura · sin teclas", 470, 177, 486, delegate { ToggleBaitPreview(); }, false);
-            baitValueLabel = LabelAt(baitTab, "Cebos: —", 470, 224, 480, 34, 17, true);
-            baitDetailLabel = LabelAt(baitTab, "El lector debe confirmar el número antes de usarlo.", 470, 263, 480, 46, 10, false);
-            idleJump = CheckAt(baitTab, "Saltar en espera: cebo en 0, contador desaparecido o 3 lanzamientos fallidos", 22, 321, 930);
-            jumpSeconds = NumberAt(baitTab, "Segundos entre saltos", 22, 365, 15, 300, 60);
-            LabelAt(baitTab, "Pulsa solo Espacio, sin mover al personaje con WASD.\nF10, F8 y cambiar de ventana detienen también los saltos.\nNo guarda objetos ni garantiza evitar una desconexión.",
-                250, 369, 710, 84, 10, false).ForeColor = muted;
-            ButtonAt(baitTab, "Guardar ajustes", 22, 470, 250, delegate { SaveSettings(); }, true);
-
-            LabelAt(shopTab,"Reponer cebo sin salir del sitio",22,18,930,36,18,true);
-            autoBuy=CheckAt(shopTab,"Comprar al confirmar 0 o desaparecer el contador durante 8 s",22,62,930);
-            LabelAt(shopTab,"Colócate al alcance de E del barril de cebo. Abre E manualmente para configurar.\nRodea el diálogo entero y la fila de botones, con poco margen: una tercera zona.",22,99,930,54,10,false).ForeColor=muted;
-            shopAreaButton=ButtonAt(shopTab,"Seleccionar zona de compra",22,161,420,delegate{SelectShopArea();},true);
-            shopAreaLabel=LabelAt(shopTab,"Zona de compra sin seleccionar",22,207,430,35,9,false);
-            shopPreview=new PictureBox{Location=new Point(475,161),Size=new Size(480,142),BackColor=Color.FromArgb(40,40,40),SizeMode=PictureBoxSizeMode.Zoom};shopTab.Controls.Add(shopPreview);
-            buyMaximum=CheckAt(shopTab,"Comprar el MAX del menú",22,250,430);
-            buyQuantity=NumberAt(shopTab,"Cantidad si no usas MAX",22,290,1,9999,5);
-            purchaseLimit=NumberAt(shopTab,"Compras por sesión (tope)",245,290,1,100,10);
-            buyMaximum.CheckedChanged+=delegate{buyQuantity.Enabled=!buyMaximum.Checked&&!IsRunning;};
-            shopPreviewButton=ButtonAt(shopTab,"Probar menús · sin clics",475,314,480,delegate{ToggleShopPreview();},false);
-            shopDetail=LabelAt(shopTab,"Prueba Sí y cantidad cambiando los menús manualmente.",475,365,480,69,10,false);
-            shopOpenTime=NumberAt(shopTab,"Mantener E para abrir (ms)",22,371,100,3000,1000);
-            LabelAt(shopTab,"Usa Peli. Un fallo detiene\nla compra sin repetirla.\nPrueba E con 1000 ms.",245,383,225,75,9.5f,false).ForeColor=muted;
-            ButtonAt(shopTab,"Guardar ajustes",22,470,250,delegate{SaveSettings();},true);
-
-            LabelAt(diagnosticsTab,"Prueba cada paso sin agotar tu cebo",22,18,930,38,18,true);
-            LabelAt(diagnosticsTab,"Estas pruebas envían clics o teclas reales. Vuelve a Roblox durante los 3 segundos.\nColócate cerca del barril, sin minijuego ni diálogos abiertos. F10 o F8 cancela.",22,64,932,52,10,false).ForeColor=muted;
-            emptyTestButton=ButtonAt(diagnosticsTab,"PROBAR SIN CEBO · 3 s",22,128,446,delegate{ArmDiagnostic(RunKind.EmptyBaitTest);},true);
-            purchaseTestButton=ButtonAt(diagnosticsTab,"PROBAR COMPRA · 1 cebo · 3 s",492,128,462,delegate{ArmDiagnostic(RunKind.PurchaseTest);},true);
-            LabelAt(diagnosticsTab,"Simula 0. Si activaste la compra, intenta comprar\n1 cebo con Peli; si no, prueba 1 salto cuando está\nhabilitado. Si ambas están apagadas, te lo indica.",22,177,446,74,10,false).ForeColor=muted;
-            LabelAt(diagnosticsTab,"Intenta una compra real de 1 cebo con Peli,\naunque todavía tengas cebo. Usa la zona de compra.\nSolo un intento; no vuelve a lanzar la caña.",492,177,462,74,10,false).ForeColor=muted;
-            LabelAt(diagnosticsTab,"RESULTADO Y PASOS",22,263,930,26,11,true);
-            diagnosticLog=new TextBox{Location=new Point(22,295),Size=new Size(932,175),Multiline=true,ReadOnly=true,
-                ScrollBars=ScrollBars.Vertical,BackColor=Color.FromArgb(246,249,248),Font=new Font("Consolas",9),
-                Text="Todavía no se ha ejecutado una prueba. El resultado aparecerá aquí."};
-            diagnosticsTab.Controls.Add(diagnosticLog);
-            LabelAt(diagnosticsTab,"Se guarda en ultima-prueba.txt. Con la lectura de cebo apagada no se confirma la reposición.\nLas pruebas conservan tus ajustes habituales y terminan sin iniciar la pesca.",22,482,930,44,9,false).ForeColor=muted;
-
-            LabelAt(calibration, "Ajusta lo que ve y cómo responde", 22, 23, 900, 40, 18, true);
-            LabelAt(calibration, "Deja margen a los lados para el balanceo. La barra verde puede quedar dentro: se excluye del seguimiento.",
-                22, 70, 900, 52, 11, false).ForeColor = muted;
-            blueButton = ButtonAt(calibration, "Color azul de la barra", 22, 138, 280, delegate { PickColor(true); }, false);
-            markerButton = ButtonAt(calibration, "Color de la línea móvil", 320, 138, 280, delegate { PickColor(false); }, false);
-            tolerance = NumberAt(calibration, "Tolerancia de color", 22, 200, 5, 90, 38);
-            anticipation = NumberAt(calibration, "Anticipación (ms)", 245, 200, 0, 300, 80);
-            restTime = NumberAt(calibration, "Pausa entre rondas (ms)", 468, 200, 500, 10000, 1800);
-            holdUp = CheckAt(calibration, "Mantener clic mueve el hueco gris hacia arriba", 22, 290, 650);
-            LabelAt(calibration, "Si el hueco se pasa del pez, aumenta la anticipación. Si responde demasiado pronto, bájala.\n" +
-                "El frenado aumenta automáticamente cuando el pez está casi quieto.\n" +
-                "Si no detecta la línea o el hueco, ajusta primero la zona; después, la tolerancia de color.",
-                22, 340, 905, 102, 11, false).ForeColor = muted;
-            ButtonAt(calibration, "Guardar ajustes", 22, 452, 250, delegate { SaveSettings(); }, true);
-            LabelAt(guide, "Primera pesca, paso a paso", 22, 23, 920, 43, 18, true);
-            LabelAt(guide,
-                "1. Abre Roblox en ventana o sin bordes y equipa la caña.\n\n" +
-                "2. Pulsa F6 y rodea toda la altura de la barra azul, con margen a ambos lados.\n" +
-                "    Revisa el rectángulo y confirma con Enter o F6. Esc cancela.\n\n" +
-                "3. Pulsa «Ver detector». El contorno celeste debe seguir la barra al balancearse.\n" +
-                "    Naranja marca el hueco; rosa, el pez. La barra verde se ignora.\n\n" +
-                "4. Elige un punto sobre el agua y marca «Permitir clics». Vuelve a Roblox\n" +
-                "    y pulsa F8. También puedes usar el botón de inicio con cuenta atrás.\n\n" +
-                "5. F8 alterna inicio/parada. F10 detiene inmediatamente. Cambiar de ventana\n" +
-                "    o llevar el ratón a la esquina superior izquierda también detiene la macro.",
-                22, 84, 938, 364, 11, false);
-            LabelAt(guide, "La barra verde del juego muestra el progreso. El menú cerrado inicia otra ronda,\n" +
-                "tanto si el pez se capturó como si escapó; el contador registra rondas, no capturas.",
-                22, 462, 900, 50, 10, false).ForeColor = muted;
-            statusLabel = LabelAt(this, "Detenida · lista para configurar", 26, 689, 741, 52, 11, true);
-            ButtonAt(this, "DETENER · F10", 788, 691, 228, delegate { StopAll("Detenida por ti"); }, false);
-        }
         private void ApplySettings()
         {
             autoCast.Checked = settings.AutoCast; holdUp.Checked = settings.HoldMovesUp;
@@ -280,17 +132,21 @@ namespace SomeFishingGPO
         }
         private void UpdateAreaLabels()
         {
-            areaLabel.Text = settings.Area.IsEmpty ? "Sin zona seleccionada" :
-                string.Format("Zona lista: {0} × {1} px · posición {2}, {3}", settings.Area.Width, settings.Area.Height, settings.Area.X, settings.Area.Y);
-            areaLabel.ForeColor = settings.Area.IsEmpty ? muted : accent;
-            areaButton.Text = settings.Area.IsEmpty ? "SELECCIONAR ZONA · F6" : "CAMBIAR ZONA · F6";
-            castLabel.Text = !settings.CastPointSet ?
-                "Equipa la caña manualmente antes de iniciar." : string.Format("Punto de lanzamiento: {0}, {1} · caña equipada", settings.CastPoint.X, settings.CastPoint.Y);
-            blueButton.BackColor = Color.FromArgb(settings.BlueArgb); blueButton.ForeColor = Color.Black;
-            markerButton.BackColor = Color.FromArgb(settings.MarkerArgb); markerButton.ForeColor = Color.Black;
-            baitAreaLabel.Text = settings.BaitArea.IsEmpty ? "Contador sin zona" :
-                string.Format("Contador: {0} × {1} px · posición {2}, {3}", settings.BaitArea.Width, settings.BaitArea.Height, settings.BaitArea.X, settings.BaitArea.Y);
-            shopAreaLabel.Text=settings.ShopArea.IsEmpty?"Zona de compra sin seleccionar":string.Format("Compra: {0} × {1} px · posición {2}, {3}",settings.ShopArea.Width,settings.ShopArea.Height,settings.ShopArea.X,settings.ShopArea.Y);
+            areaLabel.Text=settings.Area.IsEmpty?"Sin seleccionar":string.Format("Zona: {0} × {1} px",settings.Area.Width,settings.Area.Height);
+            areaLabel.ForeColor=settings.Area.IsEmpty?muted:accent;
+            areaButton.Text=settings.Area.IsEmpty?"Seleccionar zona · F6":"Cambiar zona · F6";
+            castLabel.Text=settings.CastPointSet?"Punto de lanzamiento listo":"Punto sin seleccionar";
+            castLabel.ForeColor=settings.CastPointSet?accent:muted;
+            ((ModernButton)blueButton).SwatchColor=Color.FromArgb(settings.BlueArgb);
+            ((ModernButton)markerButton).SwatchColor=Color.FromArgb(settings.MarkerArgb);
+            blueButton.Invalidate();markerButton.Invalidate();
+            baitAreaLabel.Text=settings.BaitArea.IsEmpty?"Sin seleccionar":string.Format("Zona: {0} × {1} px",settings.BaitArea.Width,settings.BaitArea.Height);
+            baitAreaLabel.ForeColor=settings.BaitArea.IsEmpty?muted:accent;
+            shopAreaLabel.Text=settings.ShopArea.IsEmpty?"Sin seleccionar":string.Format("Zona: {0} × {1} px",settings.ShopArea.Width,settings.ShopArea.Height);
+            shopAreaLabel.ForeColor=settings.ShopArea.IsEmpty?muted:accent;
+            Hint(areaLabel,"Zona del minijuego: "+settings.Area);
+            Hint(castLabel,settings.CastPointSet?"Punto en el agua: "+settings.CastPoint:"Equipa la caña y elige un punto sobre el agua.");
+            Hint(baitAreaLabel,"Zona del contador: "+settings.BaitArea);Hint(shopAreaLabel,"Zona de compra: "+settings.ShopArea);
         }
         protected override void OnHandleCreated(EventArgs e)
         {
@@ -333,7 +189,7 @@ namespace SomeFishingGPO
         {
             bool wasActive=previewingShop;StopAll("Prueba de compra detenida");if(wasActive)return;
             string issue=Settings.ValidateShopArea(settings.ShopArea,SystemInformation.VirtualScreen);if(issue!=null){statusLabel.Text=issue;return;}
-            previewShopReader=new WindowsShopReader();previewingShop=true;shopPreviewButton.Text="Detener prueba";statusLabel.Text="Solo lee los menús · no compra ni envía teclas";
+            previewShopReader=new WindowsShopReader();previewingShop=true;shopPreviewButton.Text="Detener lectura";statusLabel.Text="Solo lee los menús · no compra ni envía teclas";
         }
         private void SelectBaitArea()
         {
@@ -447,7 +303,7 @@ namespace SomeFishingGPO
         {
             StopAll("Preparando prueba…");
             diagnosticLog.Clear();lastDiagnosticStep=null;
-            AppendDiagnostic("SomeFishing GPO 0.3.3 · "+DiagnosticName(kind));
+            AppendDiagnostic("SomeFishing GPO 0.4.0 · "+DiagnosticName(kind));
             if(testMode){AppendDiagnostic("Render de interfaz: entradas reales desactivadas.");return;}
             if(!CanStartDiagnostic(kind))return;
             Settings selected=ReadSettings().ForDiagnostic(kind);
@@ -495,7 +351,7 @@ namespace SomeFishingGPO
                 runStarted = lastTick = clock.Elapsed.TotalMilliseconds; maxTickGap = 0; nextPreview = 0;
                 engine.Start(runStarted);
                 statusLabel.Text = engine.Status;
-                startButton.Text = "Detener · F8 / F10";
+                startButton.Text = "Detener · F8";
                 SetEditable(false);
                 TraceDiagnostic();
             }
@@ -532,7 +388,7 @@ namespace SomeFishingGPO
             }
             if (hadSession && !testMode)
             {
-                lastStop = string.Format("SomeFishing GPO 0.3.3 · {0:yyyy-MM-dd HH:mm:ss}\r\n\r\n{1}\r\n\r\n" +
+                lastStop = string.Format("SomeFishing GPO 0.4.0 · {0:yyyy-MM-dd HH:mm:ss}\r\n\r\n{1}\r\n\r\n" +
                     "Estado al parar: {2}\r\nRondas terminadas: {3}\r\nDuración: {4:F1} s\r\n" +
                     "Mayor intervalo entre revisiones: {5:F0} ms\r\nLanzamiento: {6} ms · Espera: {7} s\r\n" +
                     "Anticipación: {8} ms · Tolerancia: {9}\r\nÚltima detección: {10}\r\n" +
@@ -550,10 +406,10 @@ namespace SomeFishingGPO
             engine = null;
             sessionSettings=null;
             if (statusLabel != null) statusLabel.Text = reason;
-            if (startButton != null) startButton.Text = "Preparar inicio · 3 segundos";
+            if (startButton != null) startButton.Text = "Iniciar · 3 s";
             if (previewButton != null) previewButton.Text = "Ver detector";
-            if (baitPreviewButton != null) baitPreviewButton.Text = "Probar lectura · sin teclas";
-            if(shopPreviewButton!=null)shopPreviewButton.Text="Probar menús · sin clics";
+            if (baitPreviewButton != null) baitPreviewButton.Text = "Probar lectura";
+            if(shopPreviewButton!=null)shopPreviewButton.Text="Probar menú";
             if (areaButton != null) SetEditable(true);
         }
         private void ShowLastStop()
@@ -567,12 +423,12 @@ namespace SomeFishingGPO
             if (wasPreviewing) return;
             string issue = ReadSettings().Validate(SystemInformation.VirtualScreen, false);
             if (issue != null) { statusLabel.Text = issue; return; }
-            previewing = true; previewSample = false; previewButton.Text = "Parar vista previa";
+            previewing = true; previewSample = false; previewButton.Text = "Detener vista";
             statusLabel.Text = "Vista previa · solo observa, no envía clics";
         }
         private void ShowExample()
         {
-            StopAll("Ejemplo de detección · imagen de demostración");
+            StopAll("Ejemplo · no envía clics");
             previewSample = true;
             using (Bitmap sample = SelfTests.CreateWideSample(60))
                 SetPreview(sample, Detector.Analyze(sample, new Settings()));
@@ -682,6 +538,7 @@ namespace SomeFishingGPO
             if (disposing)
             {
                 timer.Dispose();
+                hints.Dispose();
                 if (runtime != null) runtime.Dispose();
                 if (previewReader != null) previewReader.Dispose();
                 if(previewShopReader!=null)previewShopReader.Dispose();
@@ -699,16 +556,11 @@ namespace SomeFishingGPO
             Location = new Point(SystemInformation.VirtualScreen.Right + 100, 0);
             ShowExample(); Show(); Application.DoEvents();
             using (var bitmap = new Bitmap(Width, Height)) { DrawToBitmap(bitmap, new Rectangle(0, 0, Width, Height)); bitmap.Save(path); }
-            foreach (Control control in Controls)
+            for(int i=1;i<pages.Length;i++)
             {
-                var tabs = control as TabControl;
-                if (tabs == null) continue;
-                for (int i = 1; i < tabs.TabPages.Count; i++)
-                {
-                    tabs.SelectedIndex = i; Application.DoEvents();
-                    using (var bitmap = new Bitmap(Width, Height))
-                    { DrawToBitmap(bitmap, new Rectangle(0, 0, Width, Height)); bitmap.Save(Path.Combine(Path.GetDirectoryName(path), "interfaz-" + i + ".png")); }
-                }
+                SelectPage(i);Application.DoEvents();
+                using(var bitmap=new Bitmap(Width,Height))
+                {DrawToBitmap(bitmap,new Rectangle(0,0,Width,Height));bitmap.Save(Path.Combine(Path.GetDirectoryName(path),"interfaz-"+i+".png"));}
             }
             Close();
         }

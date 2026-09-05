@@ -1,5 +1,13 @@
 # Cambios
 
+## 0.4.0 — interfaz más simple (compilación local)
+
+- Menú lateral con Pesca, Cebo, Compra, Pruebas, Ajustes y Guía. Diseño claro con paneles blancos, fondo suave y botones redondeados, sin emojis.
+- Inicio, parada y estado visibles en todas las secciones. Guardar en un único lugar y una guía breve.
+- Botones y textos más cortos; los detalles aparecen al pasar el cursor. El resumen de la prueba sin cebo refleja si comprará, saltará o no hará ninguna acción.
+- Copiar resultado facilita compartir el registro de una prueba, mediante una acción explícita del usuario.
+- Presentación separada en `src/Interface.cs`. Ajustes, detección, control y flujo de compra conservados. 277 comprobaciones integradas y 347 con capturas de desarrollo; las seis vistas se revisaron visualmente.
+
 ## 0.3.3 — contador x2 y apertura de compra con E (compilación local)
 
 - Respaldo visual del x2 aportado cuando el OCR no lo reconoce. Dos máscaras binarias pequeñas, margen obligatorio y comparación de la forma completa; solo aportan 2 y nunca reemplazan cantidades contradictorias ni confirman cero.

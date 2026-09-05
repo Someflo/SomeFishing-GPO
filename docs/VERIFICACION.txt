@@ -1,41 +1,38 @@
-SOMEFISHING GPO 0.3.3 - VERIFICACIÓN LOCAL
+SOMEFISHING GPO 0.4.0 - VERIFICACIÓN LOCAL
 Fecha: 2026-09-05. Compilación local, todavía no publicada en GitHub.
-Compilación x64 C# 5 / .NET Framework con Windows SDK, sin advertencias.
+Compilación x64 con C# 5, .NET Framework y Windows SDK, sin advertencias.
 277 comprobaciones integradas y 347 con diez capturas privadas aprobadas.
-Interfaz de Comprar cebo inspeccionada visualmente, sin activar el juego.
-No se enviaron clics, teclas ni compras reales durante las pruebas de desarrollo.
 
-CAMBIOS Y EVIDENCIA
-Windows OCR devolvía texto vacío para la nueva vista x2. Dos referencias
-binarias del x2 completo permiten reconocer el positivo 2, con confirmación
-temporal y sin reemplazar otra cantidad OCR. El respaldo no puede aportar cero.
-Se reconoce la vista ampliada y su reconstrucción a 38x33 y 52x45 píxeles.
-Se rechazan otras letras y cantidades sintéticas, selecciones parciales de x300,
-una imagen amarilla uniforme, el dígito sin x y una referencia muy tapada.
-No se incluyen capturas privadas: únicamente dos máscaras de texto de 32x24.
+INTERFAZ
+Se revisaron visualmente Pesca, Cebo, Compra, Pruebas, Ajustes y Guía mediante
+renders de la ventana fuera de pantalla, sin activar Roblox ni enviar entradas.
+Se corrigieron recortes del título, nombre del programa y cantidad de cebo.
+Navegación lateral, tarjetas, botones cortos, controles de inicio/parada fijos,
+ayudas al cursor y resumen contextual de la prueba de falta de cebo.
+La presentación usa WinForms y dibujo local, sin dependencias descargadas.
+El registro solo se copia al portapapeles al pulsar Copiar resultado.
 
-E se mantiene de 100 a 3000 ms (1000 iniciales). Se probaron los plazos exactos,
-duraciones inválidas, falta de diálogo sin repetición, F10 y pérdida de foco.
-La protección independiente sigue soltando E cuando no recibe latidos durante
-más de 500 ms. XML anterior sin el nuevo campo conserva las opciones existentes.
-
-LIMITACIONES
-La imagen aportada es una vista ampliada, no la captura original de la selección.
-El respaldo visual solo conoce la forma x2; otros números siguen dependiendo
-del OCR, que puede fallar (incluidos los 42 raros observados anteriormente).
-La pulsación de E de 150 ms no abrió el diálogo en la prueba del usuario.
-El tiempo nuevo es ajustable y todavía debe comprobarse cerca del barril.
-El registro anterior indicaba que no se llegó a pulsar Comprar y la prueba
-terminó al perder Roblox el foco. No se ha probado la compra real en esta versión.
-El último recorte del menú no muestra los puntos; ese detector conserva su
-validación sintética. No se garantiza evitar desconexiones ni guardar objetos.
+REGRESIÓN Y LÍMITES
+La suite existente comprueba detección, seguimiento, liberación de entradas,
+contador y x2 visual, compra simulada, E mantenida, cancelaciones y ajustes.
+No se modificaron el detector, controlador de pesca, lectores ni motor de compra.
+Los botones siguen ejecutando acciones reales cuando los usa el usuario; las
+compras pueden gastar Peli. No se compró ni se saltó en una partida real durante
+la validación. La prueba completa en el juego continúa dependiendo del usuario.
+La referencia x2 solo reconoce esa forma y nunca aporta cero. Otras cantidades
+dependen del OCR; los 42 raros no se reconocen con fiabilidad en la referencia.
+Las reconstrucciones del contador no sustituyen una captura nativa del juego.
+El botón final de tres puntos conserva una validación con imágenes sintéticas.
+No se garantiza evitar desconexiones ni preservar objetos.
 
 Microsoft Defender completó el análisis del ejecutable: "found no threats".
 Es un resultado local, no una garantía absoluta ni una certificación externa.
-No se descargaron dependencias. Sin firma comercial. Sin licencia concedida.
+Sin firma comercial. Se conserva NOTICE.md, sin licencia concedida por ahora.
+El paquete no incluye capturas privadas, ajustes ni informes personales.
+Los PNG de documentación son renders de interfaz y ejemplos sintéticos.
 
 SHA256 DEL EJECUTABLE
-112A49201699F397B5B1B8A1005D013ED4025C744664F168BE3AE3F3C821EE57  SomeFishingGPO.exe
+AB17A0756E731AC4DDB27B49A4225617EAEB9B088F005C6D4C8F3C1794D807DB  SomeFishingGPO.exe
 
 PRUEBAS INTEGRADAS
 OK: Windows INPUT structure matches the platform ABI

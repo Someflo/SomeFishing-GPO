@@ -2,9 +2,15 @@
 
 Macro visual para el minijuego de pesca de GPO en Windows. Su objetivo es ofrecer un programa sencillo, transparente y revisable, con el código completo y una forma de compilarlo localmente.
 
-**Compilación local 0.3.3: reconocimiento visual de x2 y tiempo ajustable al mantener E.** Incluye reposición de cebo y detección de su desaparición. Todavía necesita validación en partidas reales. No promete una tasa de capturas, evitar todas las desconexiones ni una garantía absoluta de ausencia de virus.
+**Compilación local 0.4.0: interfaz renovada, navegación lateral y controles más simples.** Incluye reposición de cebo y detección de su desaparición. Todavía necesita validación en partidas reales. No promete una tasa de capturas, evitar todas las desconexiones ni una garantía absoluta de ausencia de virus.
 
 ![Vista del detector de SomeFishing GPO; imagen sintética](docs/Vista-previa.png)
+
+## Interfaz
+
+El menú lateral organiza **Pesca**, **Cebo**, **Compra**, **Pruebas**, **Ajustes** y **Guía**. **Iniciar**, **Detener · F10** y el estado permanecen visibles al cambiar de sección. **Guardar** conserva las zonas y opciones actuales.
+
+Las instrucciones breves quedan junto a los controles. Mantén el cursor sobre un botón o ajuste para ver más detalles. En **Pruebas**, el resumen de falta de cebo indica la reacción configurada; **Copiar resultado** coloca el registro en el portapapeles únicamente cuando lo pulsas. Las compras reales siguen indicando que usan Peli.
 
 ## Cómo funciona
 
@@ -14,13 +20,13 @@ El ciclo es **lanzar → esperar → seguir al pez → comprobar el cierre del m
 
 ## Descargar y empezar
 
-Esta compilación se entrega como `SomeFishing-GPO-v0.3.3-win-x64.zip`: extrae toda la carpeta y abre `SomeFishingGPO.exe`. La 0.3.3 todavía no se ha publicado en GitHub; la última publicación es la [versión preliminar 0.3.1](https://github.com/Someflo/SomeFishing-GPO/releases/tag/v0.3.1). Para conservar las zonas y opciones de una versión anterior, cierra la macro y copia su `ajustes.xml` a la nueva carpeta. Requiere Windows 10 u 11 de 64 bits, .NET Framework 4.8 y el cliente de escritorio de Roblox. La lectura de cebo y de los menús utiliza el reconocimiento de texto de Windows y necesita al menos un idioma OCR disponible para tu perfil. La aplicación no descarga ni instala idiomas. El SDK solo es necesario para recompilar, no para ejecutar el binario entregado.
+Esta compilación se entrega como `SomeFishing-GPO-v0.4.0-win-x64.zip`: extrae toda la carpeta y abre `SomeFishingGPO.exe`. La 0.4.0 todavía no se ha publicado en GitHub; la última publicación es la [versión preliminar 0.3.1](https://github.com/Someflo/SomeFishing-GPO/releases/tag/v0.3.1). Para conservar las zonas y opciones de una versión anterior, cierra la macro y copia su `ajustes.xml` a la nueva carpeta. Requiere Windows 10 u 11 de 64 bits, .NET Framework 4.8 y el cliente de escritorio de Roblox. La lectura de cebo y de los menús utiliza el reconocimiento de texto de Windows y necesita al menos un idioma OCR disponible para tu perfil. La aplicación no descarga ni instala idiomas. El SDK solo es necesario para recompilar, no para ejecutar el binario entregado.
 
 1. Abre Roblox en ventana o sin bordes, equipa la caña y lanza una vez manualmente.
 2. Con el minijuego visible, pulsa **F6**. Dibuja **una sola zona** con toda la altura de la barra azul y sus dos bordes oscuros. Deja margen lateral para su pequeño balanceo. La barra verde puede quedar dentro.
 3. Confirma con **Enter o F6**. **Esc** cancela sin perder la selección anterior.
 4. Pulsa **Ver detector**: el contorno celeste debe seguir la barra azul, naranja marca el hueco y rosa marca el pez. Esta vista no envía clics. Mantén la ventana de la macro fuera de la zona del juego que captura.
-5. Selecciona **Elegir punto sobre el agua**. Marca **Permitir clics y teclas al iniciar**.
+5. Selecciona **Elegir punto en el agua**. Marca **Permitir clics y teclas**.
 6. Vuelve a Roblox y pulsa **F8**. **F10** detiene la macro; F8 también alterna inicio y parada.
 
 La selección debe cubrir el recorrido de la barra. Incluye algo de margen vertical, pero procura que la barra ocupe la mayor parte de la altura. Se admiten hasta 1200 px de ancho, 1400 px de alto y 600 000 píxeles en total.
@@ -29,12 +35,12 @@ La selección debe cubrir el recorrido de la barra. Incluye algo de margen verti
 
 ## Leer el cebo y saltar durante la espera
 
-Estas funciones empiezan desactivadas y se configuran en la pestaña **Cebo y espera**.
+Estas funciones empiezan desactivadas y se configuran en la sección **Cebo**.
 
-1. Pulsa **Seleccionar contador de cebo** y dibuja una **segunda zona pequeña**, únicamente alrededor del número del cebo equipado, por ejemplo `x300`. Incluye un poco de margen para que quepan más dígitos, pero excluye el borde amarillo del botón, que puede impedir la lectura. Confirma con Enter o F6. No selecciones el nombre, los dos tipos de cebo ni la barra verde. La zona del minijuego se conserva.
-2. Activa **Probar lectura · sin teclas**. Comprueba que el número mostrado coincide con el juego antes de iniciar la macro. La vista de prueba no envía clics ni saltos. El contador debe permanecer visible en esa posición.
-3. Marca **Saltar en espera: cebo en 0, contador desaparecido o 3 lanzamientos fallidos**. El intervalo inicial es **60 segundos**; puedes ajustarlo entre 15 y 300 segundos.
-4. Pulsa **Guardar ajustes**, termina la prueba de lectura, vuelve a Roblox y usa F8 para iniciar con el permiso de clics y saltos marcado.
+1. Pulsa **Seleccionar contador** y dibuja una **segunda zona pequeña**, únicamente alrededor del número del cebo equipado, por ejemplo `x300`. Incluye un poco de margen para que quepan más dígitos, pero excluye el borde amarillo del botón, que puede impedir la lectura. Confirma con Enter o F6. No selecciones el nombre, los dos tipos de cebo ni la barra verde. La zona del minijuego se conserva.
+2. Activa **Probar lectura**. Comprueba que el número mostrado coincide con el juego antes de iniciar la macro. La vista de prueba no envía clics ni saltos. El contador debe permanecer visible en esa posición.
+3. Marca **Saltar durante la espera**. El intervalo inicial es **60 segundos**; puedes ajustarlo entre 15 y 300 segundos.
+4. Pulsa **Guardar**, termina la prueba de lectura, vuelve a Roblox y usa F8 para iniciar con el permiso de clics y saltos marcado.
 
 ![Configuración de lectura del cebo y saltos](docs/Cebo-y-espera.png)
 
@@ -66,11 +72,11 @@ Cada salto consiste en una pulsación breve de **Espacio**, sin teclas de direcc
 
 Esta opción está **desactivada por defecto** y utiliza **Peli del juego**. Coloca manualmente al personaje junto al barril de cebo, al alcance de E, desde donde también pueda pescar. La macro no camina hasta una tienda ni cambia el cebo equipado.
 
-1. Configura y comprueba la lectura del contador en **Cebo y espera**.
-2. Abre la tienda manualmente con **E**. En **Comprar cebo**, pulsa **Seleccionar zona de compra** y rodea el diálogo entero y su fila de botones, con poco margen. Esta es la **tercera zona**. La fila de botones debe quedar en el cuarto inferior de la selección: Sí/No, Comprar/cantidad/Cancelar y «…» comparten esa posición.
-3. Usa **Probar menús · sin clics**. Cambia los menús manualmente y comprueba que reconoce la oferta de cebo en Peli, el MAX y la cantidad. Esta vista no compra ni envía teclas. El botón final debe quedar dentro de la misma zona.
-4. Elige **Comprar el MAX del menú**, o desmarca la opción para introducir una cantidad fija. Una cantidad fija se reduce al MAX si lo supera. Por defecto el límite es **10 intentos de reposición por sesión**; puedes cambiarlo entre 1 y 100. El contador de intentos vuelve a cero al reiniciar la macro.
-5. Marca **Comprar al confirmar 0 o desaparecer el contador durante 8 s**, guarda, cierra los diálogos manualmente y vuelve a Roblox. Marca el permiso de clics y teclas antes de iniciar con F8.
+1. Configura y comprueba la lectura del contador en **Cebo**.
+2. Abre la tienda manualmente con **E**. En **Compra**, pulsa **Seleccionar menú de compra** y rodea el diálogo entero y su fila de botones, con poco margen. Esta es la **tercera zona**. La fila de botones debe quedar en el cuarto inferior de la selección: Sí/No, Comprar/cantidad/Cancelar y «…» comparten esa posición.
+3. Usa **Probar menú**. Cambia los menús manualmente y comprueba que reconoce la oferta de cebo en Peli, el MAX y la cantidad. Esta vista no compra ni envía teclas. El botón final debe quedar dentro de la misma zona.
+4. Elige **Comprar el máximo disponible**, o desmarca la opción para introducir una cantidad fija. Una cantidad fija se reduce al MAX si lo supera. Por defecto el límite es **10 intentos de reposición por sesión**; puedes cambiarlo entre 1 y 100. El contador de intentos vuelve a cero al reiniciar la macro.
+5. Marca **Reponer cebo · usa Peli**, guarda, cierra los diálogos manualmente y vuelve a Roblox. Marca el permiso de clics y teclas antes de iniciar con F8.
 
 ![Configuración de compra automática de cebo](docs/Comprar-cebo.png)
 
@@ -82,14 +88,14 @@ El diálogo final puede oscurecer el contador. Por eso se cierra su botón «…
 
 ## Probar la falta de cebo y una compra
 
-La pestaña **Pruebas** permite ejecutar acciones reales sin esperar a agotar el inventario. Los botones **Probar lectura** y **Probar menús** de las otras pestañas siguen siendo vistas que solo observan la pantalla.
+La sección **Pruebas** permite ejecutar acciones reales sin esperar a agotar el inventario. Los botones **Probar lectura** y **Probar menús** de las otras seccións siguen siendo vistas que solo observan la pantalla.
 
 | Botón | Qué comprueba |
 |---|---|
-| **PROBAR SIN CEBO · 3 s** | Introduce tres lecturas simuladas de 0 en el monitor. Si activaste la compra automática, intenta comprar **1 cebo** con Peli. Si no, solicita **un salto** cuando los saltos están habilitados. Si ambas opciones están apagadas, lo indica sin enviar entradas. |
-| **PROBAR COMPRA · 1 cebo · 3 s** | Inicia directamente **una compra real de 1 cebo con Peli**, aunque todavía tengas cebo y la compra automática esté apagada. Usa la zona de compra que seleccionaste. |
+| **Probar sin cebo** | Introduce tres lecturas simuladas de 0 en el monitor. Si activaste la compra automática, intenta comprar **1 cebo** con Peli. Si no, solicita **un salto** cuando los saltos están habilitados. Si ambas opciones están apagadas, lo indica sin enviar entradas. |
+| **Probar compra** | Inicia directamente **una compra real de 1 cebo con Peli**, aunque todavía tengas cebo y la compra automática esté apagada. Usa la zona de compra que seleccionaste. |
 
-1. Configura la zona de compra si vas a comprar. Para comprobar el salto, desactiva la compra automática y activa **Saltar en espera**. No necesitas configurar un punto de lanzamiento para estas pruebas.
+1. Configura la zona de compra si vas a comprar. Para comprobar el salto, desactiva la compra automática y activa **Saltar durante la espera**. No necesitas configurar un punto de lanzamiento para estas pruebas.
 2. Colócate al alcance de **E** del barril, con el minijuego y los diálogos cerrados. Pulsa el botón deseado y vuelve a Roblox durante la cuenta atrás de **3 segundos**. Pulsar el botón autoriza esa prueba concreta; no hace falta marcar el permiso de inicio de la pesca.
 3. Deja Roblox en primer plano. **F10**, **F8**, cambiar de ventana o la esquina superior izquierda detienen una prueba activa y liberan las entradas. F10/F8 también cancelan la cuenta atrás.
 4. Cuando termine, vuelve a **Pruebas** para leer el resultado y los pasos. El programa guarda el mismo texto en **`ultima-prueba.txt`**, junto al ejecutable, sustituyendo el informe anterior.
@@ -108,9 +114,9 @@ El informe conserva estados y lecturas resumidas del detector, sin capturas ni t
 
 La 0.3.3 añade un respaldo visual para el **x2 completo** de la captura aportada. Windows OCR no pudo leerlo con fiabilidad. El respaldo compara dos referencias binarias diminutas de la misma forma, exige un margen alrededor del texto y rechaza proporciones distintas. Solo devuelve **2**, nunca cero, y no sustituye una cantidad contradictoria que haya leído el OCR. Sigue necesitando confirmación en capturas nuevas. Otras cantidades siguen usando el lector de texto; no se ha creado un reconocedor visual general de todos los dígitos.
 
-La captura ampliada y sus reconstrucciones a 38 × 33 y 52 × 45 píxeles se reconocen. Esas reconstrucciones no sustituyen una captura original de la zona del juego. Pulsa **Probar lectura · sin teclas** para comprobar la selección real; cuando el botón dice Probar lectura, la vista está detenida y la imagen anterior puede seguir visible.
+La captura ampliada y sus reconstrucciones a 38 × 33 y 52 × 45 píxeles se reconocen. Esas reconstrucciones no sustituyen una captura original de la zona del juego. Pulsa **Probar lectura** para comprobar la selección real; cuando el botón dice Probar lectura, la vista está detenida y la imagen anterior puede seguir visible.
 
-En **Comprar cebo**, el ajuste **Mantener E para abrir (ms)** vale **1000 ms** por defecto y permite de 100 a 3000 ms. Antes la pulsación duraba 150 ms. Si E no abre el diálogo, comprueba que estás junto al barril y prueba 1500 ms con **PROBAR COMPRA · 1 cebo**. La prueba puede gastar Peli si el diálogo abre y se reconocen todos los pasos. No se repite E ni Comprar automáticamente cuando falla un paso.
+En **Compra**, el ajuste **Mantener E (ms)** vale **1000 ms** por defecto y permite de 100 a 3000 ms. Antes la pulsación duraba 150 ms. Si E no abre el diálogo, comprueba que estás junto al barril y prueba 1500 ms con **Probar compra**. La prueba puede gastar Peli si el diálogo abre y se reconocen todos los pasos. No se repite E ni Comprar automáticamente cuando falla un paso.
 
 La tecla E se mantiene sin bloquear la interfaz. F10, pérdida de foco y la protección por falta de respuesta siguen soltándola. Los archivos de ajustes antiguos conservan sus opciones y adoptan 1000 ms cuando no tienen ese campo. El registro indica cuánto tiempo se mantuvo E; perder el foco de Roblox cancela la prueba antes de continuar.
 
@@ -126,7 +132,7 @@ La tecla E se mantiene sin bloquear la interfaz. F10, pérdida de foco y la prot
 
 Las zonas, el punto y los ajustes se guardan en `ajustes.xml`. La autorización para enviar clics y teclas se desmarca al volver a abrir el programa. Los ajustes anteriores conservan sus opciones y dejan la compra automática desactivada. Si cambias la posición, resolución o escala del juego, revisa las selecciones.
 
-**Ver última parada** muestra el motivo de la última interrupción y lo conserva en `ultima-parada.txt`, junto con la última cantidad confirmada de cebo, las pulsaciones de salto solicitadas, los intentos de reposición y si se envió la última compra. Tres segundos de detección incompleta con menú visible o una ronda de más de dos minutos detienen la macro. Las paradas de protección no activan los saltos de espera.
+**Última parada** muestra el motivo de la última interrupción y lo conserva en `ultima-parada.txt`, junto con la última cantidad confirmada de cebo, las pulsaciones de salto solicitadas, los intentos de reposición y si se envió la última compra. Tres segundos de detección incompleta con menú visible o una ronda de más de dos minutos detienen la macro. Las paradas de protección no activan los saltos de espera.
 
 ## Compilar y comprobar
 
@@ -137,7 +143,7 @@ compilar.cmd
 SomeFishingGPO.exe --self-test pruebas
 ```
 
-`compilar.cmd` utiliza `%WINDIR%\Microsoft.NET\Framework64\v4.0.30319\csc.exe`, busca los metadatos `Windows.winmd` del SDK y las bibliotecas locales de interoperabilidad. El modo `--self-test` no registra atajos globales ni envía clics o teclas reales; los botones de la pestaña Pruebas sí ejecutan acciones reales cuando los utilizas. Guarda el informe en `pruebas/resultados.txt`; el código de salida 0 indica éxito.
+`compilar.cmd` utiliza `%WINDIR%\Microsoft.NET\Framework64\v4.0.30319\csc.exe`, busca los metadatos `Windows.winmd` del SDK y las bibliotecas locales de interoperabilidad. El modo `--self-test` no registra atajos globales ni envía clics o teclas reales; los botones de la sección Pruebas sí ejecutan acciones reales cuando los utilizas. Guarda el informe en `pruebas/resultados.txt`; el código de salida 0 indica éxito.
 
 Las **277 comprobaciones incluidas** cubren seguimiento, balanceo, exclusión del verde, contador, desaparición, espera, compra simulada, límite de compras, regreso a la pesca y liberación de entradas. La validación local alcanzó **347 comprobaciones** al añadir diez capturas del desarrollo; esas capturas no se distribuyen. Incluye los modos de prueba, conservación de ajustes, salto o compra únicos, cancelaciones, duración configurable de E, compatibilidad de ajustes anteriores y rechazo de otras formas por el respaldo x2. También incluye reconocimiento nativo del contador y de los menús de compra, así como la regresión de `x300` con una franja blanca. Los resultados de esta compilación y el análisis de Defender están en [VERIFICACION.txt](docs/VERIFICACION.txt).
 
@@ -155,7 +161,8 @@ La huella corresponde al binario entregado. Una recompilación local puede produ
 |---|---|
 | `src/Core.cs` | Localización visual, controlador, configuración y ciclo de pesca |
 | `src/Native.cs` | Captura, foco de Roblox, clics, Espacio y teclas limitadas para comprar |
-| `src/App.cs` | Interfaz, zona, vista previa y teclas |
+| `src/App.cs` | Sesiones, selección, vistas y atajos |
+| `src/Interface.cs` | Navegación, presentación, botones y ayudas de la interfaz |
 | `src/Bait.cs` | Interpretación estricta del número y confirmación de lecturas |
 | `src/WindowsBaitReader.cs` | OCR local de Windows en segundo plano |
 | `src/CounterGlyphs.cs` | Referencias binarias del x2 completo; respaldo positivo, nunca cero |
