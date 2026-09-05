@@ -18,6 +18,21 @@ namespace SomeFishingGPO
         private long sequence;
         private double nextSample;
         private bool disposed;
+        private readonly string language;
+        internal WindowsBaitReader(string language="") { this.language=language; }
+        internal static System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<string,string>> Languages()
+        {
+            var result=new System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<string,string>>();
+            try { foreach(var item in OcrEngine.AvailableRecognizerLanguages)result.Add(new System.Collections.Generic.KeyValuePair<string,string>(item.LanguageTag,item.NativeName+" ("+item.LanguageTag+")")); } catch { }
+            return result;
+        }
+        internal static OcrEngine CreateEngine(string language)
+        {
+            if(string.IsNullOrEmpty(language))return OcrEngine.TryCreateFromUserProfileLanguages();
+            foreach(var item in OcrEngine.AvailableRecognizerLanguages)
+                if(string.Equals(item.LanguageTag,language,StringComparison.OrdinalIgnoreCase))return OcrEngine.TryCreateFromLanguage(item);
+            return null;
+        }
         internal BaitReading Latest { get { Poll(); return latest; } }
         internal bool Due(double now) { Poll(); return !disposed && pending == null && now >= nextSample; }
         internal void Submit(Bitmap frame, double now)
@@ -29,7 +44,7 @@ namespace SomeFishingGPO
                 using (frame)
                 {
                     BaitReading reading;
-                    try { reading = ReadImage(frame); }
+                    try { reading = ReadImage(frame,language); }
                     catch (Exception) { reading = new BaitReading { Detail = "No se pudo usar el lector de Windows. Revisa la zona y el OCR instalado." }; }
                     reading.Sequence = currentSequence; reading.SampledAt = now; return reading;
                 }
@@ -43,12 +58,12 @@ namespace SomeFishingGPO
             if (pending.IsFaulted) { var ignored = pending.Exception; }
             pending = null;
         }
-        internal static BaitReading ReadImage(Bitmap image)
+        internal static BaitReading ReadImage(Bitmap image,string language="")
         {
             if (!HasCounterInk(image)) return new BaitReading { VisuallyAbsent = true, Detail = "No se ve el texto amarillo del contador" };
             if (MultipleYellowRows(image)) return new BaitReading { Detail = "Hay varias filas en la zona. Selecciona un solo contador." };
-            var engine = OcrEngine.TryCreateFromUserProfileLanguages();
-            if (engine == null) return new BaitReading { Detail = "Windows no tiene un idioma de OCR disponible." };
+            var engine = CreateEngine(language);
+            if (engine == null) return new BaitReading { Detail = "El idioma OCR elegido no está disponible en Windows." };
             string first = Recognize(engine, image, 3), second = Recognize(engine, image, 5);
             int? a = ParseCounter(first), b = ParseCounter(second);
             int? isolatedFirst=null, isolatedSecond=null;
@@ -188,6 +203,8 @@ namespace SomeFishingGPO
             return groups>1;
         }
         internal static string Recognize(OcrEngine engine, Bitmap image, int scale)
+        { return RecognizeResult(engine,image,scale).Text; }
+        internal static OcrResult RecognizeResult(OcrEngine engine, Bitmap image, int scale)
         {
             using (var enlarged = new Bitmap(image.Width * scale + 40, image.Height * scale + 40, PixelFormat.Format32bppArgb))
             using (var stream = new MemoryStream())
@@ -204,7 +221,7 @@ namespace SomeFishingGPO
                 {
                     var decoder = BitmapDecoder.CreateAsync(random).AsTask().GetAwaiter().GetResult();
                     using (var bitmap = decoder.GetSoftwareBitmapAsync().AsTask().GetAwaiter().GetResult())
-                        return engine.RecognizeAsync(bitmap).AsTask().GetAwaiter().GetResult().Text;
+                        return engine.RecognizeAsync(bitmap).AsTask().GetAwaiter().GetResult();
                 }
             }
         }

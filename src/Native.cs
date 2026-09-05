@@ -114,8 +114,8 @@ namespace SomeFishingGPO
         private readonly MouseLease jump;
         private readonly MouseLease shopKey, controlKey;
         private volatile int currentShopKey;
-        private readonly WindowsShopReader shopReader = new WindowsShopReader();
-        private readonly WindowsBaitReader baitReader = new WindowsBaitReader();
+        private readonly WindowsShopReader shopReader;
+        private readonly WindowsBaitReader baitReader;
         private readonly System.Threading.Timer watchdog;
         private readonly Stopwatch clock = Stopwatch.StartNew();
         private volatile bool closing;
@@ -126,6 +126,7 @@ namespace SomeFishingGPO
         internal GameRuntime(Settings settings, IntPtr target, bool sendClicks, bool requireFishingArea=true)
         {
             this.settings = settings; this.target = target; this.sendClicks = sendClicks;
+            shopReader=new WindowsShopReader(settings.OcrLanguage);baitReader=new WindowsBaitReader(settings.OcrLanguage);
             this.requireFishingArea=requireFishingArea;
             mouse = new MouseLease(delegate(bool down) { if (sendClicks) Native.MouseButton(down); },
                 delegate { return ForegroundAllowed; }, delegate { return clock.Elapsed.TotalMilliseconds; }, delegate { return safetyReason; });

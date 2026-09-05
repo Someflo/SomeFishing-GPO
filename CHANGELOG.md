@@ -1,5 +1,15 @@
 # Cambios
 
+## 0.5.1 — flujo de compra y umbral OCR (compilación local)
+
+- Doble clic en el número central antes de seleccionar y reemplazar la cantidad; pausa de menús y apuntado ajustable, inicialmente 700 ms.
+- Posiciones de Sí, cantidad y Comprar tomadas del texto reconocido. Admite Sí como confirmación del menú de cantidad, tras reconocer MAX. Un solo reintento del primer Sí si persiste la oferta en capturas nuevas; no repite E ni Comprar.
+- Reconoce los tres puntos de la captura real entre etiquetas del HUD y pulsa su posición visible. El mismo fondo sin los puntos no autoriza el cierre.
+- Comprar cuando queden 2 cebos o menos, ajustable y compatible con MAX. Espera a terminar la pesca y rearma tras confirmar cebo por encima del umbral.
+- Selector de idiomas OCR instalados para contador y compra, con opción automática. No descarga idiomas ni oculta una selección no disponible.
+- Registro con posiciones de clic y pausas; conserva cronómetro de 50 cada 40 minutos y cantidad de prueba independiente.
+- 361 comprobaciones integradas en el equipo de desarrollo y 437 con once capturas privadas. Incluye cancelación durante el doble clic y persistencia de ajustes. El flujo completo sigue pendiente de validación dentro del juego.
+
 ## 0.5.0 — cronómetro y entradas (compilación local)
 
 - Compra por contador o cronómetro; cantidad e intervalo ajustables, inicialmente 50 cada 40 minutos, hasta el MAX del menú.

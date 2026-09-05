@@ -2,7 +2,7 @@
 
 Macro visual para el minijuego de pesca de GPO en Windows. Su objetivo es ofrecer un programa sencillo, transparente y revisable, con el código completo y una forma de compilarlo localmente.
 
-**Compilación local 0.5.0: cronómetro de compras, cantidad de prueba ajustable y correcciones de OCR y entradas.** Incluye reposición de cebo y detección de su desaparición. Todavía necesita validación en partidas reales. No promete una tasa de capturas, evitar todas las desconexiones ni una garantía absoluta de ausencia de virus.
+**Compilación local 0.5.1: doble clic en la cantidad, pausas ajustables, umbral de reposición e idioma OCR seleccionable.** Incluye compra por cronómetro y cierre del diálogo final. Todavía necesita validación en partidas reales. No promete una tasa de capturas, evitar todas las desconexiones ni una garantía absoluta de ausencia de virus.
 
 ![Vista del detector de SomeFishing GPO; imagen sintética](docs/Vista-previa.png)
 
@@ -20,7 +20,7 @@ El ciclo es **lanzar → esperar → seguir al pez → comprobar el cierre del m
 
 ## Descargar y empezar
 
-Esta compilación se entrega como `SomeFishing-GPO-v0.5.0-win-x64.zip`: extrae toda la carpeta y abre `SomeFishingGPO.exe`. La 0.5.0 todavía no se ha publicado en GitHub; la última publicación es la [versión preliminar 0.3.1](https://github.com/Someflo/SomeFishing-GPO/releases/tag/v0.3.1). Para conservar las zonas y opciones de una versión anterior, cierra la macro y copia su `ajustes.xml` a la nueva carpeta. Requiere Windows 10 u 11 de 64 bits, .NET Framework 4.8 y el cliente de escritorio de Roblox. La lectura de cebo y de los menús utiliza el reconocimiento de texto de Windows y necesita al menos un idioma OCR disponible para tu perfil. La aplicación no descarga ni instala idiomas. El SDK solo es necesario para recompilar, no para ejecutar el binario entregado.
+Esta compilación se entrega como `SomeFishing-GPO-v0.5.1-win-x64.zip`: extrae toda la carpeta y abre `SomeFishingGPO.exe`. La 0.5.1 todavía no se ha publicado en GitHub; la última publicación es la [versión preliminar 0.3.1](https://github.com/Someflo/SomeFishing-GPO/releases/tag/v0.3.1). Para conservar las zonas y opciones de una versión anterior, cierra la macro y copia su `ajustes.xml` a la nueva carpeta. Requiere Windows 10 u 11 de 64 bits, .NET Framework 4.8 y el cliente de escritorio de Roblox. La lectura de cebo y de los menús utiliza el reconocimiento de texto de Windows y necesita al menos un idioma OCR disponible. La aplicación no descarga ni instala idiomas. El SDK solo es necesario para recompilar, no para ejecutar el binario entregado.
 
 1. Abre Roblox en ventana o sin bordes, equipa la caña y lanza una vez manualmente.
 2. Con el minijuego visible, pulsa **F6**. Dibuja **una sola zona** con toda la altura de la barra azul y sus dos bordes oscuros. Deja margen lateral para su pequeño balanceo. La barra verde puede quedar dentro.
@@ -46,6 +46,8 @@ Estas funciones empiezan desactivadas y se configuran en la sección **Cebo**.
 
 El lector procesa únicamente la zona del contador con OCR local de Windows, en un segundo plano. Exige que dos tamaños de la imagen produzcan el mismo número. Además, confirma los números positivos en dos capturas diferentes y el cero en tres. Una imagen ausente, ilegible o ambigua se muestra como **desconocida**, nunca se convierte automáticamente en cero. No suma los dos tipos de cebo ni cambia entre ellos.
 
+En **Cebo → Idioma OCR · contador y menús** puedes elegir **Automático (Windows)** o uno de los idiomas OCR instalados. La misma elección se aplica a ambos lectores y a sus pruebas. Automático usa las preferencias de Windows. Si un idioma guardado ya no está disponible, se informa como error de lectura; no se sustituye silenciosamente por otro. Cambiarlo detiene una vista de lectura activa: vuelve a pulsar Probar lectura o Probar menú para comprobarlo.
+
 Desde la 0.3.1, si la lectura original falla, el lector aísla las letras amarillas o anaranjadas, elimina franjas blancas y normaliza su tamaño antes de volver a leerlas. También exige coincidencia entre dos escalas y rechaza números contradictorios con la lectura original. En la captura de la vista previa con `x300` y una franja blanca reconoce **300**; también lo hace al reconstruir esa vista al tamaño de selección de **44 × 25 px**. Esa reconstrucción no sustituye la comprobación de la selección real: usa **Probar lectura** y espera a ver **Cebos: 300** confirmado antes de iniciar.
 
 **Límite observado:** en las capturas de desarrollo reconoce los **300 y 295 cebos comunes** al excluir el borde del botón, pero no reconoce con fiabilidad los **42 raros**. Otros tamaños, fondos y dígitos también requieren comprobar la lectura. Si no reconoce tu contador, puedes usar los saltos tras tres lanzamientos sin minijuego con la lectura de cebo desactivada; la compra por cronómetro no necesita el contador; la compra en modo Contador OCR sí.
@@ -64,7 +66,7 @@ Como el contador normalmente permanece visible, la versión 0.3.0 también compr
 | La espera comenzó por tres lanzamientos fallidos | Permanece en espera hasta que venza un cronómetro de compra activo, reaparezca el minijuego o reinicies con F8; no reintenta indefinidamente |
 | Los saltos están desactivados | Se detiene al faltar cebo o fallar tres intentos, salvo que haya una compra pendiente por cronómetro: entonces sigue esperando |
 
-Si habilitas la compra automática, esta tiene prioridad sobre los saltos al confirmar cero o la desaparición. En modo Contador OCR, tres lanzamientos fallidos por sí solos no autorizan compras. En Cronómetro, compra cuando vence el intervalo configurado.
+Si habilitas la compra automática, esta tiene prioridad sobre los saltos al confirmar cero o la desaparición. En modo Contador OCR también puede adelantarse al agotamiento con el umbral de cantidad; tres lanzamientos fallidos por sí solos no autorizan compras. En Cronómetro, compra cuando vence el intervalo configurado.
 
 Cada salto consiste en una pulsación breve de **Espacio**, sin teclas de dirección. **F10, F8, cambiar de ventana o llevar el ratón a la esquina superior izquierda detiene también los saltos**. La macro no comprueba que el personaje haya saltado ni que el juego contabilice esa pulsación como actividad. Esta función no guarda objetos ni protege frente a caídas de conexión, del servidor o del proceso.
 
@@ -87,16 +89,18 @@ Esta opción está **desactivada por defecto** y utiliza **Peli del juego**. Col
 1. Elige **Cronómetro** en Compra, o configura la lectura en **Cebo** para usar **Contador OCR**.
 2. Abre la tienda manualmente con **E**. En **Compra**, pulsa **Seleccionar menú de compra** y rodea el diálogo entero y su fila de botones, con poco margen. Es una zona adicional; Cronómetro permite omitir la zona del contador. La fila de botones debe quedar en el cuarto inferior de la selección: Sí/No, Comprar/cantidad/Cancelar y «…» comparten esa posición.
 3. Usa **Probar menú**. Cambia los menús manualmente y comprueba que reconoce la oferta de cebo en Peli, el MAX y la cantidad. Esta vista no compra ni envía teclas. El botón final debe quedar dentro de la misma zona.
-4. En Contador OCR elige **Usar MAX del menú (solo OCR)**, o desmarca la opción para introducir una cantidad fija. Una cantidad fija se reduce al MAX si lo supera. Por defecto el límite es **10 intentos de reposición por sesión**; puedes cambiarlo entre 1 y 100. El contador de intentos vuelve a cero al reiniciar la macro.
+4. En Contador OCR establece **Comprar si quedan ≤** (inicial: **2**, ajustable entre 0 y 9999). Elige **Usar MAX del menú (solo OCR)**, o desmarca la opción para introducir una cantidad fija. Una cantidad fija se reduce al MAX si lo supera. Por defecto el límite es **10 intentos de reposición por sesión**; puedes cambiarlo entre 1 y 100. El contador de intentos vuelve a cero al reiniciar la macro.
 5. Marca **Reponer cebo · usa Peli**, guarda, cierra los diálogos manualmente y vuelve a Roblox. Marca el permiso de clics y teclas antes de iniciar con F8.
 
 ![Configuración de compra automática de cebo](docs/Comprar-cebo.png)
 
-El flujo es **E → Sí → seleccionar la cantidad → Ctrl+A y escribir → comprobar el número → Comprar una sola vez → cerrar «…» → comprobar cebo disponible → volver a pescar**. El programa compara lecturas nuevas antes de avanzar. Solo escribe dígitos; reconoce ofertas de cebo en Peli y rechaza indicaciones de Robux. La escritura no se considera correcta hasta que el número visible coincide con el solicitado y sigue respetando el MAX.
+El flujo es **E → Sí → doble clic en el número central → Ctrl+A, borrar y escribir → comprobar el número → Comprar/Sí una sola vez → cerrar «…» → comprobar cebo disponible → volver a pescar**. El programa compara lecturas nuevas antes de avanzar y localiza el texto de cada botón. Solo escribe dígitos; reconoce ofertas de cebo en Peli y rechaza indicaciones de Robux. La escritura no se considera correcta hasta que el número visible coincide con el solicitado y sigue respetando el MAX.
+
+El umbral requiere una cantidad confirmada y espera a terminar la ronda o la última espera de picada. Por ejemplo, **2 + MAX** solicita el máximo del menú al confirmar 2 cebos o menos. Tras una reposición, el disparador vuelve a habilitarse cuando el contador confirmado supera el umbral: una lectura baja que persista no genera compras seguidas. Con la compra automática desactivada, un valor positivo bajo no interrumpe la pesca.
 
 En modo Contador OCR, el diálogo final puede oscurecer el contador. Por eso se cierra su botón «…» antes de exigir una lectura nueva y positiva del cebo. Si falta algún paso, falla la lectura, no hay saldo suficiente o el diálogo no aparece, la compra se detiene con un motivo: no se repite automáticamente el clic de Comprar. Los saltos quedan suspendidos mientras compra. Al alcanzar el límite de compras, pasa a la espera con saltos si está habilitada.
 
-**Validación pendiente:** las capturas permiten comprobar la oferta con Sí/No y el menú con MAX 5 y cantidad 1. El botón «…» no aparece dentro del recorte final aportado; su detector se probó con imágenes sintéticas. No se hicieron compras reales ni se gastó Peli durante las pruebas. Comprueba ese último menú con la vista de prueba antes de dejar el ciclo trabajando. En modo Contador OCR, si empiezas con el contador ya ausente y nunca se reconoció, compra cebo manualmente para establecer una primera lectura.
+**Validación pendiente en el juego:** las capturas permiten comprobar la oferta con Sí/No, el menú con MAX 5 y cantidad 1 y el botón «…» de la nueva captura, incluso con los nombres de habilidades alrededor. Al borrar los tres puntos de esa imagen, ya no autoriza el cierre. No se hicieron compras reales ni se gastó Peli durante las pruebas. Comprueba el flujo completo con Probar compra. En modo Contador OCR, si empiezas con el contador ya ausente y nunca se reconoció, compra cebo manualmente para establecer una primera lectura.
 
 ## Probar la falta de cebo y una compra
 
@@ -118,15 +122,17 @@ La prueba de falta de cebo simula el cero; no demuestra que el OCR detecte corre
 
 La prueba usa el modo elegido en Compra: Cronómetro puede terminar sin contador; Contador OCR exige cebo positivo tras cerrar. El registro distingue E sin oferta reconocida, Sí sin menú de cantidad, número escrito sin confirmar, Comprar enviado sin reconocer «…» y cierre sin confirmar cebo disponible. En modo Contador OCR, si la lectura de cebo está apagada, la prueba puede enviar Comprar y cerrar el diálogo, pero termina indicando que no pudo confirmar la reposición. No repite Comprar. Un contador positivo después del cierre confirma que hay cebo visible, no que haya aumentado exactamente en la cantidad solicitada: revisa el contador y el saldo del juego.
 
-El informe conserva estados y lecturas resumidas del detector, sin capturas ni texto libre obtenido por OCR. Está excluido del repositorio y del paquete. Si algo falla, este archivo permite identificar el paso pendiente.
+El informe conserva estados, posiciones de clic y lecturas resumidas del detector, sin capturas. Puede incluir fragmentos breves del OCR del contador para explicar una lectura fallida. Está excluido del repositorio y del paquete. Si algo falla, este archivo permite identificar el paso pendiente.
 
 ![Botones de prueba y registro de pasos](docs/Pruebas.png)
 
-## OCR y entradas en la 0.5.0
+## OCR y entradas en la 0.5.1
 
 El OCR añade contraste suave para conservar los bordes de dígitos pequeños. Exige el prefijo x, × o * junto a la cantidad: evita aceptar solo el 2 de x42 si el OCR omite los caracteres anteriores. Sigue exigiendo coincidencia entre escalas y capturas. Las lecturas ambiguas permanecen desconocidas. No se afirma que reconozca todas las cantidades: varias imágenes reducidas y x42 siguen fallando.
 
-E y las teclas de compra utilizan códigos físicos, como Espacio. Antes de cada clic mueve el puntero, espera al menos **200 ms**, exige otra lectura estable y comprueba que el cursor haya llegado al botón. Los clics duran **180 ms**. No muevas el ratón durante la prueba. El registro distingue que Windows aceptara la entrada de que el juego mostrara el menú siguiente. Estos cambios aún requieren una prueba en Roblox.
+E y las teclas de compra utilizan códigos físicos, como Espacio. En **Compra → Pausa entre pasos (ms)** se configura la espera de los menús y el apuntado: inicialmente **700 ms**, ajustable entre 200 y 3000. Antes de pulsar un botón exige otra lectura estable y comprueba que el cursor haya llegado al texto reconocido. Los clics duran **180 ms**. El doble clic del número mantiene 250 ms entre el inicio de ambas pulsaciones, seguido de la pausa antes de escribir. No muevas el ratón durante la prueba.
+
+Si tras el primer Sí sigue reconociendo la misma oferta en capturas nuevas, permite un único reintento de Sí, con una nueva pausa. No repite E ni el botón que confirma la compra. El botón «…» se busca por su forma y posición entre las otras etiquetas del menú. El registro distingue que Windows aceptara la entrada de que el juego mostrara el menú siguiente. Estos cambios aún requieren una prueba en Roblox.
 
 La implementación utiliza [KEYBDINPUT](https://learn.microsoft.com/en-us/windows/win32/api/winuser/ns-winuser-keybdinput) y [SendInput](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-sendinput). No eleva privilegios ni inyecta código en el juego.
 
@@ -149,6 +155,9 @@ La tecla E se mantiene sin bloquear la interfaz. F10, pérdida de foco y la prot
 | Pausa entre rondas | 1800 ms | Espera después de confirmar el cierre del menú |
 | Tolerancia de color | 38 | Margen de reconocimiento del azul y el blanco |
 | Anticipación | 80 ms | Compensación del movimiento; el frenado aumenta al estar el pez casi quieto |
+| Comprar si quedan ≤ | 2 | Umbral confirmado de reposición en Contador OCR |
+| Pausa entre pasos | 700 ms | Espera del diálogo y del apuntado durante la compra |
+| Idioma OCR | Automático (Windows) | Idioma para leer el contador y los menús |
 
 Las zonas, el punto y los ajustes se guardan en `ajustes.xml`. La autorización para enviar clics y teclas se desmarca al volver a abrir el programa. Los ajustes anteriores conservan sus opciones. Las nuevas instalaciones tienen la compra automática desactivada. Si cambias la posición, resolución o escala del juego, revisa las selecciones.
 
@@ -165,7 +174,7 @@ SomeFishingGPO.exe --self-test pruebas
 
 `compilar.cmd` utiliza `%WINDIR%\Microsoft.NET\Framework64\v4.0.30319\csc.exe`, busca los metadatos `Windows.winmd` del SDK y las bibliotecas locales de interoperabilidad. El modo `--self-test` no registra atajos globales ni envía clics o teclas reales; los botones de la sección Pruebas sí ejecutan acciones reales cuando los utilizas. Guarda el informe en `pruebas/resultados.txt`; el código de salida 0 indica éxito.
 
-Las **332 comprobaciones incluidas** cubren seguimiento, balanceo, exclusión del verde, contador, desaparición, espera, compra simulada, límite de compras, regreso a la pesca y liberación de entradas. La validación local alcanzó **404 comprobaciones** al añadir diez capturas del desarrollo; esas capturas no se distribuyen. Incluye los modos de prueba, conservación de ajustes, salto o compra únicos, cancelaciones, duración configurable de E, compatibilidad de ajustes anteriores y rechazo de otras formas por el respaldo x2. También incluye reconocimiento nativo del contador y de los menús de compra, así como la regresión de `x300` con una franja blanca. Los resultados de esta compilación y el análisis de Defender están en [VERIFICACION.txt](docs/VERIFICACION.txt).
+Las **361 comprobaciones integradas realizadas en este equipo** cubren seguimiento, balanceo, exclusión del verde, contador, desaparición, espera, compra simulada, límite de compras, regreso a la pesca y liberación de entradas. La validación local alcanzó **437 comprobaciones** al añadir once capturas del desarrollo; esas capturas no se distribuyen. Incluye umbral, rearme, idioma OCR, pausas, reintento limitado de Sí, doble clic, cancelación entre sus pulsaciones y posición real de los tres puntos. También cubre cronómetro, modos de prueba, conservación de ajustes, duración de E, respaldo x2 y la regresión de `x300` con una franja blanca. La cantidad de comprobaciones depende de los idiomas OCR disponibles. Los resultados de esta compilación y el análisis de Defender están en [VERIFICACION.txt](docs/VERIFICACION.txt).
 
 Puedes comparar la huella del ejecutable descargado con [SHA256.txt](docs/SHA256.txt):
 

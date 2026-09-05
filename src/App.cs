@@ -56,6 +56,10 @@ namespace SomeFishingGPO
         private NumericUpDown buyQuantity, purchaseLimit, shopOpenTime, purchaseMinutes, testBuyQuantity;
         private ComboBox purchaseMode;
         private Label purchaseCountdown, purchaseModeHint;
+        private NumericUpDown baitThreshold, shopSettle;
+        private ComboBox ocrLanguage;
+        private readonly System.Collections.Generic.List<string> ocrTags=new System.Collections.Generic.List<string>();
+        private Panel timerCondition, ocrCondition;
         private Button shopAreaButton, shopPreviewButton;
         private Label shopAreaLabel, shopDetail;
         private PictureBox shopPreview;
@@ -84,7 +88,7 @@ namespace SomeFishingGPO
             string loadWarning = null;
             try { settings = testMode ? new Settings() : Settings.Load(settingsPath); }
             catch (Exception error) { settings = new Settings(); loadWarning = "No se pudieron cargar los ajustes: " + error.Message; }
-            Text = "SomeFishing GPO · v0.5.0";
+            Text = "SomeFishing GPO · v0.5.1";
             ClientSize = new Size(1080, 730);
             AutoScaleMode = AutoScaleMode.None;
             Font = new Font("Segoe UI", 10);
@@ -117,6 +121,10 @@ namespace SomeFishingGPO
             SetNumber(purchaseMinutes,settings.PurchaseIntervalMinutes);SetNumber(testBuyQuantity,settings.TestBuyQuantity);
             purchaseMode.SelectedIndex=settings.PurchaseByTimer?1:0;UpdatePurchaseControls(true);
             SetNumber(shopOpenTime,settings.ShopOpenMilliseconds);
+            SetNumber(baitThreshold,settings.BuyBaitAt);SetNumber(shopSettle,settings.ShopSettleMilliseconds);
+            int languageIndex=ocrTags.IndexOf(settings.OcrLanguage??"");
+            if(languageIndex<0){ocrTags.Add(settings.OcrLanguage);ocrLanguage.Items.Add("No disponible: "+settings.OcrLanguage);languageIndex=ocrTags.Count-1;}
+            ocrLanguage.SelectedIndex=languageIndex;
             UpdateAreaLabels();
         }
         private static void SetNumber(NumericUpDown control, int value)
@@ -133,7 +141,8 @@ namespace SomeFishingGPO
                 IdleJumpEnabled = idleJump.Checked, IdleJumpSeconds = (int)jumpSeconds.Value,
                 AutoBuyBait=autoBuy.Checked,ShopArea=settings.ShopArea,BuyMaximum=buyMaximum.Checked,
                 BuyQuantity=(int)buyQuantity.Value,PurchaseLimit=(int)purchaseLimit.Value,ShopOpenMilliseconds=(int)shopOpenTime.Value,
-                PurchaseByTimer=purchaseMode.SelectedIndex==1,PurchaseIntervalMinutes=(int)purchaseMinutes.Value,TestBuyQuantity=(int)testBuyQuantity.Value };
+                PurchaseByTimer=purchaseMode.SelectedIndex==1,PurchaseIntervalMinutes=(int)purchaseMinutes.Value,TestBuyQuantity=(int)testBuyQuantity.Value,
+                BuyBaitAt=(int)baitThreshold.Value,ShopSettleMilliseconds=(int)shopSettle.Value,OcrLanguage=ocrLanguage.SelectedIndex>=0?ocrTags[ocrLanguage.SelectedIndex]:"" };
         }
         private void UpdateAreaLabels()
         {
@@ -194,7 +203,7 @@ namespace SomeFishingGPO
         {
             bool wasActive=previewingShop;StopAll("Prueba de compra detenida");if(wasActive)return;
             string issue=Settings.ValidateShopArea(settings.ShopArea,SystemInformation.VirtualScreen);if(issue!=null){statusLabel.Text=issue;return;}
-            previewShopReader=new WindowsShopReader();previewingShop=true;shopPreviewButton.Text="Detener lectura";statusLabel.Text="Solo lee los menús · no compra ni envía teclas";
+            previewShopReader=new WindowsShopReader(ReadSettings().OcrLanguage);previewingShop=true;shopPreviewButton.Text="Detener lectura";statusLabel.Text="Solo lee los menús · no compra ni envía teclas";
         }
         private void SelectBaitArea()
         {
@@ -222,7 +231,7 @@ namespace SomeFishingGPO
             if (wasActive) return;
             string problem = Settings.ValidateBaitArea(settings.BaitArea, SystemInformation.VirtualScreen);
             if (problem != null) { statusLabel.Text = problem; return; }
-            previewReader = new WindowsBaitReader(); previewBaitMonitor.Reset(); previewingBait = true;
+            previewReader = new WindowsBaitReader(ReadSettings().OcrLanguage); previewBaitMonitor.Reset(); previewingBait = true;
             baitPreviewButton.Text = "Detener lectura";
             statusLabel.Text = "Solo lectura del contador · sin clics ni saltos";
         }
@@ -295,7 +304,7 @@ namespace SomeFishingGPO
             statusLabel.Text = "Vuelve a Roblox: inicio en 3 segundos. F10 cancela.";
         }
         private static string DiagnosticName(RunKind kind)
-        {return kind==RunKind.EmptyBaitTest?"SIN CEBO SIMULADO":"COMPRA REAL DE 1 CEBO";}
+        {return kind==RunKind.EmptyBaitTest?"SIN CEBO SIMULADO":"COMPRA REAL";}
         private bool CanStartDiagnostic(RunKind kind)
         {
             string issue=runtime!=null&&runtime.PendingRelease?"Hay una liberación de entrada pendiente. Espera antes de probar.":
@@ -308,11 +317,12 @@ namespace SomeFishingGPO
         {
             StopAll("Preparando prueba…");
             diagnosticLog.Clear();lastDiagnosticStep=null;
-            AppendDiagnostic("SomeFishing GPO 0.5.0 · "+DiagnosticName(kind));
+            AppendDiagnostic("SomeFishing GPO 0.5.1 · "+DiagnosticName(kind));
             if(testMode){AppendDiagnostic("Render de interfaz: entradas reales desactivadas.");return;}
             if(!CanStartDiagnostic(kind))return;
             Settings selected=ReadSettings().ForDiagnostic(kind);
             AppendDiagnostic("Compra: "+selected.AutoBuyBait+" · saltos: "+selected.IdleJumpEnabled+" · lector: "+selected.UsesBaitCounter+" · modo: "+(selected.PurchaseByTimer?"Cronómetro":"Contador OCR"));
+            AppendDiagnostic("Idioma OCR: "+(string.IsNullOrEmpty(selected.OcrLanguage)?"Automático":selected.OcrLanguage)+" · umbral: "+selected.BuyBaitAt+" · pausa entre pasos: "+selected.ShopSettleMilliseconds+" ms");
             if(selected.AutoBuyBait)AppendDiagnostic("Mantener E: "+selected.ShopOpenMilliseconds+" ms. El diálogo debe abrirse antes de pulsar Sí.");
             if(selected.Area.IsEmpty)AppendDiagnostic("Sin zona de pesca: comprueba manualmente que no esté abierto el minijuego.");
             if(selected.AutoBuyBait&&!selected.UsesBaitCounter)AppendDiagnostic(selected.PurchaseByTimer?"Prueba inmediata, sin esperar el intervalo. Comprueba el cierre del diálogo; inventario sin verificar por OCR.":"Lector apagado: podrá enviar Comprar, pero no confirmar la reposición.");
@@ -368,7 +378,7 @@ namespace SomeFishingGPO
                 tolerance, anticipation, holdUp, blueButton, markerButton, allowClicks,
                 monitorBait, idleJump, jumpSeconds, baitAreaButton, baitPreviewButton,
                 autoBuy,buyMaximum,buyQuantity,purchaseLimit,shopOpenTime,shopAreaButton,shopPreviewButton,
-                purchaseMode,purchaseMinutes,testBuyQuantity,emptyTestButton,purchaseTestButton }) control.Enabled = value;
+                purchaseMode,purchaseMinutes,testBuyQuantity,baitThreshold,shopSettle,ocrLanguage,emptyTestButton,purchaseTestButton }) control.Enabled = value;
             UpdatePurchaseControls(value);
         }
         private void StopAll(string reason)
@@ -393,7 +403,7 @@ namespace SomeFishingGPO
             }
             if (hadSession && !testMode)
             {
-                lastStop = string.Format("SomeFishing GPO 0.5.0 · {0:yyyy-MM-dd HH:mm:ss}\r\n\r\n{1}\r\n\r\n" +
+                lastStop = string.Format("SomeFishing GPO 0.5.1 · {0:yyyy-MM-dd HH:mm:ss}\r\n\r\n{1}\r\n\r\n" +
                     "Estado al parar: {2}\r\nRondas terminadas: {3}\r\nDuración: {4:F1} s\r\n" +
                     "Mayor intervalo entre revisiones: {5:F0} ms\r\nLanzamiento: {6} ms · Espera: {7} s\r\n" +
                     "Anticipación: {8} ms · Tolerancia: {9}\r\nÚltima detección: {10}\r\n" +

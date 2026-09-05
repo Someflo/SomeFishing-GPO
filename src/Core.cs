@@ -37,6 +37,9 @@ namespace SomeFishingGPO
         [XmlIgnore] public bool UsesBaitCounter { get { return MonitorBait && !TimedPurchases; } }
         public int PurchaseLimit = 10;
         public int ShopOpenMilliseconds = 1000;
+        public int ShopSettleMilliseconds = 700;
+        public int BuyBaitAt = 2;
+        public string OcrLanguage = "";
 
         public Settings ForDiagnostic(RunKind kind)
         {
@@ -56,6 +59,7 @@ namespace SomeFishingGPO
             if(AutoBuyBait){string issue=ValidateShopArea(ShopArea,desktop);if(issue!=null)return issue;
                 if(ShopOpenMilliseconds<100||ShopOpenMilliseconds>3000)return "Mantener E debe estar entre 100 y 3000 ms.";}
             if(BuyQuantity<1||BuyQuantity>9999)return "La cantidad de prueba debe estar entre 1 y 9999.";
+            if(ShopSettleMilliseconds<200||ShopSettleMilliseconds>3000)return "La pausa entre pasos debe estar entre 200 y 3000 ms.";
             if(UsesBaitCounter){string issue=ValidateBaitArea(BaitArea,desktop);if(issue!=null)return issue;}
             return null;
         }
@@ -72,6 +76,8 @@ namespace SomeFishingGPO
             if (sending && AutoCast && (!CastPointSet || !ContainsSafely(desktop, new Rectangle(CastPoint, new Size(1, 1))))) return "Selecciona un punto sobre el agua para lanzar.";
             if (IdleJumpSeconds < 15 || IdleJumpSeconds > 300) return "El intervalo de saltos debe estar entre 15 y 300 segundos.";
             if (UsesBaitCounter) { string problem = ValidateBaitArea(BaitArea, desktop); if (problem != null) return problem; }
+            if(BuyBaitAt<0||BuyBaitAt>9999)return "El umbral de cebo debe estar entre 0 y 9999.";
+            if(ShopSettleMilliseconds<200||ShopSettleMilliseconds>3000)return "La pausa entre pasos debe estar entre 200 y 3000 ms.";
             if (AutoBuyBait)
             {
                 if(ShopOpenMilliseconds<100||ShopOpenMilliseconds>3000)return "Mantener E debe estar entre 100 y 3000 ms.";
@@ -481,6 +487,7 @@ namespace SomeFishingGPO
         private string idleReason;
         private PurchaseController purchase;
         private double nextPurchase;
+        private bool baitPurchaseArmed;
         private long simulatedSequence;
         public RunKind Kind { get; private set; }
         public bool IsDiagnostic { get { return Kind!=RunKind.Fishing; } }
@@ -521,6 +528,7 @@ namespace SomeFishingGPO
             bait.Reset();
             JumpRequests = 0;
             PurchaseAttempts = 0; purchase = null;
+            baitPurchaseArmed=true;
             nextPurchase=now+settings.PurchaseIntervalMinutes*60000.0;
             simulatedSequence=0;
             State = Phase.Preparing; deadline = now + 1000; Status = "Preparando la pesca…";
@@ -542,13 +550,15 @@ namespace SomeFishingGPO
         }
         private bool HandleNoBait(double now)
         {
-            if((!settings.UsesBaitCounter&&Kind!=RunKind.EmptyBaitTest)||(!bait.Empty&&!bait.Disappeared))return false;
-            string reason=bait.Empty?"Sin cebo confirmado":"Contador desaparecido durante 8 s";
-            if(settings.AutoBuyBait && PurchaseAttempts<settings.PurchaseLimit)
+            bool low=settings.AutoBuyBait&&!settings.PurchaseByTimer&&bait.Count.HasValue&&bait.Count<=settings.BuyBaitAt;
+            if((!settings.UsesBaitCounter&&Kind!=RunKind.EmptyBaitTest)||(!bait.Empty&&!bait.Disappeared&&!(low&&baitPurchaseArmed)))return false;
+            string reason=bait.Empty?"Sin cebo confirmado":low?"Cebo bajo: "+bait.Count+" · umbral: "+settings.BuyBaitAt:"Contador desaparecido durante 8 s";
+            if(settings.AutoBuyBait && PurchaseAttempts<settings.PurchaseLimit && (baitPurchaseArmed||IsDiagnostic))
             {
+                baitPurchaseArmed=false;
                 BeginPurchase(now);return true;
             }
-            EnterIdle(now,settings.AutoBuyBait?reason+" · límite de compras alcanzado":reason,true);return true;
+            EnterIdle(now,settings.AutoBuyBait?reason+(PurchaseAttempts>=settings.PurchaseLimit?" · límite de compras alcanzado":" · reposición todavía no confirmada por encima del umbral"):reason,true);return true;
         }
         private void BeginPurchase(double now)
         {
@@ -613,6 +623,7 @@ namespace SomeFishingGPO
                 if(Kind==RunKind.EmptyBaitTest&&purchase==null)
                     bait.Update(new BaitReading{Count=0,Sequence=++simulatedSequence,SampledAt=now,Detail="Lectura de prueba"},now);
                 else if (settings.UsesBaitCounter) bait.Update(runtime.ReadBait(now), now);
+                if(State!=Phase.Purchasing&&bait.Count>settings.BuyBaitAt)baitPurchaseArmed=true;
                 if(IsDiagnostic&&State==Phase.Preparing)
                 {
                     LastObservation=runtime.Observe();

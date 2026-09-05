@@ -1,26 +1,31 @@
-SomeFishing GPO 0.5.0 - verificación local, 2026-09-05
+SomeFishing GPO 0.5.1 - verificación local, 2026-09-05
 
-332 comprobaciones integradas; 404 al añadir diez capturas privadas del usuario.
-Incluye compra por cronómetro sin contador: intervalo completo, espera de ronda,
-reinicio tras cerrar el diálogo, límite por sesión, no comprar antes de tiempo,
-espera tras tres lanzamientos fallidos, cancelación y cantidad fija hasta MAX.
-Prueba de compra con cantidad independiente y sin esperar el cronómetro.
-E por código físico; apuntar sin clicar, espera de 200 ms y foco perdido al apuntar.
-Construcción de las parejas de teclas probada sin enviarlas a aplicaciones.
-Fallos del lector no confirman que se haya cerrado un diálogo de compra.
+361 comprobaciones integradas; 437 al añadir once capturas privadas del usuario.
+La cuenta incluye los tres idiomas OCR instalados en el equipo de desarrollo.
+Incluye umbral configurable, espera de la pesca pendiente, rechazo de una lectura
+baja aislada y rearme solo después de confirmar cebo por encima del umbral.
+Idioma OCR seleccionable, persistencia y error explícito si no está disponible.
+Pausas de menús y apuntado, un solo reintento del primer Sí en una oferta estable,
+doble clic a 250 ms en la misma cantidad y pausa antes de Ctrl+A y escritura.
+Parada entre las dos pulsaciones impide la siguiente pulsación y la escritura.
+Posiciones de clic dentro de los textos reales Sí y cantidad de las capturas.
+Los tres puntos de la nueva captura se reconocen entre etiquetas del HUD:
+centro (257, 180) en la imagen de prueba de 527 x 200. El mismo fondo sin
+los tres puntos no autoriza el cierre. La captura anterior no contenía el botón.
 Interfaz renderizada sin activación ni atajos y revisada visualmente.
 
-OCR: regresión que confundía x42 reducido con 2 ahora queda desconocida.
-Contraste suave conserva los dígitos del contador 295 a dos escalas.
-Comparación adicional de 24 reconstrucciones: 10 correctas y 1 equivocada en
-0.4.0; 10 correctas y ninguna equivocada en 0.5.0. Las otras 14 son desconocidas.
-No se afirma una mejora general de cobertura: x42 y varios tamaños siguen fallando.
-El respaldo visual x2 sigue siendo específico; no devuelve cero.
+Conserva pruebas de cronómetro sin contador, cantidad de prueba independiente,
+límites de compra, cancelación, códigos físicos, liberación de entradas y foco.
+La cantidad y el MAX se comprueban antes de confirmar el pedido una sola vez.
+Los errores del lector no confirman un cierre de diálogo.
+OCR: se conserva contraste suave y prefijo obligatorio para evitar lecturas
+parciales. No se afirma reconocer todos los tamaños o cantidades: x42 y varias
+reconstrucciones siguen siendo desconocidas. El respaldo x2 no devuelve cero.
 
 No se enviaron teclas/clics a Roblox ni se gastó Peli en estas pruebas.
-E y los clics necesitan comprobación del usuario en el juego.
-El botón final de tres puntos solo tiene validación con imágenes sintéticas;
-el recorte final proporcionado no muestra ese botón.
+El flujo completo, incluidos E, Sí, doble clic, compra y cierre, requiere
+comprobación del usuario dentro del juego. Las capturas no demuestran que
+Roblox acepte las entradas ni que el pedido se complete en una partida.
 Cronómetro conserva OCR del menú, pero no confirma el inventario ni su aumento.
 
 Microsoft Defender completó el análisis del ejecutable: found no threats.
@@ -30,7 +35,7 @@ No se incluyen capturas privadas, preferencias, registros personales ni credenci
 Los PNG de documentación son renders y ejemplos sintéticos.
 
 SHA256 DEL EJECUTABLE
-CF44B55E452CD92C05BDA5BBE9A37816CF0AA04197D4DA50963BB9D9D0355AE2  SomeFishingGPO.exe
+CD61AB4E32A2854216A7B49AC7882DC984652BCC577281B899AAC3EAAEDABCC1  SomeFishingGPO.exe
 
 PRUEBAS INTEGRADAS
 OK: Windows INPUT structure matches the platform ABI
@@ -245,7 +250,7 @@ OK: Other item offers are rejected
 OK: Short numeric fields require matching copies of the same glyph image
 OK: Repeated-glyph disagreements and letters are rejected
 OK: Three aligned white dots identify the final central button
-OK: Additional lettering prevents a false ellipsis button
+OK: Additional lettering on the button row prevents a false ellipsis button
 OK: Purchase opens once, confirms Yes and types the displayed maximum
 OK: Quantity entry sends E and Ctrl+A then 5, releasing every key
 OK: Wrong displayed quantity cannot click Buy
@@ -399,8 +404,37 @@ OK: A suffix, ambiguous glyph or extra number cannot authorize a counter quantit
 OK: A suffix, ambiguous glyph or extra number cannot authorize a counter quantity: x4.2
 OK: A suffix, ambiguous glyph or extra number cannot authorize a counter quantity: x
 OK: Soft contrast cannot turn an empty crop into digits
+OK: Above the configured bait threshold fishing continues
+OK: Confirmed low bait preserves the already-started bite wait
+OK: Two confirmed remaining bait trigger replenishment at threshold two
+OK: Threshold is configurable instead of hardcoded to two
+OK: A single or unreadable low-count frame cannot trigger spending
+OK: Low-bait threshold cannot interrupt an active fish
+OK: Threshold alone does not enable purchases or stop fishing early
+OK: A still-low count after purchase cannot cause repeated orders at every cast
+OK: A confirmed rise above the threshold rearms a later low-bait purchase
+OK: Bait threshold survives a settings round trip
+OK: The quantity screen permits its positive purchase button, never No or Cancel
+OK: Menu animation grace period prevents aiming immediately after E
+OK: Configured 700 ms pointer settling is respected despite fresh OCR frames
+OK: Stable offer receives the first Yes only after its pause
+OK: Cached confirmation cannot authorize a Yes retry
+OK: An unchanged freshly recognized offer permits exactly one Yes retry
+OK: A persistent offer cannot cause a third Yes click
+OK: The displayed MAX is chosen only after recognizing the quantity screen
+OK: The number double-click leaves time to release its first press
+OK: Quantity entry sends two clicks to the same number, 250 ms apart
+OK: Typing waits for the field after the second click
+OK: Ctrl+A follows the double-click and configured pause
+OK: Cancellation between the number clicks prevents the second click and all typing
+OK: OCR language and step pause survive saving and diagnostic cloning
+OK: Unknown OCR language never silently changes to a different engine
+OK: An enumerated installed OCR language is selectable: en-US
+OK: An enumerated installed OCR language is selectable: es-ES
+OK: An enumerated installed OCR language is selectable: es-MX
+OK: Unavailable OCR language is a read error, not a closed dialogue
 UI: rendered off-screen non-activating form; no hotkeys registered and no clicks sent.
-PASS: 332 checks.
+PASS: 361 checks.
 
 VALIDACIÓN CON CAPTURAS NO DISTRIBUIDAS
 OK: Windows INPUT structure matches the platform ABI
@@ -673,7 +707,7 @@ OK: Other item offers are rejected
 OK: Short numeric fields require matching copies of the same glyph image
 OK: Repeated-glyph disagreements and letters are rejected
 OK: Three aligned white dots identify the final central button
-OK: Additional lettering prevents a false ellipsis button
+OK: Additional lettering on the button row prevents a false ellipsis button
 OK: Purchase opens once, confirms Yes and types the displayed maximum
 OK: Quantity entry sends E and Ctrl+A then 5, releasing every key
 OK: Wrong displayed quantity cannot click Buy
@@ -701,7 +735,7 @@ OK: The supplied purchase offer and Sí/No buttons are recognized
 OK: The actual No button does not match Sí
 OK: The supplied amount dialogue reads MAX 5 and quantity 1
 OK: The cropped final screenshot without visible dots cannot authorize a close click
-SHOP LIMIT: the supplied final screenshot does not show the ellipsis button; that detector is validated with synthetic dots only. No live purchases were sent.
+SHOP: the earlier final crop lacks dots. The additional final screenshot is checked separately when supplied. No live purchases were sent.
 OK: The supplied 295-bait counter is readable when the yellow button border is excluded
 OK: White-only UI strips do not produce counter glyphs
 OK: A white strip never becomes a numeric zero
@@ -851,5 +885,38 @@ OK: A suffix, ambiguous glyph or extra number cannot authorize a counter quantit
 OK: Soft contrast cannot turn an empty crop into digits
 OK: Regression: a resized x42 counter must not be misread as its final digit 2
 OK: Soft contrast retains the tiny 295 digits at two scales where the hard mask loses them
+OK: Above the configured bait threshold fishing continues
+OK: Confirmed low bait preserves the already-started bite wait
+OK: Two confirmed remaining bait trigger replenishment at threshold two
+OK: Threshold is configurable instead of hardcoded to two
+OK: A single or unreadable low-count frame cannot trigger spending
+OK: Low-bait threshold cannot interrupt an active fish
+OK: Threshold alone does not enable purchases or stop fishing early
+OK: A still-low count after purchase cannot cause repeated orders at every cast
+OK: A confirmed rise above the threshold rearms a later low-bait purchase
+OK: Bait threshold survives a settings round trip
+OK: The quantity screen permits its positive purchase button, never No or Cancel
+OK: Menu animation grace period prevents aiming immediately after E
+OK: Configured 700 ms pointer settling is respected despite fresh OCR frames
+OK: Stable offer receives the first Yes only after its pause
+OK: Cached confirmation cannot authorize a Yes retry
+OK: An unchanged freshly recognized offer permits exactly one Yes retry
+OK: A persistent offer cannot cause a third Yes click
+OK: The displayed MAX is chosen only after recognizing the quantity screen
+OK: The number double-click leaves time to release its first press
+OK: Quantity entry sends two clicks to the same number, 250 ms apart
+OK: Typing waits for the field after the second click
+OK: Ctrl+A follows the double-click and configured pause
+OK: Cancellation between the number clicks prevents the second click and all typing
+OK: OCR language and step pause survive saving and diagnostic cloning
+OK: Unknown OCR language never silently changes to a different engine
+OK: An enumerated installed OCR language is selectable: en-US
+OK: An enumerated installed OCR language is selectable: es-ES
+OK: An enumerated installed OCR language is selectable: es-MX
+OK: Unavailable OCR language is a read error, not a closed dialogue
+OK: Yes click lands on the supplied button lettering rather than a generic third of the region
+OK: Double-click target lands on the displayed numeric field in the supplied image
+OK: The actual ellipsis is recognized among HUD labels and targeted at its visible position
+OK: The same HUD without its three dots cannot authorize a closing click
 UI: rendered off-screen non-activating form; no hotkeys registered and no clicks sent.
-PASS: 404 checks.
+PASS: 437 checks.
