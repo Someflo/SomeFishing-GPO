@@ -1,5 +1,16 @@
 # Cambios
 
+## 0.5.0 — cronómetro y entradas (compilación local)
+
+- Compra por contador o cronómetro; cantidad e intervalo ajustables, inicialmente 50 cada 40 minutos, hasta el MAX del menú.
+- Cuenta atrás visible, compra entre rondas, nuevo intervalo tras completar el diálogo, límite por sesión y cancelación al parar. Espera al cronómetro tras tres lanzamientos fallidos, con saltos opcionales.
+- Cantidad independiente en Pruebas, para una compra inmediata. La simulación de cero conserva una unidad.
+- E y teclas de compra por códigos físicos; apuntar separado de pulsar, pausa mínima de 200 ms, otra confirmación visual y comprobación de la posición. Clic de 180 ms.
+- Contraste suave del contador y prefijo obligatorio; evita una lectura parcial de x42 como 2. No resuelve todas las cantidades ni tamaños.
+- Un error del lector no confirma el cierre de la compra. Cronómetro no verifica inventario mediante OCR.
+- 332 comprobaciones integradas y 404 con capturas privadas. Sin entradas reales durante la validación ni cambio de licencia.
+
+
 ## 0.4.0 — interfaz más simple (compilación local)
 
 - Menú lateral con Pesca, Cebo, Compra, Pruebas, Ajustes y Guía. Diseño claro con paneles blancos, fondo suave y botones redondeados, sin emojis.

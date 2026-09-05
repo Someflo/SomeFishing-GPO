@@ -21,7 +21,7 @@ namespace SomeFishingGPO
             long seq=++sequence;next=now+1000;
             pending=Task.Run(delegate {
                 using(frame){ShopReading result;
-                    try{result=ReadImage(frame);}catch{result=new ShopReading{Detail="No se pudo leer el menú de compra con Windows OCR"};}
+                    try{result=ReadImage(frame);}catch{result=new ShopReading{ReadFailed=true,Detail="No se pudo leer el menú de compra con Windows OCR"};}
                     result.Left.Offset(origin);result.Middle.Offset(origin);result.SampledAt=now;result.Sequence=seq;return result;
                 }
             });
@@ -29,7 +29,7 @@ namespace SomeFishingGPO
         private void Poll()
         {
             if(pending==null||!pending.IsCompleted)return;
-            if(!disposed)latest=pending.Status==TaskStatus.RanToCompletion?pending.Result:new ShopReading();
+            if(!disposed)latest=pending.Status==TaskStatus.RanToCompletion?pending.Result:new ShopReading{ReadFailed=true};
             if(pending.IsFaulted){var ignored=pending.Exception;}pending=null;
         }
         private static string Read(OcrEngine engine,Bitmap source,Rectangle rect,int scale)
@@ -39,7 +39,7 @@ namespace SomeFishingGPO
             var result=new ShopReading();
             if(image.Width<150||image.Height<80)return result;
             var engine=OcrEngine.TryCreateFromUserProfileLanguages();
-            if(engine==null){result.Detail="Windows no tiene un idioma OCR disponible";return result;}
+            if(engine==null){result.ReadFailed=true;result.Detail="Windows no tiene un idioma OCR disponible";return result;}
             int row=(int)(image.Height*.73),third=image.Width/3;
             var body=new Rectangle(0,0,image.Width,row);
             var left=new Rectangle(0,row,third,image.Height-row);

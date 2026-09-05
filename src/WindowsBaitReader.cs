@@ -50,7 +50,7 @@ namespace SomeFishingGPO
             var engine = OcrEngine.TryCreateFromUserProfileLanguages();
             if (engine == null) return new BaitReading { Detail = "Windows no tiene un idioma de OCR disponible." };
             string first = Recognize(engine, image, 3), second = Recognize(engine, image, 5);
-            int? a = BaitText.Parse(first), b = BaitText.Parse(second);
+            int? a = ParseCounter(first), b = ParseCounter(second);
             int? isolatedFirst=null, isolatedSecond=null;
             if (a.HasValue && a == b) return new BaitReading { Count = a, Detail = "Lectura: " + a.Value };
             // Conflicting numeric evidence must stay unknown; do not choose a preferred result.
@@ -59,20 +59,81 @@ namespace SomeFishingGPO
             {
                 if (isolated != null)
                 {
-                    int? c = BaitText.Parse(Recognize(engine, isolated, 3));
-                    int? d = BaitText.Parse(Recognize(engine, isolated, 5));
+                    int? c = ParseCounter(Recognize(engine, isolated, 3));
+                    int? d = ParseCounter(Recognize(engine, isolated, 5));
                     isolatedFirst=c;isolatedSecond=d;
                     if (c.HasValue && c == d && (!a.HasValue || a == c) && (!b.HasValue || b == c))
                         return new BaitReading { Count = c, Detail = "Lectura: " + c.Value + " · texto amarillo aislado" };
                 }
             }
+            // Preserve antialiased edges in tiny digits. A hard yellow/white mask
+            // turns e.g. 295 into letters on the supplied 9-pixel-high counter.
+            // Use two scales of each soft contrast image, retaining disagreements.
+            int? softValue=null,softEvidence=null;
+            bool conflict=(a.HasValue&&b.HasValue&&a!=b)||(isolatedFirst.HasValue&&isolatedSecond.HasValue&&isolatedFirst!=isolatedSecond);
+            foreach(int variant in new[]{0,1,2})
+            {
+                if(conflict)break;
+                using(Bitmap soft=NormalizeSoftCounter(image,variant))
+                {
+                    if(soft==null)continue;
+                    int? c=ParseCounter(Recognize(engine,soft,2)),d=ParseCounter(Recognize(engine,soft,3));
+                    foreach(int? evidence in new[]{c,d})if(evidence.HasValue)
+                    {
+                        if((a.HasValue&&a!=evidence)||(b.HasValue&&b!=evidence)
+                            ||(isolatedFirst.HasValue&&isolatedFirst!=evidence)||(isolatedSecond.HasValue&&isolatedSecond!=evidence)
+                            ||(softEvidence.HasValue&&softEvidence!=evidence))conflict=true;
+                        softEvidence=evidence;
+                    }
+                    if(c.HasValue&&c==d)softValue=c;
+                }
+            }
+            if(!conflict&&softValue.HasValue)return new BaitReading{Count=softValue,Detail="Lectura: "+softValue.Value+" · contraste suave"};
             // A narrow positive-only visual reference handles the supplied touching
             // x2 glyphs when Windows returns no text. It never supplies a zero and
             // cannot override contradictory numeric OCR evidence at any scale.
-            if(CounterGlyphs.MatchTwo(image)&&(!a.HasValue||a==2)&&(!b.HasValue||b==2)
+            if(!conflict&&CounterGlyphs.MatchTwo(image)&&(!softEvidence.HasValue||softEvidence==2)&&(!a.HasValue||a==2)&&(!b.HasValue||b==2)
                 &&(!isolatedFirst.HasValue||isolatedFirst==2)&&(!isolatedSecond.HasValue||isolatedSecond==2))
                 return new BaitReading{Count=2,Detail="Lectura: 2 · referencia visual x2"};
-            return new BaitReading { Detail = "Número no reconocido con claridad. Rodea x y la cantidad, sin bordes ni otros números." };
+            return new BaitReading { Detail = conflict?"OCR contradictorio; cantidad desconocida. Ajusta la zona o usa Cronómetro.":"OCR sin coincidencia: "+ShortText(first)+" / "+ShortText(second)+". Rodea x y el número o usa Cronómetro." };
+        }
+        private static string ShortText(string text)
+        {
+            text=(text??"").Replace("\r"," ").Replace("\n"," ").Trim();
+            return text.Length==0?"vacío":text.Length>18?text.Substring(0,18)+"…":text;
+        }
+        internal static int? ParseCounter(string text)
+        {
+            // This region is configured around x and the complete quantity. If
+            // OCR drops the prefix/first digit (x42 -> 2), a bare suffix is unsafe.
+            return System.Text.RegularExpressions.Regex.IsMatch(text??"",@"\A\s*[xX×*]\s*[0-9]{1,5}\s*\z")?BaitText.Parse(text):null;
+        }
+        internal static Bitmap NormalizeSoftCounter(Bitmap image,int variant)
+        {
+            int left=image.Width,top=image.Height,right=-1,bottom=-1;
+            for(int y=0;y<image.Height;y++)for(int x=0;x<image.Width;x++)
+            {
+                Color c=image.GetPixel(x,y);
+                if(c.R>140&&c.G>75&&c.R-c.G>20&&c.G-c.B>35)
+                {left=Math.Min(left,x);right=Math.Max(right,x);top=Math.Min(top,y);bottom=Math.Max(bottom,y);}
+            }
+            int width=right-left+1,height=bottom-top+1;
+            if(width<3||height<5||width>height*12)return null;
+            int targetHeight=variant==2?32:24;
+            int targetWidth=(int)Math.Round(width*targetHeight*(variant==1?1.3:1.0)/height);
+            using(var glyph=new Bitmap(width,height,PixelFormat.Format32bppArgb))
+            {
+                for(int y=0;y<height;y++)for(int x=0;x<width;x++)
+                {
+                    Color c=image.GetPixel(left+x,top+y);
+                    int value=255-Math.Min(255,Math.Max(0,c.R-c.B-25)*255/200);
+                    glyph.SetPixel(x,y,Color.FromArgb(value,value,value));
+                }
+                var result=new Bitmap(targetWidth+16,targetHeight+16,PixelFormat.Format32bppArgb);
+                using(var g=Graphics.FromImage(result))
+                {g.Clear(Color.White);g.InterpolationMode=InterpolationMode.HighQualityBicubic;g.DrawImage(glyph,8,8,targetWidth,targetHeight);}
+                return result;
+            }
         }
         internal static Bitmap NormalizeCounterText(Bitmap image)
         {

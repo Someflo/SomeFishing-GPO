@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -161,6 +161,9 @@ namespace SomeFishingGPO
                 TestCounterIsolation(args);
                 TestDiagnostics(output);
                 TestInteractionAndTinyCounter(output,args);
+                TestPurchaseTimer(output);
+                TestShopInputTiming();
+                TestCounterRobustness(args);
 
                 using (var form = new MainForm(true)) form.RenderExample(Path.Combine(output, "interfaz.png"));
                 results.Add("UI: rendered off-screen non-activating form; no hotkeys registered and no clicks sent.");
@@ -777,7 +780,7 @@ namespace SomeFishingGPO
             Check(!engine.Running&&engine.PurchaseSubmitted&&game.ShopClicks==4&&engine.Status.Contains("no se confirmó cebo"),"Without bait OCR the purchase test reports an unconfirmed outcome and cannot repeat Buy");
 
             game=new FakeGame();engine=new FishingEngine(new Settings(),game,RunKind.PurchaseTest);engine.Start(0);engine.Tick(1000);engine.Tick(2000);engine.Tick(22500);
-            Check(!engine.Running&&!engine.PurchaseSubmitted&&engine.Status.Contains("E se envió")&&engine.PurchaseDetail.Contains("Comprar enviado: False"),"Diagnostic distinguishes an E/menu failure from a submitted purchase");
+            Check(!engine.Running&&!engine.PurchaseSubmitted&&engine.Status.Contains("Windows aceptó E")&&engine.PurchaseDetail.Contains("Comprar enviado: False"),"Diagnostic distinguishes an E/menu failure from a submitted purchase");
             game=new FakeGame();var p=ReadyToVerify(game,new Settings{BuyMaximum=false,BuyQuantity=1});
             game.Active=false;p.Tick(3600,null,0);
             Check(p.State==PurchasePhase.Failed&&game.KeysDown.Count==0&&!p.Submitted,"Losing focus after typing prevents a diagnostic purchase submission");
@@ -861,6 +864,122 @@ namespace SomeFishingGPO
                 results.Add("TINY COUNTER LIMIT: fallback matches only the full supplied x2 glyph shape. It cannot supply zero; other digits still use OCR. The 38x33 case is reconstructed from the enlarged preview, not a native game capture.");
             }
         }
+        private static void TestCounterRobustness(string[] args)
+        {
+            Check(WindowsBaitReader.ParseCounter("x42")==42&&WindowsBaitReader.ParseCounter("*300")==300&&WindowsBaitReader.ParseCounter("x0")==0,"Counter OCR accepts the complete prefix and quantity, including an explicit zero");
+            foreach(string partial in new[]{"2","0","42","xO","x42 2","x4.2","x"})
+                Check(!WindowsBaitReader.ParseCounter(partial).HasValue,"A suffix, ambiguous glyph or extra number cannot authorize a counter quantity: "+partial);
+            using(var blank=new Bitmap(40,20))using(var soft=WindowsBaitReader.NormalizeSoftCounter(blank,0))
+                Check(soft==null,"Soft contrast cannot turn an empty crop into digits");
+            if(args.Length>5)using(var source=new Bitmap(args[5]))using(var rare=source.Clone(new Rectangle(207,81,33,20),PixelFormat.Format32bppArgb))using(var resized=new Bitmap(40,24))
+            {
+                using(var g=Graphics.FromImage(resized)){g.InterpolationMode=System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;g.DrawImage(rare,0,0,40,24);}
+                var reading=WindowsBaitReader.ReadImage(resized);
+                Check(!reading.Count.HasValue||reading.Count==42,"Regression: a resized x42 counter must not be misread as its final digit 2");
+            }
+            if(args.Length>9)using(var source=new Bitmap(args[9]))using(var crop=source.Clone(new Rectangle(403,388,30,17),PixelFormat.Format32bppArgb))
+            using(var soft=WindowsBaitReader.NormalizeSoftCounter(crop,0))
+            {
+                var ocr=Windows.Media.Ocr.OcrEngine.TryCreateFromUserProfileLanguages();
+                Check(soft!=null&&WindowsBaitReader.ParseCounter(WindowsBaitReader.Recognize(ocr,soft,2))==295
+                    &&WindowsBaitReader.ParseCounter(WindowsBaitReader.Recognize(ocr,soft,3))==295,"Soft contrast retains the tiny 295 digits at two scales where the hard mask loses them");
+            }
+        }
+        private static void TestPurchaseTimer(string output)
+        {
+            var defaults=new Settings();
+            Check(defaults.BuyQuantity==50&&defaults.PurchaseIntervalMinutes==40&&!defaults.AutoBuyBait,"New purchase values are 50 bait every 40 minutes, with automation opt-in");
+            var settings=new Settings{AutoBuyBait=true,PurchaseByTimer=true,PurchaseIntervalMinutes=1,BuyQuantity=50,BuyMaximum=true,
+                MonitorBait=true,AutoCast=false,Area=new Rectangle(20,20,30,300),ShopArea=new Rectangle(200,300,505,207),PurchaseLimit=2};
+            Check(settings.Validate(new Rectangle(0,0,1920,1080),true)==null&&!settings.UsesBaitCounter,"Timer mode accepts an unconfigured counter even if the old reader checkbox was enabled");
+            settings.PurchaseIntervalMinutes=0;Check(settings.Validate(new Rectangle(0,0,1920,1080),true)!=null,"Zero minute intervals cannot create a purchase loop");settings.PurchaseIntervalMinutes=1;
+            settings.TestBuyQuantity=37;settings.Save(Path.Combine(output,"timer-settings.xml"));
+            var loaded=Settings.Load(Path.Combine(output,"timer-settings.xml"));
+            Check(loaded.PurchaseByTimer&&loaded.PurchaseIntervalMinutes==1&&loaded.BuyQuantity==50&&loaded.TestBuyQuantity==37,"Timer and independent diagnostic quantity survive saving and loading");
+            var diagnostic=loaded.ForDiagnostic(RunKind.PurchaseTest);
+            Check(diagnostic.BuyQuantity==37&&diagnostic.PurchaseLimit==1&&!diagnostic.BuyMaximum&&loaded.BuyQuantity==50,"Custom purchase diagnostic uses 37 without changing the regular 50-bait quantity");
+            Check(loaded.ForDiagnostic(RunKind.EmptyBaitTest).BuyQuantity==1,"Empty-bait simulation keeps its separate one-bait limit");
+            var game=new FakeGame();var engine=new FishingEngine(settings,game);engine.Start(0);engine.Tick(1000);engine.Tick(59999);
+            Check(engine.PurchaseAttempts==0&&game.KeysDown.Count==0&&game.BaitReads==0,"No early timed purchases or OCR calls before one complete interval");
+            engine.Tick(60000);Check(engine.State==Phase.Purchasing&&engine.PurchaseAttempts==1&&game.KeysDown.Contains(69),"A due timer starts E once while the fishing menu is closed");
+            double completed=-1,secondStart=-1;
+            for(int t=60050;t<=150000;t+=50)
+            {
+                int click=game.ShopClicks%4;
+                game.Shop=ShopFrame(click==0?ShopMenu.Confirm:click<3?ShopMenu.Quantity:ShopMenu.Done,t,t,100,50);
+                if(game.ShopClicks>0&&click==0&&engine.State==Phase.Purchasing)game.Shop=ShopFrame(ShopMenu.Unknown,t,t,null,null);
+                // The first frame of the second order follows its own Opening phase.
+                if(engine.PurchaseAttempts==2&&game.ShopClicks==4)game.Shop=ShopFrame(ShopMenu.Confirm,t,t,null,null);
+                var before=engine.State;engine.Tick(t);
+                if(before==Phase.Purchasing&&engine.State==Phase.Preparing&&completed<0)completed=t;
+                if(engine.PurchaseAttempts==2&&secondStart<0)secondStart=t;
+            }
+            Check(completed>60000&&game.BaitReads==0,"Timed purchase completes after closing the dialogue without consulting the inventory counter");
+            Check(secondStart==completed+60000,"The next full interval starts after completion, with no overdue purchase backlog");
+            Check(game.ShopClicks==8&&engine.PurchaseAttempts==2&&engine.Running,"The session limit prevents a third order after two full timed purchases");
+            Check(game.KeyLog.Contains("+53")&&game.KeyLog.Contains("+48"),"Timer types the fixed 50 quantity even when the old MAX option is selected");
+            engine.Stop("F10");int keys=game.KeyLog.Count;engine.Tick(500000);
+            Check(game.KeyLog.Count==keys&&game.ShopClicks==8&&!engine.Running,"Stopping cancels all remaining timed actions");
+            engine.Start(500000);engine.Tick(501000);Check(engine.PurchaseAttempts==0&&engine.TimerStatus(501000).Contains("00:59"),"Restart begins a fresh full countdown and resets the session limit");engine.Stop("test");
+
+            game=new FakeGame{Current=new Observation{Found=true,MenuVisible=true,GapY=100,FishY=100,GapTop=80,GapBottom=120}};
+            engine=new FishingEngine(settings,game);engine.Start(0);engine.Tick(0);engine.Tick(50);engine.Tick(60000);
+            Check(engine.State==Phase.Tracking&&engine.PurchaseAttempts==0,"An overdue timer cannot interrupt an active fish");
+            game.Current=new Observation();engine.Tick(60050);engine.Tick(61700);engine.Tick(63450);
+            Check(engine.PurchaseAttempts==0,"Timer also respects menu-close confirmation and the rest between rounds");engine.Tick(63500);
+            Check(engine.PurchaseAttempts==1,"The deferred purchase starts when the round has finished");engine.Stop("test");
+
+            settings.AutoCast=true;settings.IdleJumpEnabled=false;game=new FakeGame();engine=new FishingEngine(settings,game);engine.Start(0);
+            for(int t=0;t<60000;t+=50)engine.Tick(t);
+            Check(engine.State==Phase.IdleWaiting&&game.Moves==3&&game.Jumps==0,"Three failed casts wait for the timer even with jumps disabled");engine.Tick(60000);
+            Check(engine.State==Phase.Purchasing&&game.Moves==3,"The waiting timer buys without endlessly relaunching the rod");engine.Stop("test");
+
+            settings.AutoCast=false;game=new FakeGame();engine=new FishingEngine(settings,game);engine.Start(0);engine.Tick(1000);game.Active=false;engine.Tick(60000);
+            Check(!engine.Running&&engine.PurchaseAttempts==0&&game.KeysDown.Count==0,"Loss of focus at the timer deadline prevents E and spending");
+            settings.AutoBuyBait=false;game=new FakeGame();engine=new FishingEngine(settings,game);engine.Start(0);engine.Tick(1000);engine.Tick(60000);
+            Check(engine.PurchaseAttempts==0,"Selecting timer mode alone does not enable purchases");engine.Stop("test");
+
+            settings.AutoBuyBait=true;game=new FakeGame();engine=new FishingEngine(settings,game,RunKind.PurchaseTest);engine.Start(0);
+            for(int t=0;t<=15000;t+=50)
+            {
+                game.Shop=ShopFrame(game.ShopClicks==0?ShopMenu.Confirm:game.ShopClicks<3?ShopMenu.Quantity:game.ShopClicks==3?ShopMenu.Done:ShopMenu.Unknown,t,t,100,37);
+                engine.Tick(t);
+            }
+            Check(!engine.Running&&engine.PurchaseSubmitted&&game.ShopClicks==4&&game.BaitReads==0&&game.Moves==0,"Custom quantity test completes immediately in timer mode without waiting, counter OCR or casting");
+            Check(game.KeyLog.Contains("+51")&&game.KeyLog.Contains("+55"),"Custom quantity test types both digits of 37");
+            settings.TestBuyQuantity=0;Check(settings.ForDiagnostic(RunKind.PurchaseTest).ValidateDiagnostic(new Rectangle(0,0,1920,1080))!=null,"An invalid test quantity is rejected before any input");
+        }
+        private static void TestShopInputTiming()
+        {
+            var e=Native.PurchaseInput(0x45,true).Data.Keyboard;
+            Check(e.Scan==0x12&&e.VirtualKey==0&&e.Flags==8,"E uses a physical scan code instead of a virtual-key-only event");
+            foreach(int key in new[]{0x45,0x11,0x41,0x08,0x30,0x31,0x32,0x33,0x34,0x35,0x36,0x37,0x38,0x39})
+            {
+                var down=Native.PurchaseInput(key,true).Data.Keyboard;var up=Native.PurchaseInput(key,false).Data.Keyboard;
+                Check(down.Scan>0&&down.Scan==up.Scan&&down.Flags==8&&up.Flags==10,"Purchase key press/release pair preserves physical key: "+key);
+            }
+            bool rejected=false;try{Native.PurchaseInput(0x5B,true);}catch(ArgumentOutOfRangeException){rejected=true;}
+            Check(rejected,"Keys outside the purchase allowlist cannot be constructed");
+            var game=new FakeGame();var p=new PurchaseController(new Settings{ShopOpenMilliseconds=150},game,game);p.Start(0);p.Tick(150,null,0);
+            FeedShop(p,game,ShopMenu.Confirm,1,400,null,null,null,0);
+            Check(game.Aims==1&&game.ShopClicks==0,"First recognized menu moves the pointer without clicking");
+            FeedShop(p,game,ShopMenu.Confirm,2,500,null,null,null,0);
+            Check(game.ShopClicks==0,"Even two frames cannot click until the pointer has settled for 200 ms");
+            FeedShop(p,game,ShopMenu.Confirm,3,600,null,null,null,0);
+            Check(game.ShopClicks==1&&p.State==PurchasePhase.Editing,"A settled pointer and a fresh stable menu authorize one click");
+            game=new FakeGame();p=new PurchaseController(new Settings{ShopOpenMilliseconds=150},game,game);p.Start(0);p.Tick(150,null,0);
+            FeedShop(p,game,ShopMenu.Confirm,1,400,null,null,null,0);game.Active=false;
+            FeedShop(p,game,ShopMenu.Confirm,2,650,null,null,null,0);
+            Check(p.State==PurchasePhase.Failed&&game.ShopClicks==0,"Losing focus while aiming cancels the upcoming click");
+            game=new FakeGame();p=ReadyToVerify(game,new Settings{PurchaseByTimer=true,BuyQuantity=5});
+            FeedShop(p,game,ShopMenu.Quantity,5,3800,5,5,null,0);FeedShop(p,game,ShopMenu.Quantity,6,4800,5,5,null,0);
+            FeedShop(p,game,ShopMenu.Done,7,5200,null,null,null,0);FeedShop(p,game,ShopMenu.Done,8,6200,null,null,null,0);
+            game.Shop=ShopFrame(ShopMenu.Unknown,9,6500,null,null);game.Shop.ReadFailed=true;p.Tick(6500,null,0);
+            game.Shop=ShopFrame(ShopMenu.Unknown,10,7500,null,null);game.Shop.ReadFailed=true;p.Tick(7500,null,0);
+            Check(p.State==PurchasePhase.Closing,"OCR worker errors cannot confirm that a timed purchase dialogue closed");
+            FeedShop(p,game,ShopMenu.Unknown,11,7800,null,null,null,0);FeedShop(p,game,ShopMenu.Unknown,12,8800,null,null,null,0);
+            Check(p.State==PurchasePhase.Complete,"Fresh successful menu reads can complete timer mode without counter OCR");
+        }
         private sealed class FakeGame : IGameRuntime, IShopRuntime
         {
             public bool Active = true, Held, JumpHeld;
@@ -876,10 +995,13 @@ namespace SomeFishingGPO
             public void SetHeld(bool held) { if (held && !Active) throw new Exception("Inactive input"); if (held && !Held) Presses++; Held = held; }
             public void Release() { Held = false; JumpHeld = false; KeysDown.Clear(); }
             public ShopReading ReadShop(double now){return Shop;}
+            public int Aims;
+            public void ShopAim(Point point){if(!Active)throw new Exception("Inactive shop aim");Aims++;}
             public void ShopClick(Point point){if(!Active)throw new Exception("Inactive shop click");ShopClicks++;}
             public void ShopKey(int key,bool held){if(held&&!Active)throw new Exception("Inactive shop key");KeyLog.Add((held?"+":"-")+key);if(held)KeysDown.Add(key);else KeysDown.Remove(key);}
             public Observation Observe() { return Current; }
-            public BaitReading ReadBait(double now) { return Bait; }
+            public int BaitReads;
+            public BaitReading ReadBait(double now) { BaitReads++;return Bait; }
             public void SetJumpHeld(bool held)
             {
                 if(held && !Active)throw new Exception("Inactive jump");

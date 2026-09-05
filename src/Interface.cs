@@ -81,6 +81,14 @@ namespace SomeFishingGPO
             emptyTestSummary.Text=autoBuy.Checked?"Simula 0 y compra 1 cebo con Peli.":idleJump.Checked?
                 "Simula 0 y da un solo salto en el sitio.":"Compra y saltos desactivados.\nLa prueba lo indicará sin actuar.";
         }
+        private void UpdatePurchaseControls(bool editable)
+        {
+            bool timed=purchaseMode.SelectedIndex==1;
+            buyMaximum.Enabled=editable&&!timed;
+            buyQuantity.Enabled=editable&&(timed||!buyMaximum.Checked);
+            purchaseMinutes.Enabled=editable&&timed;
+            purchaseModeHint.Text=timed?"Cantidad fija, sin leer el contador.":"Al detectar 0 o contador ausente.";
+        }
         private void BuildInterface()
         {
             var rail=new Panel { Dock=DockStyle.Left, Width=188, BackColor=Color.FromArgb(24,34,44) };
@@ -101,7 +109,7 @@ namespace SomeFishingGPO
             Hint(save,"Guarda las zonas y los ajustes actuales.");
             save.BackColor=Color.FromArgb(34,48,61);save.ForeColor=Color.White;
             ((ModernButton)save).BorderVisible=false;
-            LabelAt(rail,"Local  /  v0.4.0",22,657,145,23,9,false).ForeColor=Color.FromArgb(145,166,177);
+            LabelAt(rail,"Local  /  v0.5.0",22,657,145,23,9,false).ForeColor=Color.FromArgb(145,166,177);
             LabelAt(rail,"Código incluido",22,681,145,23,9,false).ForeColor=Color.FromArgb(145,166,177);
             pageTitle=LabelAt(this,"",212,15,800,49,25,true);
             pageSubtitle=LabelAt(this,"",214,69,820,27,10.5f,false);pageSubtitle.ForeColor=muted;
@@ -157,26 +165,32 @@ namespace SomeFishingGPO
             var buying=Card(pages[2],0,0,372,516);
             LabelAt(buying,"Compra automática",20,20,332,29,14,true);
             autoBuy=CheckAt(buying,"Reponer cebo · usa Peli",20,66,332);
-            Hint(autoBuy,"Compra al confirmar 0 o desaparecer un contador que antes se leía durante al menos 8 segundos. Tiene prioridad sobre los saltos.");
-            shopAreaButton=ButtonAt(buying,"Seleccionar menú de compra",20,117,332,delegate{SelectShopArea();},true);
-            shopAreaLabel=LabelAt(buying,"Sin seleccionar",20,169,332,25,9.5f,false);
-            LabelAt(buying,"Abre el diálogo con E para seleccionarlo.",20,207,332,41,10,false).ForeColor=muted;
+            Hint(autoBuy,"Activa compras por contador o cronómetro. Permanece junto al barril de cebo.");
+            purchaseMode=new ComboBox {DropDownStyle=ComboBoxStyle.DropDownList,Location=new Point(20,109),Size=new Size(332,30),Font=new Font("Segoe UI",11)};
+            purchaseMode.Items.AddRange(new object[]{"Contador OCR","Cronómetro"});buying.Controls.Add(purchaseMode);
+            purchaseModeHint=LabelAt(buying,"",20,146,332,38,9.5f,false);purchaseModeHint.ForeColor=muted;
+            buyQuantity=NumberAt(buying,"Cebos por compra",20,196,1,9999,50,156);
+            Hint(buyQuantity,"Cantidad por pedido, limitada al MAX que permita el juego. Cronómetro siempre usa esta cantidad fija.");
+            purchaseMinutes=NumberAt(buying,"Cada (minutos)",194,196,1,1440,40,158);
+            buyMaximum=CheckAt(buying,"Usar MAX del menú (solo OCR)",20,264,332);
+            Divider(buying,20,307,332);
+            shopAreaButton=ButtonAt(buying,"Seleccionar menú de compra",20,323,332,delegate{SelectShopArea();},true);
+            shopAreaLabel=LabelAt(buying,"Sin seleccionar",20,369,332,25,9.5f,false);
             Hint(shopAreaButton,"Incluye el diálogo y todos los botones, con poco margen. La fila Sí/No, cantidad o … debe quedar en el cuarto inferior de la zona.");
-            Divider(buying,20,261,332);
-            buyMaximum=CheckAt(buying,"Comprar el máximo disponible",20,278,332);
-            buyQuantity=NumberAt(buying,"Cantidad",20,328,1,9999,5,156);
-            purchaseLimit=NumberAt(buying,"Tope de compras",194,328,1,100,10,158);
-            shopOpenTime=NumberAt(buying,"Mantener E (ms)",20,420,100,3000,1000,156);
-            LabelAt(buying,"Permanece junto\nal barril de cebo.",194,446,158,44,9.5f,false).ForeColor=muted;
+            purchaseLimit=NumberAt(buying,"Tope por sesión",194,419,1,100,10,158);
+            shopOpenTime=NumberAt(buying,"Mantener E (ms)",20,419,100,3000,1000,156);
             Hint(shopOpenTime,"Duración de la tecla E para abrir el diálogo. Si no abre con 1000 ms, prueba 1500 ms.");
             Hint(purchaseLimit,"Máximo de intentos por sesión. Si falla un paso, la compra se detiene sin repetirse.");
-            buyMaximum.CheckedChanged+=delegate{buyQuantity.Enabled=!buyMaximum.Checked&&!IsRunning&&armedUntil==0;};
+            buyMaximum.CheckedChanged+=delegate{UpdatePurchaseControls(!IsRunning&&armedUntil==0);};
+            purchaseMode.SelectedIndexChanged+=delegate{UpdatePurchaseControls(!IsRunning&&armedUntil==0);};
             var shopView=Card(pages[2],388,0,456,516);
             LabelAt(shopView,"Vista del menú",20,20,416,29,14,true);
-            shopPreview=PreviewAt(shopView,20,66,416,224,"Selecciona el diálogo completo");
-            shopPreviewButton=ButtonAt(shopView,"Probar menú",20,312,416,delegate{ToggleShopPreview();},false);
+            shopPreview=PreviewAt(shopView,20,66,416,179,"Selecciona el diálogo completo");
+            shopPreviewButton=ButtonAt(shopView,"Probar menú",20,263,416,delegate{ToggleShopPreview();},false);
             Hint(shopPreviewButton,"Solo observa: cambia los menús manualmente para comprobar Sí, MAX, cantidad y …");
-            shopDetail=LabelAt(shopView,"Solo lectura. No compra ni envía teclas.",20,369,416,64,10,false);FullTextHint(shopDetail);
+            shopDetail=LabelAt(shopView,"Solo lectura. No compra ni envía teclas.",20,317,416,56,10,false);FullTextHint(shopDetail);
+            purchaseCountdown=LabelAt(shopView,"El cronómetro empieza al iniciar la pesca.",20,392,416,49,10.5f,true);FullTextHint(purchaseCountdown);
+            Hint(purchaseMinutes,"Cuenta desde el inicio. Espera al fin de la ronda para comprar y reinicia el intervalo tras cerrar el diálogo. Al detener la macro se cancela.");
             ButtonAt(shopView,"Ir a pruebas",20,459,416,delegate{SelectPage(3);},false);
 
             var noBait=Card(pages[3],0,0,414,213);
@@ -185,7 +199,8 @@ namespace SomeFishingGPO
             emptyTestButton=ButtonAt(noBait,"Probar sin cebo",20,153,374,delegate{ArmDiagnostic(RunKind.EmptyBaitTest);},true);
             var purchase=Card(pages[3],430,0,414,213);
             LabelAt(purchase,"Compra",20,20,374,29,14,true);
-            LabelAt(purchase,"Compra real de 1 cebo con Peli.\nUn intento, aunque todavía tengas cebo.",20,66,374,57,10.5f,false).ForeColor=muted;
+            testBuyQuantity=NumberAt(purchase,"Cebos para esta prueba",20,64,1,9999,1,180);
+            LabelAt(purchase,"Compra real con Peli.\nUn solo intento.",216,84,178,45,9.5f,false).ForeColor=muted;
             purchaseTestButton=ButtonAt(purchase,"Probar compra",20,153,374,delegate{ArmDiagnostic(RunKind.PurchaseTest);},true);
             LabelAt(pages[3],"Inicio en 3 s. Vuelve a Roblox con los diálogos cerrados. F10 cancela.",4,235,836,34,10,false).ForeColor=muted;
             var result=Card(pages[3],0,282,844,234);
@@ -202,7 +217,7 @@ namespace SomeFishingGPO
             result.Controls.Add(diagnosticLog);
             autoBuy.CheckedChanged+=delegate{UpdateDiagnosticSummary();};idleJump.CheckedChanged+=delegate{UpdateDiagnosticSummary();};UpdateDiagnosticSummary();
             Hint(emptyTestButton,"Simula 0; no comprueba el OCR real. Compra una unidad, da un salto o informa de que ambas opciones están apagadas, según tus ajustes.");
-            Hint(purchaseTestButton,"Compra real con Peli. Requiere la zona de compra y estar junto al barril. Sin lector de cebo puede enviar Comprar, pero no confirmar la reposición. No inicia la pesca al terminar.");
+            Hint(purchaseTestButton,"Compra ahora la cantidad indicada, hasta el MAX del menú. Usa el modo de Compra: Cronómetro no requiere contador. Un intento, sin lanzar pesca al terminar.");
 
             var response=Card(pages[4],0,0,844,246);
             LabelAt(response,"Respuesta",20,20,804,29,14,true);

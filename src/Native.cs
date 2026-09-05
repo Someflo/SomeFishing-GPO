@@ -46,9 +46,27 @@ namespace SomeFishingGPO
         }
         internal static void PurchaseKey(int key, bool down)
         {
-            if(key!=0x45&&key!=0x11&&key!=0x41&&key!=0x08&&(key<0x30||key>0x39))throw new ArgumentOutOfRangeException("key");
-            var input=new Input {Type=1,Data=new InputUnion {Keyboard=new KeyboardInput {VirtualKey=(ushort)key,Flags=down?0u:2u}}};
-            if(SendInput(1,new[]{input},Marshal.SizeOf(typeof(Input)))!=1)throw new Win32Exception(Marshal.GetLastWin32Error(),"Windows no aceptó una tecla de compra.");
+            var input=PurchaseInput(key,down);
+            if(SendInput(1,new[]{input},Marshal.SizeOf(typeof(Input)))!=1)throw new Win32Exception(Marshal.GetLastWin32Error(),"Windows no aceptó la tecla de compra "+key+". Ejecuta ambos programas como usuario normal.");
+        }
+        // Pure construction is testable without sending input to any application.
+        internal static Input PurchaseInput(int key,bool down)
+        {
+            ushort scan;
+            if(key==0x45)scan=0x12;else if(key==0x11)scan=0x1d;else if(key==0x41)scan=0x1e;
+            else if(key==0x08)scan=0x0e;else if(key==0x30)scan=0x0b;
+            else if(key>=0x31&&key<=0x39)scan=(ushort)(key-0x31+2);else throw new ArgumentOutOfRangeException("key");
+            // KEYEVENTF_SCANCODE: same physical input path as the working Space key.
+            return new Input {Type=1,Data=new InputUnion {Keyboard=new KeyboardInput {Scan=scan,Flags=down?8u:10u}}};
+        }
+        internal static void MovePointer(Point point)
+        {
+            Rectangle desktop=SystemInformation.VirtualScreen;
+            if(!Settings.ContainsSafely(desktop,new Rectangle(point,new Size(1,1))))throw new InvalidOperationException("El botón está fuera del escritorio.");
+            var input=new Input {Type=0,Data=new InputUnion {Mouse=new MouseInput {
+                X=(int)(((long)point.X-desktop.Left)*65536/desktop.Width+32768/desktop.Width),
+                Y=(int)(((long)point.Y-desktop.Top)*65536/desktop.Height+32768/desktop.Height),Flags=0xC001u}}};
+            if(SendInput(1,new[]{input},Marshal.SizeOf(typeof(Input)))!=1)throw new Win32Exception(Marshal.GetLastWin32Error(),"Windows no aceptó mover el puntero al botón.");
         }
         internal static Rectangle ClientBounds(IntPtr window)
         {
@@ -146,7 +164,7 @@ namespace SomeFishingGPO
                 if (Native.InStopCorner())
                 { safetyReason = "Detenida: el ratón llegó a la esquina superior izquierda."; return false; }
                 Rectangle client = Native.ClientBounds(target);
-                bool inside = ((!requireFishingArea&&settings.Area.IsEmpty)||Settings.ContainsSafely(client, settings.Area)) && (!settings.MonitorBait || Settings.ContainsSafely(client, settings.BaitArea)) && (!settings.AutoBuyBait || Settings.ContainsSafely(client,settings.ShopArea)) && (!settings.AutoCast ||
+                bool inside = ((!requireFishingArea&&settings.Area.IsEmpty)||Settings.ContainsSafely(client, settings.Area)) && (!settings.UsesBaitCounter || Settings.ContainsSafely(client, settings.BaitArea)) && (!settings.AutoBuyBait || Settings.ContainsSafely(client,settings.ShopArea)) && (!settings.AutoCast ||
                     (settings.CastPointSet && Settings.ContainsSafely(client, new Rectangle(settings.CastPoint, new Size(1, 1)))));
                 if (!inside) safetyReason = "Detenida: la zona o el punto de lanzamiento quedó fuera de la ventana de Roblox.";
                 return inside;
@@ -188,12 +206,19 @@ namespace SomeFishingGPO
             if(shopReader.Due(now))shopReader.Submit(Native.Capture(settings.ShopArea),settings.ShopArea.Location,now);
             return shopReader.Latest;
         }
-        public void ShopClick(Point point)
+        public void ShopAim(Point point)
         {
             Guard();if(!settings.AutoBuyBait||!Settings.ContainsSafely(settings.ShopArea,new Rectangle(point,new Size(1,1))))throw new InvalidOperationException("Clic de compra fuera de la zona autorizada.");
             Release();if(PendingRelease)throw new InvalidOperationException("Hay una entrada pendiente de liberación.");
-            if(sendClicks&&!Native.SetCursorPos(point.X,point.Y))throw new Win32Exception("No se pudo apuntar al botón de compra.");
-            mouse.Pulse(100);
+            if(sendClicks)Native.MovePointer(point);
+        }
+        public void ShopClick(Point point)
+        {
+            Guard();if(!settings.AutoBuyBait||!Settings.ContainsSafely(settings.ShopArea,new Rectangle(point,new Size(1,1))))throw new InvalidOperationException("Clic de compra fuera de la zona autorizada.");
+            Point actual=Cursor.Position;
+            if(sendClicks&&(Math.Abs(actual.X-point.X)>3||Math.Abs(actual.Y-point.Y)>3))throw new InvalidOperationException("El puntero no llegó al botón o se movió. Clic cancelado; suelta el ratón durante la prueba.");
+            Release();if(PendingRelease)throw new InvalidOperationException("Hay una entrada pendiente de liberación.");
+            mouse.Pulse(180);
         }
         public void ShopKey(int key,bool held)
         {
@@ -211,7 +236,7 @@ namespace SomeFishingGPO
         public BaitReading ReadBait(double now)
         {
             Guard();
-            if (!settings.MonitorBait) return new BaitReading();
+            if (!settings.UsesBaitCounter) return new BaitReading();
             if (baitReader.Due(now)) baitReader.Submit(Native.Capture(settings.BaitArea), now);
             return baitReader.Latest;
         }

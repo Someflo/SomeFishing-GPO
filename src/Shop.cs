@@ -14,6 +14,7 @@ namespace SomeFishingGPO
         public Point Left, Middle;
         public long Sequence;
         public double SampledAt;
+        public bool ReadFailed;
         public string Detail = "Esperando menú de compra";
     }
     public static class ShopText
@@ -44,6 +45,7 @@ namespace SomeFishingGPO
     public interface IShopRuntime
     {
         ShopReading ReadShop(double now);
+        void ShopAim(Point point);
         void ShopClick(Point point);
         void ShopKey(int key, bool held);
     }
@@ -58,6 +60,8 @@ namespace SomeFishingGPO
         private ShopReading candidate;
         private int stable, digitIndex, key;
         private bool keyHeld;
+        private Point aimedPoint;
+        private double aimedAt;
         private string digits;
         public PurchasePhase State { get; private set; }
         public string Status { get; private set; }
@@ -78,12 +82,28 @@ namespace SomeFishingGPO
         { State=state;after=now+200;deadline=now+20000;candidate=null;stable=0;Status=message; }
         private bool FreshStable(ShopReading reading,double now)
         {
-            if(reading==null||reading.SampledAt<after||reading.SampledAt>now||now-reading.SampledAt>4000||reading.Sequence<=lastSequence)return false;
+            if(reading==null||reading.ReadFailed||reading.SampledAt<after||reading.SampledAt>now||now-reading.SampledAt>4000||reading.Sequence<=lastSequence)return false;
             lastSequence=reading.Sequence;
             bool same=candidate!=null&&reading.SampledAt-candidate.SampledAt<=4000&&candidate.Menu==reading.Menu&&candidate.Maximum==reading.Maximum&&candidate.Quantity==reading.Quantity
                 && Math.Abs(candidate.Left.X-reading.Left.X)<12&&Math.Abs(candidate.Left.Y-reading.Left.Y)<12
                 && Math.Abs(candidate.Middle.X-reading.Middle.X)<12&&Math.Abs(candidate.Middle.Y-reading.Middle.Y)<12;
-            stable=same?stable+1:1;candidate=reading;return stable>=2;
+            stable=same?stable+1:1;candidate=reading;
+            bool clickable=(State==PurchasePhase.Confirming&&reading.Menu==ShopMenu.Confirm)
+                ||(State==PurchasePhase.Editing&&reading.Menu==ShopMenu.Quantity&&reading.Maximum>0)
+                ||(State==PurchasePhase.Verifying&&reading.Menu==ShopMenu.Quantity&&reading.Quantity==Quantity&&reading.Maximum>=Quantity)
+                ||(State==PurchasePhase.Finishing&&reading.Menu==ShopMenu.Done);
+            if(clickable)
+            {
+                Point target=(State==PurchasePhase.Editing||State==PurchasePhase.Finishing)?reading.Middle:reading.Left;
+                if(!same || Math.Abs(target.X-aimedPoint.X)>3 || Math.Abs(target.Y-aimedPoint.Y)>3)
+                {
+                    shop.ShopAim(target);aimedPoint=target;aimedAt=now;
+                    Status="Apuntando a "+(State==PurchasePhase.Confirming?"Sí":State==PurchasePhase.Editing?"cantidad":State==PurchasePhase.Verifying?"Comprar":"…")+" · esperando confirmación visual";
+                    return false;
+                }
+                if(now-aimedAt<200)return false;
+            }
+            return stable>=2;
         }
         private void Press(int virtualKey,double now)
         { shop.ShopKey(virtualKey,true);key=virtualKey;keyHeld=true;next=now+100; }
@@ -117,34 +137,34 @@ namespace SomeFishingGPO
             LastReading=reading;
             if(!FreshStable(reading,now))return;
             if(State==PurchasePhase.Confirming&&reading.Menu==ShopMenu.Confirm)
-            { shop.ShopClick(reading.Left);Wait(PurchasePhase.Editing,now,"Esperando cantidad y MAX…");return; }
+            { shop.ShopClick(aimedPoint);Wait(PurchasePhase.Editing,now,"Sí pulsado · esperando cantidad y MAX…");return; }
             if(State==PurchasePhase.Editing&&reading.Menu==ShopMenu.Quantity&&reading.Maximum.HasValue)
             {
-                Quantity=settings.BuyMaximum?reading.Maximum.Value:Math.Min(settings.BuyQuantity,reading.Maximum.Value);
+                Quantity=settings.BuyMaximum&&!settings.PurchaseByTimer?reading.Maximum.Value:Math.Min(settings.BuyQuantity,reading.Maximum.Value);
                 if(Quantity<1){Fail("el máximo disponible es 0");return;}
-                digits=Quantity.ToString(CultureInfo.InvariantCulture);shop.ShopClick(reading.Middle);
+                digits=Quantity.ToString(CultureInfo.InvariantCulture);shop.ShopClick(aimedPoint);
                 State=PurchasePhase.Selecting;deadline=now+20000;next=now+250;Status="Escribiendo "+digits+" cebos…";return;
             }
             if(State==PurchasePhase.Verifying&&reading.Menu==ShopMenu.Quantity&&reading.Quantity==Quantity&&reading.Maximum>=Quantity)
             {
-                shop.ShopClick(reading.Left);Submitted=true;boughtAt=now;
+                shop.ShopClick(aimedPoint);Submitted=true;boughtAt=now;
                 Wait(PurchasePhase.Finishing,now,"Compra enviada una vez · esperando cebo y «…»");return;
             }
             if(State==PurchasePhase.Finishing&&reading.Menu==ShopMenu.Done&&reading.SampledAt>boughtAt)
-            { shop.ShopClick(reading.Middle);Wait(PurchasePhase.Closing,now,"Cerrando «…» y comprobando reposición…");return; }
-            if(State==PurchasePhase.Closing&&reading.Menu==ShopMenu.Unknown&&baitCount>0&&baitConfirmedAt>after)
-            { game.Release();State=PurchasePhase.Complete;Status="Cebo repuesto · reanudando pesca"; }
+            { shop.ShopClick(aimedPoint);Wait(PurchasePhase.Closing,now,settings.PurchaseByTimer?"Cerrando «…» · sin lectura del contador":"Cerrando «…» y comprobando reposición…");return; }
+            if(State==PurchasePhase.Closing&&reading.Menu==ShopMenu.Unknown&&(settings.PurchaseByTimer||(baitCount>0&&baitConfirmedAt>after)))
+            { game.Release();State=PurchasePhase.Complete;Status=settings.PurchaseByTimer?"Compra enviada · diálogo cerrado; inventario sin verificar":"Cebo repuesto · reanudando pesca"; }
         }
         private string TimeoutReason()
         {
             string reason;
             switch(State)
             {
-                case PurchasePhase.Confirming:reason="E se envió durante "+settings.ShopOpenMilliseconds+" ms, pero no se confirmó la oferta con Sí/No. Revisa la distancia al barril, Mantener E y la zona";break;
+                case PurchasePhase.Confirming:reason="Windows aceptó E durante "+settings.ShopOpenMilliseconds+" ms, pero no se confirmó la oferta con Sí/No. Revisa la distancia al barril, Mantener E y la zona";break;
                 case PurchasePhase.Editing:reason="se pulsó Sí, pero no se confirmó el menú de cantidad y MAX";break;
                 case PurchasePhase.Verifying:reason="la cantidad escrita no se confirmó como "+Quantity+" dentro del MAX. Comprar no se pulsó";break;
                 case PurchasePhase.Finishing:reason="Comprar se envió una vez, pero no se reconoció el botón final «…». Revisa el diálogo y el saldo";break;
-                case PurchasePhase.Closing:reason="se pulsó «…», pero no se confirmó cebo disponible después. Revisa el contador; no se repetirá Comprar";break;
+                case PurchasePhase.Closing:reason=settings.PurchaseByTimer?"se pulsó «…», pero no se confirmó el cierre del diálogo; no se repetirá Comprar":"se pulsó «…», pero no se confirmó cebo disponible después. Revisa el contador; no se repetirá Comprar";break;
                 default:reason="se agotó el tiempo durante "+State;break;
             }
             return reason+". "+(LastReading==null?"Sin lectura del menú.":LastReading.Detail);

@@ -28,9 +28,19 @@ El lector de compra usa el mismo OCR local en una tarea separada. El código inc
 
 El script de compilación ejecuta el compilador local de .NET Framework y utiliza los metadatos del Windows SDK instalado. El modo `--self-test` crea imágenes sintéticas, renders de la interfaz e informes en la carpeta indicada, sin enviar clics ni teclas al juego.
 
-Los botones de la sección **Pruebas** son acciones reales, distintas del modo automatizado `--self-test`: pulsarlos autoriza una prueba concreta tras tres segundos de cuenta atrás. La simulación de cero sigue las opciones de compra o salto configuradas; la prueba de compra puede gastar Peli aunque la compra automática esté apagada. Ambas limitan cualquier compra a una unidad y un intento, no guardan sus opciones temporales y terminan sin lanzar la caña. Las vistas de lectura siguen sin enviar entradas.
+Los botones de la sección **Pruebas** son acciones reales, distintas del modo automatizado `--self-test`: pulsarlos autoriza una prueba concreta tras tres segundos de cuenta atrás. La simulación de cero sigue las opciones de compra o salto configuradas; la prueba de compra puede gastar Peli aunque la compra automática esté apagada. La prueba de compra utiliza la cantidad elegida, hasta el MAX, en un intento; la simulación de cero conserva una unidad. Ambas no guardan sus opciones temporales y terminan sin lanzar la caña. Las vistas de lectura siguen sin enviar entradas.
 
-El registro local de la última prueba contiene estados, cantidades resumidas y errores; no incluye capturas ni el texto libre reconocido por OCR. Está limitado a unos 32 000 caracteres y se reemplaza al iniciar otra prueba. La zona de pesca puede omitirse al probar; en ese caso se debe comprobar manualmente que el minijuego esté cerrado. Las zonas que sí están configuradas mantienen la validación de límites y foco.
+El registro local de la última prueba contiene estados, cantidades resumidas y errores; no incluye capturas. Puede incluir fragmentos breves del OCR de la zona del contador para explicar un fallo de lectura. Está limitado a unos 32 000 caracteres y se reemplaza al iniciar otra prueba. La zona de pesca puede omitirse al probar; en ese caso se debe comprobar manualmente que el minijuego esté cerrado. Las zonas que sí están configuradas mantienen la validación de límites y foco.
+
+## Cronómetro, OCR y entradas
+
+Cronómetro usa el reloj transcurrido de la aplicación, sin tareas de Windows ni servicios externos. No consulta el contador ni exige su zona. Compra entre rondas, respeta el límite por sesión y empieza un intervalo completo tras cada compra. Al detenerse cancela toda acción futura; reiniciar empieza una cuenta nueva.
+
+Conserva la verificación de los menús, la cantidad y el MAX. Tras el botón final exige capturas nuevas sin diálogo reconocido, pero no confirma un aumento del inventario. Errores del lector no confirman cierre. No reintenta una compra fallida. Contador OCR sigue exigiendo cebo positivo después del cierre.
+
+El OCR del contador añade contraste suave y exige x, × o * delante de la cantidad para rechazar lecturas parciales. Los números contradictorios quedan desconocidos; no se garantiza reconocer cualquier tamaño o cantidad.
+
+E y las teclas de compra se envían con códigos físicos. El puntero se mueve mediante SendInput, espera al menos 200 ms y una captura nueva antes de pulsar 180 ms. Si el cursor no queda sobre el botón se cancela el clic. No se usa el portapapeles para escribir cantidades.
 
 ## Límites de protección
 
@@ -38,7 +48,7 @@ F10, F8 durante la ejecución, perder el foco de Roblox o llevar el ratón a la 
 
 La misma protección cubre E, Ctrl, A, Retroceso y los dígitos. E se puede mantener entre 100 y 3000 ms (1000 por defecto) con revisiones del controlador; la protección independiente sigue soltándola si la interfaz deja de responder durante más de 500 ms. Las demás teclas de compra conservan sus pulsaciones breves. Los clics de compra se limitan a la zona elegida, mientras Roblox conserva el foco. Antes de Comprar se comprueban el menú, el MAX y la cantidad escrita. Se envía como máximo un clic de compra por intento. Los fallos de un diálogo detienen la sesión en lugar de repetir compras con resultado incierto.
 
-La lectura de cebo requiere coincidencia entre dos escalas y confirmación en varias capturas. La ausencia de lectura no equivale a cero. Si un contador antes confirmado pierde el texto amarillo durante 8 segundos y varias capturas nuevas, se informa como desaparecido y puede activar la reposición o la espera. Una ventana u objeto que lo tape puede parecer una desaparición. Estas comprobaciones reducen lecturas erróneas, pero no garantizan la exactitud del OCR. Tres lanzamientos sin minijuego pueden activar la espera, pero no autorizan compras. El cierre normal de una ronda no basta para activar ninguna de esas acciones. No se garantiza evitar expulsiones por inactividad ni conservar objetos ante una desconexión.
+La lectura de cebo requiere coincidencia entre dos escalas y confirmación en varias capturas. La ausencia de lectura no equivale a cero. Si un contador antes confirmado pierde el texto amarillo durante 8 segundos y varias capturas nuevas, se informa como desaparecido y puede activar la reposición o la espera. Una ventana u objeto que lo tape puede parecer una desaparición. Estas comprobaciones reducen lecturas erróneas, pero no garantizan la exactitud del OCR. Tres lanzamientos sin minijuego pueden activar la espera. En Contador OCR no autorizan compras por sí solos; en Cronómetro la autorización es el intervalo configurado. El cierre normal de una ronda no basta para activar ninguna de esas acciones. No se garantiza evitar expulsiones por inactividad ni conservar objetos ante una desconexión.
 
 Los análisis locales de Microsoft Defender y sus resultados se documentan en `docs/VERIFICACION.txt`. Un resultado sin amenazas detectadas no es una garantía absoluta ni una certificación externa. El ejecutable no tiene firma digital comercial. La huella SHA-256 de cada publicación identifica exactamente el archivo analizado.
 

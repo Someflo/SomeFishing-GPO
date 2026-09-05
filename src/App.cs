@@ -53,7 +53,9 @@ namespace SomeFishingGPO
         private readonly BaitMonitor previewBaitMonitor = new BaitMonitor();
         private bool previewingBait;
         private CheckBox autoBuy, buyMaximum;
-        private NumericUpDown buyQuantity, purchaseLimit, shopOpenTime;
+        private NumericUpDown buyQuantity, purchaseLimit, shopOpenTime, purchaseMinutes, testBuyQuantity;
+        private ComboBox purchaseMode;
+        private Label purchaseCountdown, purchaseModeHint;
         private Button shopAreaButton, shopPreviewButton;
         private Label shopAreaLabel, shopDetail;
         private PictureBox shopPreview;
@@ -82,7 +84,7 @@ namespace SomeFishingGPO
             string loadWarning = null;
             try { settings = testMode ? new Settings() : Settings.Load(settingsPath); }
             catch (Exception error) { settings = new Settings(); loadWarning = "No se pudieron cargar los ajustes: " + error.Message; }
-            Text = "SomeFishing GPO · v0.4.0";
+            Text = "SomeFishing GPO · v0.5.0";
             ClientSize = new Size(1080, 730);
             AutoScaleMode = AutoScaleMode.None;
             Font = new Font("Segoe UI", 10);
@@ -111,7 +113,9 @@ namespace SomeFishingGPO
             monitorBait.Checked = settings.MonitorBait; idleJump.Checked = settings.IdleJumpEnabled;
             SetNumber(jumpSeconds, settings.IdleJumpSeconds);
             autoBuy.Checked=settings.AutoBuyBait;buyMaximum.Checked=settings.BuyMaximum;
-            SetNumber(buyQuantity,settings.BuyQuantity);SetNumber(purchaseLimit,settings.PurchaseLimit);buyQuantity.Enabled=!buyMaximum.Checked;
+            SetNumber(buyQuantity,settings.BuyQuantity);SetNumber(purchaseLimit,settings.PurchaseLimit);
+            SetNumber(purchaseMinutes,settings.PurchaseIntervalMinutes);SetNumber(testBuyQuantity,settings.TestBuyQuantity);
+            purchaseMode.SelectedIndex=settings.PurchaseByTimer?1:0;UpdatePurchaseControls(true);
             SetNumber(shopOpenTime,settings.ShopOpenMilliseconds);
             UpdateAreaLabels();
         }
@@ -128,7 +132,8 @@ namespace SomeFishingGPO
                 MonitorBait = monitorBait.Checked, BaitArea = settings.BaitArea,
                 IdleJumpEnabled = idleJump.Checked, IdleJumpSeconds = (int)jumpSeconds.Value,
                 AutoBuyBait=autoBuy.Checked,ShopArea=settings.ShopArea,BuyMaximum=buyMaximum.Checked,
-                BuyQuantity=(int)buyQuantity.Value,PurchaseLimit=(int)purchaseLimit.Value,ShopOpenMilliseconds=(int)shopOpenTime.Value };
+                BuyQuantity=(int)buyQuantity.Value,PurchaseLimit=(int)purchaseLimit.Value,ShopOpenMilliseconds=(int)shopOpenTime.Value,
+                PurchaseByTimer=purchaseMode.SelectedIndex==1,PurchaseIntervalMinutes=(int)purchaseMinutes.Value,TestBuyQuantity=(int)testBuyQuantity.Value };
         }
         private void UpdateAreaLabels()
         {
@@ -303,15 +308,15 @@ namespace SomeFishingGPO
         {
             StopAll("Preparando prueba…");
             diagnosticLog.Clear();lastDiagnosticStep=null;
-            AppendDiagnostic("SomeFishing GPO 0.4.0 · "+DiagnosticName(kind));
+            AppendDiagnostic("SomeFishing GPO 0.5.0 · "+DiagnosticName(kind));
             if(testMode){AppendDiagnostic("Render de interfaz: entradas reales desactivadas.");return;}
             if(!CanStartDiagnostic(kind))return;
             Settings selected=ReadSettings().ForDiagnostic(kind);
-            AppendDiagnostic("Compra: "+selected.AutoBuyBait+" · saltos: "+selected.IdleJumpEnabled+" · lector: "+selected.MonitorBait);
+            AppendDiagnostic("Compra: "+selected.AutoBuyBait+" · saltos: "+selected.IdleJumpEnabled+" · lector: "+selected.UsesBaitCounter+" · modo: "+(selected.PurchaseByTimer?"Cronómetro":"Contador OCR"));
             if(selected.AutoBuyBait)AppendDiagnostic("Mantener E: "+selected.ShopOpenMilliseconds+" ms. El diálogo debe abrirse antes de pulsar Sí.");
             if(selected.Area.IsEmpty)AppendDiagnostic("Sin zona de pesca: comprueba manualmente que no esté abierto el minijuego.");
-            if(selected.AutoBuyBait&&!selected.MonitorBait)AppendDiagnostic("Lector apagado: podrá enviar Comprar, pero no confirmar la reposición.");
-            AppendDiagnostic("Preparada. Vuelve a Roblox en 3 s. F10/F8 cancela. Como máximo 1 compra de 1 cebo o 1 salto.");
+            if(selected.AutoBuyBait&&!selected.UsesBaitCounter)AppendDiagnostic(selected.PurchaseByTimer?"Prueba inmediata, sin esperar el intervalo. Comprueba el cierre del diálogo; inventario sin verificar por OCR.":"Lector apagado: podrá enviar Comprar, pero no confirmar la reposición.");
+            AppendDiagnostic("Preparada. Vuelve a Roblox en 3 s. F10/F8 cancela. Como máximo 1 compra de "+selected.BuyQuantity+" cebos (limitada por MAX) o 1 salto.");
             armedKind=kind;diagnosticPending=true;armedUntil=clock.Elapsed.TotalMilliseconds+3000;SetEditable(false);
             statusLabel.Text="Prueba preparada · vuelve a Roblox en 3 s. F10 cancela.";
         }
@@ -363,8 +368,8 @@ namespace SomeFishingGPO
                 tolerance, anticipation, holdUp, blueButton, markerButton, allowClicks,
                 monitorBait, idleJump, jumpSeconds, baitAreaButton, baitPreviewButton,
                 autoBuy,buyMaximum,buyQuantity,purchaseLimit,shopOpenTime,shopAreaButton,shopPreviewButton,
-                emptyTestButton,purchaseTestButton }) control.Enabled = value;
-            buyQuantity.Enabled=value&&!buyMaximum.Checked;
+                purchaseMode,purchaseMinutes,testBuyQuantity,emptyTestButton,purchaseTestButton }) control.Enabled = value;
+            UpdatePurchaseControls(value);
         }
         private void StopAll(string reason)
         {
@@ -388,7 +393,7 @@ namespace SomeFishingGPO
             }
             if (hadSession && !testMode)
             {
-                lastStop = string.Format("SomeFishing GPO 0.4.0 · {0:yyyy-MM-dd HH:mm:ss}\r\n\r\n{1}\r\n\r\n" +
+                lastStop = string.Format("SomeFishing GPO 0.5.0 · {0:yyyy-MM-dd HH:mm:ss}\r\n\r\n{1}\r\n\r\n" +
                     "Estado al parar: {2}\r\nRondas terminadas: {3}\r\nDuración: {4:F1} s\r\n" +
                     "Mayor intervalo entre revisiones: {5:F0} ms\r\nLanzamiento: {6} ms · Espera: {7} s\r\n" +
                     "Anticipación: {8} ms · Tolerancia: {9}\r\nÚltima detección: {10}\r\n" +
@@ -437,6 +442,7 @@ namespace SomeFishingGPO
         {
             if (!IsRunning && runtime != null && !runtime.PendingRelease) { runtime.Dispose(); runtime = null; }
             double now = clock.Elapsed.TotalMilliseconds;
+            purchaseCountdown.Text=IsRunning?engine.TimerStatus(now):"El cronómetro empieza al iniciar la pesca.";
             if (armedUntil > 0)
             {
                 if (now >= armedUntil) { armedUntil = 0; StartNow(armedKind); }
@@ -562,6 +568,9 @@ namespace SomeFishingGPO
                 using(var bitmap=new Bitmap(Width,Height))
                 {DrawToBitmap(bitmap,new Rectangle(0,0,Width,Height));bitmap.Save(Path.Combine(Path.GetDirectoryName(path),"interfaz-"+i+".png"));}
             }
+            purchaseMode.SelectedIndex=1;SelectPage(2);Application.DoEvents();
+            using(var bitmap=new Bitmap(Width,Height))
+            {DrawToBitmap(bitmap,new Rectangle(0,0,Width,Height));bitmap.Save(Path.Combine(Path.GetDirectoryName(path),"cronometro.png"));}
             Close();
         }
         protected override bool ShowWithoutActivation { get { return testMode; } }
