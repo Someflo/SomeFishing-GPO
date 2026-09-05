@@ -2,6 +2,7 @@
 ajustes.xml
 ajustes.xml.tmp
 ultima-parada.txt
+ultima-prueba.txt
 pruebas/
 artifacts/
 *.exe
@@ -12,4 +13,3 @@ artifacts/
 .vs/
 bin/
 obj/
-

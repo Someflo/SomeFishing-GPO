@@ -7,6 +7,7 @@ using System.Xml.Serialization;
 
 namespace SomeFishingGPO
 {
+    public enum RunKind { Fishing, EmptyBaitTest, PurchaseTest }
     public class Settings
     {
         public Rectangle Area;
@@ -30,6 +31,26 @@ namespace SomeFishingGPO
         public bool BuyMaximum = true;
         public int BuyQuantity = 5;
         public int PurchaseLimit = 10;
+
+        public Settings ForDiagnostic(RunKind kind)
+        {
+            if(kind==RunKind.Fishing)throw new ArgumentException("Elige una prueba.","kind");
+            var copy=(Settings)MemberwiseClone();
+            copy.AutoCast=false;copy.BuyMaximum=false;copy.BuyQuantity=1;copy.PurchaseLimit=1;
+            if(kind==RunKind.PurchaseTest)copy.AutoBuyBait=true;
+            return copy;
+        }
+        public string ValidateDiagnostic(Rectangle desktop)
+        {
+            if(!Area.IsEmpty)
+            {
+                var areaCheck=(Settings)MemberwiseClone();areaCheck.AutoCast=false;areaCheck.MonitorBait=false;areaCheck.AutoBuyBait=false;
+                string issue=areaCheck.Validate(desktop,false);if(issue!=null)return issue;
+            }
+            if(AutoBuyBait){string issue=ValidateShopArea(ShopArea,desktop);if(issue!=null)return issue;}
+            if(MonitorBait){string issue=ValidateBaitArea(BaitArea,desktop);if(issue!=null)return issue;}
+            return null;
+        }
 
         public string Validate(Rectangle desktop, bool sending)
         {
@@ -449,10 +470,14 @@ namespace SomeFishingGPO
         private bool waitingForBait;
         private string idleReason;
         private PurchaseController purchase;
+        private long simulatedSequence;
+        public RunKind Kind { get; private set; }
+        public bool IsDiagnostic { get { return Kind!=RunKind.Fishing; } }
+        public string PurchaseDetail { get { return purchase==null?"Sin compra iniciada":purchase.Diagnostic; } }
         public int PurchaseAttempts { get; private set; }
         public bool PurchaseSubmitted { get { return purchase != null && purchase.Submitted; } }
         public int? BaitCount { get { return bait.Count; } }
-        public string BaitStatus { get { return settings.MonitorBait ? bait.Detail : "Lectura de cebo desactivada"; } }
+        public string BaitStatus { get { return Kind==RunKind.EmptyBaitTest&&purchase==null?"SIMULACIÓN: contador en 0 · "+bait.Detail:settings.MonitorBait ? bait.Detail : "Lectura de cebo desactivada"; } }
         public int JumpRequests { get; private set; }
         public Phase State { get; private set; }
         public string Status { get; private set; }
@@ -461,8 +486,8 @@ namespace SomeFishingGPO
         public Observation LastObservation { get; private set; }
         public bool Running { get { return State != Phase.Stopped; } }
 
-        public FishingEngine(Settings settings, IGameRuntime runtime)
-        { this.settings = settings; this.runtime = runtime; State = Phase.Stopped; Status = "Detenida"; }
+        public FishingEngine(Settings settings, IGameRuntime runtime, RunKind kind=RunKind.Fishing)
+        { this.settings = kind==RunKind.Fishing?settings:settings.ForDiagnostic(kind); this.runtime = runtime; Kind=kind;State = Phase.Stopped; Status = "Detenida"; }
         public void Start(double now)
         {
             if (!runtime.IsActive) throw new InvalidOperationException("Roblox debe estar en primer plano.");
@@ -470,7 +495,9 @@ namespace SomeFishingGPO
             bait.Reset();
             JumpRequests = 0;
             PurchaseAttempts = 0; purchase = null;
+            simulatedSequence=0;
             State = Phase.Preparing; deadline = now + 1000; Status = "Preparando la pesca…";
+            if(IsDiagnostic)Status=Kind==RunKind.EmptyBaitTest?"Prueba: simulando 0 cebos en tres lecturas…":"Prueba: preparando una compra real de 1 cebo…";
         }
         public void Stop(string reason)
         {
@@ -488,21 +515,28 @@ namespace SomeFishingGPO
         }
         private bool HandleNoBait(double now)
         {
-            if(!settings.MonitorBait||(!bait.Empty&&!bait.Disappeared))return false;
+            if((!settings.MonitorBait&&Kind!=RunKind.EmptyBaitTest)||(!bait.Empty&&!bait.Disappeared))return false;
             string reason=bait.Empty?"Sin cebo confirmado":"Contador desaparecido durante 8 s";
             if(settings.AutoBuyBait && PurchaseAttempts<settings.PurchaseLimit)
             {
-                var shop=runtime as IShopRuntime;
-                if(shop==null){Stop("El lector de compra no está disponible");return true;}
-                purchase=new PurchaseController(settings,runtime,shop);PurchaseAttempts++;
-                State=Phase.Purchasing;SuggestedHold=false;purchase.Start(now);Status=purchase.Status;return true;
+                BeginPurchase(now);return true;
             }
             EnterIdle(now,settings.AutoBuyBait?reason+" · límite de compras alcanzado":reason,true);return true;
+        }
+        private void BeginPurchase(double now)
+        {
+            var shop=runtime as IShopRuntime;
+            if(shop==null){Stop("El lector de compra no está disponible");return;}
+            purchase=new PurchaseController(settings,runtime,shop);PurchaseAttempts++;
+            // Synthetic frames and the OCR reader have separate sequence counters.
+            // Discard the injected zero before accepting real post-purchase frames.
+            if(Kind==RunKind.EmptyBaitTest)bait.Reset();
+            State=Phase.Purchasing;SuggestedHold=false;purchase.Start(now);Status=purchase.Status;
         }
         private void EnterIdle(double now, string reason, bool noBait)
         {
             runtime.Release(); controller.Reset(); SuggestedHold = false;
-            if (!settings.IdleJumpEnabled) { Stop(reason + " · saltos de espera desactivados"); return; }
+            if (!settings.IdleJumpEnabled) { Stop(IsDiagnostic?"Prueba terminada: se detectó el 0 simulado; compra y saltos desactivados.":reason + " · saltos de espera desactivados"); return; }
             State = Phase.IdleWaiting; idleReason = reason; waitingForBait = noBait;
             stableFrames = 0; idleMenuMissingSince = now; nextJump = now + 2000;
             Status = reason + " · espera con saltos";
@@ -512,6 +546,7 @@ namespace SomeFishingGPO
             LastObservation = runtime.Observe();
             if (LastObservation.Found || LastObservation.MenuVisible)
             {
+                if(IsDiagnostic){Stop("Prueba detenida: el minijuego está visible. Termínalo antes de probar.");return;}
                 runtime.SetJumpHeld(false); State = Phase.IdleWaiting;
                 idleMenuMissingSince = -1; nextJump = now + settings.IdleJumpSeconds * 1000;
                 if (LastObservation.Found && ++stableFrames >= 2)
@@ -521,7 +556,7 @@ namespace SomeFishingGPO
             }
             stableFrames = 0;
             if (idleMenuMissingSince < 0) idleMenuMissingSince = now;
-            if (waitingForBait && bait.Count.HasValue && bait.Count.Value > 0)
+            if (!IsDiagnostic && waitingForBait && bait.Count.HasValue && bait.Count.Value > 0)
             {
                 runtime.Release(); failures = 0; State = Phase.Preparing; deadline = now + 1000;
                 Status = "Cebo disponible · reanudando pesca"; return;
@@ -529,7 +564,11 @@ namespace SomeFishingGPO
             if (State == Phase.Jumping)
             {
                 if (now >= jumpUntil)
-                { runtime.SetJumpHeld(false); State = Phase.IdleWaiting; nextJump = now + settings.IdleJumpSeconds * 1000; }
+                {
+                    runtime.SetJumpHeld(false);
+                    if(IsDiagnostic){Stop("Prueba terminada: se envió una sola pulsación de Espacio. Comprueba el salto en el juego.");return;}
+                    State = Phase.IdleWaiting; nextJump = now + settings.IdleJumpSeconds * 1000;
+                }
                 return;
             }
             Status = idleReason + " · próximo salto en " + Math.Max(0, Math.Ceiling((nextJump - now) / 1000)) + " s";
@@ -542,14 +581,29 @@ namespace SomeFishingGPO
             try
             {
                 if (!runtime.IsActive) { Stop("Detenida: cambiaste de ventana o activaste la parada con el ratón."); return; }
-                if (settings.MonitorBait) bait.Update(runtime.ReadBait(now), now);
+                if(Kind==RunKind.EmptyBaitTest&&purchase==null)
+                    bait.Update(new BaitReading{Count=0,Sequence=++simulatedSequence,SampledAt=now,Detail="Lectura de prueba"},now);
+                else if (settings.MonitorBait) bait.Update(runtime.ReadBait(now), now);
+                if(IsDiagnostic&&State==Phase.Preparing)
+                {
+                    LastObservation=runtime.Observe();
+                    if(LastObservation.Found||LastObservation.MenuVisible){Stop("Prueba detenida: el minijuego está visible. Termínalo antes de probar.");return;}
+                    if(now<deadline)return;
+                    if(Kind==RunKind.PurchaseTest)BeginPurchase(now);
+                    else if(bait.Empty)HandleNoBait(now);
+                    return;
+                }
                 if (State == Phase.Purchasing)
                 {
                     LastObservation=runtime.Observe();
                     if(LastObservation.Found||LastObservation.MenuVisible){Stop("Compra detenida: apareció el minijuego. Reinicia cuando termine el diálogo.");return;}
                     purchase.Tick(now,bait.Count,bait.ConfirmedAt);Status=purchase.Status;
                     if(purchase.State==PurchasePhase.Failed){Stop(purchase.Status);return;}
-                    if(purchase.State==PurchasePhase.Complete){failures=0;State=Phase.Preparing;deadline=now+1000;}
+                    if(purchase.State==PurchasePhase.Complete)
+                    {
+                        if(IsDiagnostic){Stop("Prueba terminada: Comprar se envió una vez, se cerró el diálogo y hay cebo visible. No se inicia la pesca.");return;}
+                        failures=0;State=Phase.Preparing;deadline=now+1000;
+                    }
                     return;
                 }
                 if (State == Phase.IdleWaiting || State == Phase.Jumping) { TickIdle(now); return; }

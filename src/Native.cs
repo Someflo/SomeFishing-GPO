@@ -91,6 +91,7 @@ namespace SomeFishingGPO
         private readonly Settings settings;
         private readonly IntPtr target;
         private readonly bool sendClicks;
+        private readonly bool requireFishingArea;
         private readonly MouseLease mouse;
         private readonly MouseLease jump;
         private readonly MouseLease shopKey, controlKey;
@@ -104,9 +105,10 @@ namespace SomeFishingGPO
         public Bitmap LastFrame { get; private set; }
         internal bool PendingRelease { get { return mouse.PendingRelease || jump.PendingRelease || shopKey.PendingRelease || controlKey.PendingRelease; } }
         internal string FaultReason { get { return mouse.Fault ?? jump.Fault ?? shopKey.Fault ?? controlKey.Fault; } }
-        internal GameRuntime(Settings settings, IntPtr target, bool sendClicks)
+        internal GameRuntime(Settings settings, IntPtr target, bool sendClicks, bool requireFishingArea=true)
         {
             this.settings = settings; this.target = target; this.sendClicks = sendClicks;
+            this.requireFishingArea=requireFishingArea;
             mouse = new MouseLease(delegate(bool down) { if (sendClicks) Native.MouseButton(down); },
                 delegate { return ForegroundAllowed; }, delegate { return clock.Elapsed.TotalMilliseconds; }, delegate { return safetyReason; });
             jump = new MouseLease(delegate(bool down) { if (sendClicks) Native.JumpKey(down); },
@@ -144,7 +146,7 @@ namespace SomeFishingGPO
                 if (Native.InStopCorner())
                 { safetyReason = "Detenida: el ratón llegó a la esquina superior izquierda."; return false; }
                 Rectangle client = Native.ClientBounds(target);
-                bool inside = Settings.ContainsSafely(client, settings.Area) && (!settings.MonitorBait || Settings.ContainsSafely(client, settings.BaitArea)) && (!settings.AutoBuyBait || Settings.ContainsSafely(client,settings.ShopArea)) && (!settings.AutoCast ||
+                bool inside = ((!requireFishingArea&&settings.Area.IsEmpty)||Settings.ContainsSafely(client, settings.Area)) && (!settings.MonitorBait || Settings.ContainsSafely(client, settings.BaitArea)) && (!settings.AutoBuyBait || Settings.ContainsSafely(client,settings.ShopArea)) && (!settings.AutoCast ||
                     (settings.CastPointSet && Settings.ContainsSafely(client, new Rectangle(settings.CastPoint, new Size(1, 1)))));
                 if (!inside) safetyReason = "Detenida: la zona o el punto de lanzamiento quedó fuera de la ventana de Roblox.";
                 return inside;
@@ -213,6 +215,7 @@ namespace SomeFishingGPO
         public Observation Observe()
         {
             Guard();
+            if(!requireFishingArea&&settings.Area.IsEmpty)return new Observation{Detail="Prueba sin zona de pesca configurada"};
             Bitmap frame = Native.Capture(settings.Area);
             if (LastFrame != null) LastFrame.Dispose();
             LastFrame = frame;

@@ -1,5 +1,14 @@
 # Cambios
 
+## 0.3.2 — botones de prueba y diagnóstico de compra (compilación local)
+
+- Nueva pestaña Pruebas: simular 0 cebos y probar una compra real de una unidad, con cuenta atrás de tres segundos.
+- La simulación sigue la reacción configurada: una compra, un salto o aviso de funciones desactivadas. La prueba directa de compra funciona aunque haya cebo.
+- Las pruebas terminan automáticamente sin lanzar la caña; limitan compras a 1 unidad y 1 intento, sin cambiar los ajustes habituales. Conservan F10/F8, pérdida de foco y liberación de entradas.
+- Registro visible y local en `ultima-prueba.txt`, con estado, contador y si se envió Comprar. Los fallos identifican E, Sí, cantidad, botón final o contador sin confirmar. No repiten una compra incierta.
+- La prueba permite omitir la zona de pesca y el punto de lanzamiento. Toda zona configurada mantiene su validación. La simulación de cero se descarta antes de aceptar lecturas reales después de la compra.
+- 238 comprobaciones integradas; 296 con nueve capturas privadas. Entradas simuladas durante la validación: no se realizaron compras ni saltos reales en el juego.
+
 ## 0.3.1 — lectura del contador con franjas blancas (versión preliminar)
 
 - Corrige el caso en el que la vista muestra `x300` pero el lector no confirma el contador al incluir una franja blanca o recibir letras de distinto tamaño.

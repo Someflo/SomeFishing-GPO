@@ -63,6 +63,8 @@ namespace SomeFishingGPO
         public string Status { get; private set; }
         public int Quantity { get; private set; }
         public bool Submitted { get; private set; }
+        public ShopReading LastReading { get; private set; }
+        public string Diagnostic { get { return "Paso: "+State+" · cantidad solicitada: "+Quantity+" · Comprar enviado: "+Submitted+" · "+(LastReading==null?"Sin lectura de menú":LastReading.Detail); } }
         public PurchaseController(Settings settings, IGameRuntime game, IShopRuntime shop)
         { this.settings=settings;this.game=game;this.shop=shop; }
         public void Start(double now)
@@ -88,7 +90,7 @@ namespace SomeFishingGPO
         {
             if(State==PurchasePhase.Complete||State==PurchasePhase.Failed)return;
             if(!game.IsActive){Fail("Roblox perdió el foco");return;}
-            if(now-started>90000||now>deadline){Fail("el menú no se reconoció o no confirmó la reposición. Revisa la zona y el saldo");return;}
+            if(now-started>90000||now>deadline){Fail(TimeoutReason());return;}
             if(State==PurchasePhase.Opening)
             {
                 if(now<next)return;shop.ShopKey(key,false);keyHeld=false;Wait(PurchasePhase.Confirming,now,"Esperando Sí y la oferta de cebo en Peli…");return;
@@ -111,6 +113,7 @@ namespace SomeFishingGPO
                 Wait(PurchasePhase.Verifying,now,"Verificando la cantidad escrita antes de Comprar…");return;
             }
             ShopReading reading=shop.ReadShop(now);
+            LastReading=reading;
             if(!FreshStable(reading,now))return;
             if(State==PurchasePhase.Confirming&&reading.Menu==ShopMenu.Confirm)
             { shop.ShopClick(reading.Left);Wait(PurchasePhase.Editing,now,"Esperando cantidad y MAX…");return; }
@@ -130,6 +133,20 @@ namespace SomeFishingGPO
             { shop.ShopClick(reading.Middle);Wait(PurchasePhase.Closing,now,"Cerrando «…» y comprobando reposición…");return; }
             if(State==PurchasePhase.Closing&&reading.Menu==ShopMenu.Unknown&&baitCount>0&&baitConfirmedAt>after)
             { game.Release();State=PurchasePhase.Complete;Status="Cebo repuesto · reanudando pesca"; }
+        }
+        private string TimeoutReason()
+        {
+            string reason;
+            switch(State)
+            {
+                case PurchasePhase.Confirming:reason="E se envió, pero no se confirmó la oferta con Sí/No. Revisa la distancia al barril y la zona";break;
+                case PurchasePhase.Editing:reason="se pulsó Sí, pero no se confirmó el menú de cantidad y MAX";break;
+                case PurchasePhase.Verifying:reason="la cantidad escrita no se confirmó como "+Quantity+" dentro del MAX. Comprar no se pulsó";break;
+                case PurchasePhase.Finishing:reason="Comprar se envió una vez, pero no se reconoció el botón final «…». Revisa el diálogo y el saldo";break;
+                case PurchasePhase.Closing:reason="se pulsó «…», pero no se confirmó cebo disponible después. Revisa el contador; no se repetirá Comprar";break;
+                default:reason="se agotó el tiempo durante "+State;break;
+            }
+            return reason+". "+(LastReading==null?"Sin lectura del menú.":LastReading.Detail);
         }
     }
 }

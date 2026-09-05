@@ -59,6 +59,12 @@ namespace SomeFishingGPO
         private PictureBox shopPreview;
         private WindowsShopReader previewShopReader;
         private bool previewingShop;
+        private RunKind armedKind;
+        private Settings sessionSettings;
+        private Button emptyTestButton, purchaseTestButton;
+        private TextBox diagnosticLog;
+        private string lastDiagnosticStep;
+        private bool diagnosticPending;
 
         public MainForm(bool testMode)
         {
@@ -76,7 +82,7 @@ namespace SomeFishingGPO
             string loadWarning = null;
             try { settings = testMode ? new Settings() : Settings.Load(settingsPath); }
             catch (Exception error) { settings = new Settings(); loadWarning = "No se pudieron cargar los ajustes: " + error.Message; }
-            Text = "SomeFishing GPO · v0.3.1";
+            Text = "SomeFishing GPO · v0.3.2";
             ClientSize = new Size(1040, 760);
             AutoScaleMode = AutoScaleMode.None;
             Font = new Font("Segoe UI", 10);
@@ -85,6 +91,12 @@ namespace SomeFishingGPO
             StartPosition = FormStartPosition.CenterScreen;
             BuildInterface();
             ApplySettings();
+            if(!testMode)try
+            {
+                string report=Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"ultima-prueba.txt");
+                if(File.Exists(report)&&new FileInfo(report).Length<=65536)diagnosticLog.Text=File.ReadAllText(report);
+            }
+            catch { diagnosticLog.Text="No se pudo leer la última prueba."; }
             if (loadWarning != null) statusLabel.Text = loadWarning;
             timer.Tick += Tick;
             if (!testMode) timer.Start();
@@ -120,14 +132,15 @@ namespace SomeFishingGPO
         {
             LabelAt(this, "SOMEFISHING GPO", 24, 17, 620, 43, 25, true);
             LabelAt(this, "Mantener para subir. Soltar para bajar. Repetir a tu ritmo.", 26, 63, 760, 28, 11, false).ForeColor = muted;
-            LabelAt(this, "CÓDIGO INCLUIDO  /  v0.3.1", 771, 35, 250, 26, 10, true).ForeColor = accent;
+            LabelAt(this, "CÓDIGO INCLUIDO  /  v0.3.2", 771, 35, 250, 26, 10, true).ForeColor = accent;
             var tabs = new TabControl { Location = new Point(24, 105), Size = new Size(992, 567), Padding = new Point(22, 9) };
             var fishing = new TabPage("Pesca") { BackColor = Color.White };
             var calibration = new TabPage("Calibración") { BackColor = Color.White };
             var guide = new TabPage("Guía rápida") { BackColor = Color.White };
             var baitTab = new TabPage("Cebo y espera") { BackColor = Color.White };
             var shopTab = new TabPage("Comprar cebo") { BackColor = Color.White };
-            tabs.TabPages.AddRange(new[] { fishing, calibration, baitTab, shopTab, guide }); Controls.Add(tabs);
+            var diagnosticsTab = new TabPage("Pruebas") { BackColor = Color.White };
+            tabs.TabPages.AddRange(new[] { fishing, calibration, baitTab, shopTab, diagnosticsTab, guide }); Controls.Add(tabs);
 
             LabelAt(fishing, "01  ELIGE LA BARRA", 20, 18, 410, 28, 12, true);
             LabelAt(fishing, "Barra azul completa y margen para su balanceo.", 20, 52, 430, 24, 10, false).ForeColor = muted;
@@ -190,6 +203,19 @@ namespace SomeFishingGPO
             shopDetail=LabelAt(shopTab,"Prueba Sí y cantidad cambiando los menús manualmente.",475,365,480,69,10,false);
             LabelAt(shopTab,"E → Sí → cantidad → Comprar → … → pesca.\nUsa Peli. Si falla, se detiene sin repetir la compra.\nLos saltos se suspenden mientras compra.",22,383,435,75,9.5f,false).ForeColor=muted;
             ButtonAt(shopTab,"Guardar ajustes",22,470,250,delegate{SaveSettings();},true);
+
+            LabelAt(diagnosticsTab,"Prueba cada paso sin agotar tu cebo",22,18,930,38,18,true);
+            LabelAt(diagnosticsTab,"Estas pruebas envían clics o teclas reales. Vuelve a Roblox durante los 3 segundos.\nColócate cerca del barril, sin minijuego ni diálogos abiertos. F10 o F8 cancela.",22,64,932,52,10,false).ForeColor=muted;
+            emptyTestButton=ButtonAt(diagnosticsTab,"PROBAR SIN CEBO · 3 s",22,128,446,delegate{ArmDiagnostic(RunKind.EmptyBaitTest);},true);
+            purchaseTestButton=ButtonAt(diagnosticsTab,"PROBAR COMPRA · 1 cebo · 3 s",492,128,462,delegate{ArmDiagnostic(RunKind.PurchaseTest);},true);
+            LabelAt(diagnosticsTab,"Simula 0. Si activaste la compra, intenta comprar\n1 cebo con Peli; si no, prueba 1 salto cuando está\nhabilitado. Si ambas están apagadas, te lo indica.",22,177,446,74,10,false).ForeColor=muted;
+            LabelAt(diagnosticsTab,"Intenta una compra real de 1 cebo con Peli,\naunque todavía tengas cebo. Usa la zona de compra.\nSolo un intento; no vuelve a lanzar la caña.",492,177,462,74,10,false).ForeColor=muted;
+            LabelAt(diagnosticsTab,"RESULTADO Y PASOS",22,263,930,26,11,true);
+            diagnosticLog=new TextBox{Location=new Point(22,295),Size=new Size(932,175),Multiline=true,ReadOnly=true,
+                ScrollBars=ScrollBars.Vertical,BackColor=Color.FromArgb(246,249,248),Font=new Font("Consolas",9),
+                Text="Todavía no se ha ejecutado una prueba. El resultado aparecerá aquí."};
+            diagnosticsTab.Controls.Add(diagnosticLog);
+            LabelAt(diagnosticsTab,"Se guarda en ultima-prueba.txt. Con la lectura de cebo apagada no se confirma la reposición.\nLas pruebas conservan tus ajustes habituales y terminan sin iniciar la pesca.",22,482,930,44,9,false).ForeColor=muted;
 
             LabelAt(calibration, "Ajusta lo que ve y cómo responde", 22, 23, 900, 40, 18, true);
             LabelAt(calibration, "Deja margen a los lados para el balanceo. La barra verde puede quedar dentro: se excluye del seguimiento.",
@@ -401,27 +427,74 @@ namespace SomeFishingGPO
         {
             if (IsRunning || armedUntil > 0) { StopAll("Detenida por ti"); return; }
             if (!CanStart()) return;
-            previewing = false; armedUntil = clock.Elapsed.TotalMilliseconds + 3000;
+            StopAll("Preparando inicio…");
+            armedKind=RunKind.Fishing; armedUntil = clock.Elapsed.TotalMilliseconds + 3000;SetEditable(false);
             statusLabel.Text = "Vuelve a Roblox: inicio en 3 segundos. F10 cancela.";
         }
-        private void StartNow()
+        private static string DiagnosticName(RunKind kind)
+        {return kind==RunKind.EmptyBaitTest?"SIN CEBO SIMULADO":"COMPRA REAL DE 1 CEBO";}
+        private bool CanStartDiagnostic(RunKind kind)
         {
-            if (!CanStart()) return;
+            string issue=runtime!=null&&runtime.PendingRelease?"Hay una liberación de entrada pendiente. Espera antes de probar.":
+                !stopHotkey?"F10 no está disponible. Cierra otras macros y vuelve a abrir SomeFishing GPO.":
+                ReadSettings().ForDiagnostic(kind).ValidateDiagnostic(SystemInformation.VirtualScreen);
+            if(issue==null)return true;
+            statusLabel.Text=issue;AppendDiagnostic("No se inició: "+issue);return false;
+        }
+        private void ArmDiagnostic(RunKind kind)
+        {
+            StopAll("Preparando prueba…");
+            diagnosticLog.Clear();lastDiagnosticStep=null;
+            AppendDiagnostic("SomeFishing GPO 0.3.2 · "+DiagnosticName(kind));
+            if(testMode){AppendDiagnostic("Render de interfaz: entradas reales desactivadas.");return;}
+            if(!CanStartDiagnostic(kind))return;
+            Settings selected=ReadSettings().ForDiagnostic(kind);
+            AppendDiagnostic("Compra: "+selected.AutoBuyBait+" · saltos: "+selected.IdleJumpEnabled+" · lector: "+selected.MonitorBait);
+            if(selected.Area.IsEmpty)AppendDiagnostic("Sin zona de pesca: comprueba manualmente que no esté abierto el minijuego.");
+            if(selected.AutoBuyBait&&!selected.MonitorBait)AppendDiagnostic("Lector apagado: podrá enviar Comprar, pero no confirmar la reposición.");
+            AppendDiagnostic("Preparada. Vuelve a Roblox en 3 s. F10/F8 cancela. Como máximo 1 compra de 1 cebo o 1 salto.");
+            armedKind=kind;diagnosticPending=true;armedUntil=clock.Elapsed.TotalMilliseconds+3000;SetEditable(false);
+            statusLabel.Text="Prueba preparada · vuelve a Roblox en 3 s. F10 cancela.";
+        }
+        private void AppendDiagnostic(string message)
+        {
+            if(diagnosticLog==null)return;
+            diagnosticLog.AppendText(DateTime.Now.ToString("HH:mm:ss")+"  "+message+Environment.NewLine);
+            if(diagnosticLog.TextLength>32000)diagnosticLog.Text=diagnosticLog.Text.Substring(diagnosticLog.TextLength-28000);
+            diagnosticLog.SelectionStart=diagnosticLog.TextLength;diagnosticLog.ScrollToCaret();
+            if(!testMode)try{File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"ultima-prueba.txt"),diagnosticLog.Text);}
+            catch{statusLabel.Text="No se pudo guardar ultima-prueba.txt; el resultado sigue visible en Pruebas.";}
+        }
+        private void TraceDiagnostic()
+        {
+            if(engine==null||!engine.IsDiagnostic)return;
+            string step=engine.Status+"\r\n    "+engine.PurchaseDetail+"\r\n    Cebos: "+
+                (engine.BaitCount.HasValue?engine.BaitCount.Value.ToString():"desconocido")+" · "+engine.BaitStatus;
+            if(step==lastDiagnosticStep)return;
+            lastDiagnosticStep=step;AppendDiagnostic(step);
+        }
+        private void StartNow(RunKind kind=RunKind.Fishing)
+        {
+            bool diagnostic=kind!=RunKind.Fishing;
+            if (diagnostic?!CanStartDiagnostic(kind):!CanStart()) {StopAll(statusLabel.Text);return;}
             IntPtr target = Native.GetForegroundWindow();
-            if (!Native.IsRoblox(target)) { statusLabel.Text = "Vuelve a la ventana de Roblox y pulsa F8 para iniciar."; return; }
-            StopAll("Iniciando…");
+            if (!Native.IsRoblox(target)) { StopAll(diagnostic?"Prueba cancelada: Roblox no estaba en primer plano. Pulsa de nuevo el botón de prueba.":"Vuelve a la ventana de Roblox y pulsa F8 para iniciar."); return; }
+            diagnosticPending=false;StopAll("Iniciando…");
             previewSample = false;
             try
             {
-                settings = ReadSettings();
-                SaveSettingsQuietly();
-                runtime = new GameRuntime(settings, target, true);
-                engine = new FishingEngine(settings, runtime);
+                if(diagnostic)sessionSettings=ReadSettings().ForDiagnostic(kind);
+                else{settings=ReadSettings();SaveSettingsQuietly();sessionSettings=settings;}
+                diagnosticPending=diagnostic;
+                runtime = new GameRuntime(sessionSettings, target, true, !diagnostic);
+                engine = new FishingEngine(sessionSettings, runtime,kind);
+                diagnosticPending=false;
                 runStarted = lastTick = clock.Elapsed.TotalMilliseconds; maxTickGap = 0; nextPreview = 0;
                 engine.Start(runStarted);
                 statusLabel.Text = engine.Status;
                 startButton.Text = "Detener · F8 / F10";
                 SetEditable(false);
+                TraceDiagnostic();
             }
             catch (Exception error) { StopAll(error.Message); }
         }
@@ -430,12 +503,15 @@ namespace SomeFishingGPO
             foreach (Control control in new Control[] { areaButton, pointButton, autoCast, castTime, biteTime, restTime,
                 tolerance, anticipation, holdUp, blueButton, markerButton, allowClicks,
                 monitorBait, idleJump, jumpSeconds, baitAreaButton, baitPreviewButton,
-                autoBuy,buyMaximum,buyQuantity,purchaseLimit,shopAreaButton,shopPreviewButton }) control.Enabled = value;
+                autoBuy,buyMaximum,buyQuantity,purchaseLimit,shopAreaButton,shopPreviewButton,
+                emptyTestButton,purchaseTestButton }) control.Enabled = value;
             buyQuantity.Enabled=value&&!buyMaximum.Checked;
         }
         private void StopAll(string reason)
         {
             bool hadSession = engine != null;
+            bool wasDiagnostic=diagnosticPending||(hadSession&&engine.IsDiagnostic);
+            diagnosticPending=false;
             Phase phase = hadSession ? (engine.Running ? engine.State : phaseBeforeTick) : Phase.Stopped;
             armedUntil = 0; previewing = false;
             previewingBait = false;
@@ -446,9 +522,14 @@ namespace SomeFishingGPO
             try { if (runtime != null) runtime.Dispose(); }
             catch (Exception error) { reason += " · " + error.Message; }
             if (runtime != null && runtime.FaultReason != null) reason = runtime.FaultReason;
+            if(wasDiagnostic)
+            {
+                TraceDiagnostic();
+                AppendDiagnostic("FIN: "+reason+(hadSession?"\r\n    Intentos: "+engine.PurchaseAttempts+" · Comprar enviado: "+engine.PurchaseSubmitted+" · Espacios solicitados: "+engine.JumpRequests:" · No se enviaron entradas de la prueba."));
+            }
             if (hadSession && !testMode)
             {
-                lastStop = string.Format("SomeFishing GPO 0.3.1 · {0:yyyy-MM-dd HH:mm:ss}\r\n\r\n{1}\r\n\r\n" +
+                lastStop = string.Format("SomeFishing GPO 0.3.2 · {0:yyyy-MM-dd HH:mm:ss}\r\n\r\n{1}\r\n\r\n" +
                     "Estado al parar: {2}\r\nRondas terminadas: {3}\r\nDuración: {4:F1} s\r\n" +
                     "Mayor intervalo entre revisiones: {5:F0} ms\r\nLanzamiento: {6} ms · Espera: {7} s\r\n" +
                     "Anticipación: {8} ms · Tolerancia: {9}\r\nÚltima detección: {10}\r\n" +
@@ -456,14 +537,15 @@ namespace SomeFishingGPO
                     "Intentos de reposición: {14} · Última compra enviada: {15}\r\n",
                     DateTime.Now, reason.Length > 2000 ? reason.Substring(0, 2000) : reason, phase, engine.Cycles,
                     (clock.Elapsed.TotalMilliseconds - runStarted) / 1000, maxTickGap,
-                    settings.CastMilliseconds, settings.BiteSeconds, settings.AnticipationMilliseconds, settings.Tolerance,
+                    sessionSettings.CastMilliseconds, sessionSettings.BiteSeconds, sessionSettings.AnticipationMilliseconds, sessionSettings.Tolerance,
                     engine.LastObservation == null ? "Sin imagen" : engine.LastObservation.Detail,
-                    engine.BaitCount.HasValue ? engine.BaitCount.Value.ToString() : "Desconocido", settings.IdleJumpEnabled, engine.JumpRequests,engine.PurchaseAttempts,engine.PurchaseSubmitted);
+                    engine.BaitCount.HasValue ? engine.BaitCount.Value.ToString() : "Desconocido", sessionSettings.IdleJumpEnabled, engine.JumpRequests,engine.PurchaseAttempts,engine.PurchaseSubmitted);
                 try { File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ultima-parada.txt"), lastStop); }
                 catch (Exception error) { reason += " · No se pudo guardar el informe: " + error.Message; }
             }
             if (runtime == null || !runtime.PendingRelease) runtime = null;
             engine = null;
+            sessionSettings=null;
             if (statusLabel != null) statusLabel.Text = reason;
             if (startButton != null) startButton.Text = "Preparar inicio · 3 segundos";
             if (previewButton != null) previewButton.Text = "Ver detector";
@@ -498,8 +580,8 @@ namespace SomeFishingGPO
             double now = clock.Elapsed.TotalMilliseconds;
             if (armedUntil > 0)
             {
-                if (now >= armedUntil) { armedUntil = 0; StartNow(); }
-                else statusLabel.Text = "Vuelve a Roblox: inicio en " + Math.Ceiling((armedUntil - now) / 1000) + " s. F10 cancela.";
+                if (now >= armedUntil) { armedUntil = 0; StartNow(armedKind); }
+                else statusLabel.Text = (armedKind==RunKind.Fishing?"Vuelve a Roblox: inicio en ":"Prueba: vuelve a Roblox en ")+ Math.Ceiling((armedUntil - now) / 1000) + " s. F10 cancela.";
                 return;
             }
             try
@@ -509,6 +591,7 @@ namespace SomeFishingGPO
                     maxTickGap = Math.Max(maxTickGap, now - lastTick); lastTick = now;
                     phaseBeforeTick = engine.State;
                     engine.Tick(now);
+                    TraceDiagnostic();
                     if (runtime.LastFrame != null && now >= nextPreview)
                     { SetPreview(runtime.LastFrame, engine.LastObservation); nextPreview = now + 150; }
                     cycleLabel.Text = "Rondas: " + engine.Cycles + " · Cebos: " + (engine.BaitCount.HasValue ? engine.BaitCount.Value.ToString() : "—");

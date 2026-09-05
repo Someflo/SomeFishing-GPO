@@ -159,6 +159,7 @@ namespace SomeFishingGPO
                 TestBaitAndIdle(args);
                 TestPurchases(args);
                 TestCounterIsolation(args);
+                TestDiagnostics(output);
 
                 using (var form = new MainForm(true)) form.RenderExample(Path.Combine(output, "interfaz.png"));
                 results.Add("UI: rendered off-screen non-activating form; no hotkeys registered and no clicks sent.");
@@ -697,6 +698,97 @@ namespace SomeFishingGPO
                 }
                 results.Add("COUNTER: the new image is a screenshot of the enlarged preview, not the original screen crop; the 44x25 case is a reconstruction. No live game input was sent.");
             }
+        }
+        private static void TestDiagnostics(string output)
+        {
+            var desktop=new Rectangle(0,0,1920,1080);
+            var original=new Settings{AutoCast=true,BuyMaximum=true,BuyQuantity=80,PurchaseLimit=10};
+            var direct=original.ForDiagnostic(RunKind.PurchaseTest);
+            Check(direct.AutoBuyBait&&!direct.AutoCast&&!direct.BuyMaximum&&direct.BuyQuantity==1&&direct.PurchaseLimit==1,"Purchase diagnostic forces one order of one bait without automatic casting");
+            Check(!original.AutoBuyBait&&original.AutoCast&&original.BuyMaximum&&original.BuyQuantity==80&&original.PurchaseLimit==10,"Diagnostic settings do not change the user's fishing settings");
+            Check(direct.ValidateDiagnostic(desktop)!=null,"A real purchase diagnostic requires a shop region");
+            direct.ShopArea=new Rectangle(100,300,505,207);
+            Check(direct.ValidateDiagnostic(desktop)==null,"A purchase diagnostic can run without a casting point, fishing region or OCR counter");
+            direct.MonitorBait=true;
+            Check(direct.ValidateDiagnostic(desktop)!=null,"An enabled counter must have a valid region during diagnostics");
+            direct.BaitArea=new Rectangle(300,200,44,25);
+            Check(direct.ValidateDiagnostic(desktop)==null,"Valid diagnostic shop and counter regions are accepted");
+            direct.Area=new Rectangle(1900,0,100,300);
+            Check(direct.ValidateDiagnostic(desktop)!=null,"A configured off-screen fishing region is still rejected during diagnostics");
+            var empty=original.ForDiagnostic(RunKind.EmptyBaitTest);
+            Check(!empty.AutoBuyBait&&empty.ValidateDiagnostic(desktop)==null,"No-bait simulation preserves disabled reactions and requires no unused regions");
+            original.Save(Path.Combine(output,"diagnostic-settings.xml"));
+            var saved=Settings.Load(Path.Combine(output,"diagnostic-settings.xml"));
+            Check(saved.AutoCast&&saved.BuyMaximum&&saved.BuyQuantity==80&&!saved.AutoBuyBait,"Saving the original settings after diagnostics preserves quantity and permissions");
+
+            var game=new FakeGame();var engine=new FishingEngine(original,game,RunKind.EmptyBaitTest);engine.Start(0);
+            engine.Tick(0);engine.Tick(50);
+            Check(!engine.BaitCount.HasValue&&engine.PurchaseAttempts==0,"The simulated zero still requires three distinct readings");
+            engine.Tick(100);
+            Check(engine.BaitCount==0&&engine.BaitStatus.Contains("SIMULACIÓN"),"Injected zero is clearly marked as simulated");
+            engine.Tick(1000);
+            Check(!engine.Running&&engine.Status.Contains("desactivados")&&game.Jumps==0&&game.ShopClicks==0&&game.Moves==0,"No-bait test reports disabled reactions and never launches fishing");
+
+            game=new FakeGame();engine=new FishingEngine(new Settings{IdleJumpEnabled=true,IdleJumpSeconds=300,MonitorBait=true},game,RunKind.EmptyBaitTest);engine.Start(0);
+            for(int t=0;t<=15000;t+=50){game.Bait=Reading(300,t,t);engine.Tick(t);}
+            Check(!engine.Running&&game.Jumps==1&&!game.JumpHeld&&engine.JumpRequests==1,"No-bait test gives one immediate test jump and stops despite real positive stock");
+            Check(game.ShopClicks==0&&game.Moves==0&&game.Presses==0,"A jump-only test sends no purchase or fishing clicks");
+
+            foreach(RunKind kind in new[]{RunKind.EmptyBaitTest,RunKind.PurchaseTest})
+            {
+                game=new FakeGame{Current=new Observation{MenuVisible=true}};
+                engine=new FishingEngine(new Settings{AutoBuyBait=true,IdleJumpEnabled=true},game,kind);engine.Start(0);engine.Tick(1000);
+                Check(!engine.Running&&game.KeysDown.Count==0&&game.KeyLog.Count==0&&game.Jumps==0&&game.Moves==0,kind+": a visible minigame blocks all test inputs");
+                game=new FakeGame();engine=new FishingEngine(new Settings{AutoBuyBait=true},game,kind);engine.Start(0);
+                for(int t=0;t<=1000;t+=50)engine.Tick(t);
+                Check(engine.State==Phase.Purchasing&&engine.PurchaseAttempts==1&&game.KeysDown.Contains(0x45),kind+": test opens the shop once without waiting for real empty bait");
+                engine.Stop("F10");engine.Tick(100000);
+                Check(!engine.Running&&game.KeysDown.Count==0&&game.ShopClicks==0&&game.Moves==0,kind+": F10 releases E and cancels future inputs");
+            }
+
+            foreach(RunKind kind in new[]{RunKind.EmptyBaitTest,RunKind.PurchaseTest})
+            {
+                original=new Settings{AutoBuyBait=kind==RunKind.EmptyBaitTest,MonitorBait=true,IdleJumpEnabled=true,BuyMaximum=true,BuyQuantity=80,PurchaseLimit=10};
+                game=new FakeGame();engine=new FishingEngine(original,game,kind);engine.Start(0);
+                long realSequence=0;
+                for(int t=0;t<=40000;t+=50)
+                {
+                    ShopMenu menu=game.ShopClicks==0?ShopMenu.Confirm:game.ShopClicks<3?ShopMenu.Quantity:game.ShopClicks==3?ShopMenu.Done:ShopMenu.Unknown;
+                    game.Shop=ShopFrame(menu,t,t,5,1);
+                    // A real OCR worker starts its own low sequence after simulation.
+                    if(t%1500==0)game.Bait=Reading(game.ShopClicks>=4?301:300,++realSequence,t);
+                    engine.Tick(t);
+                }
+                Check(!engine.Running&&engine.Status.Contains("hay cebo visible")&&game.ShopClicks==4,kind+": complete purchase test observes real bait and terminates");
+                Check(engine.PurchaseAttempts==1&&engine.PurchaseSubmitted&&game.Moves==0&&game.Jumps==0&&game.KeysDown.Count==0,kind+": one purchase, no jump or automatic fishing afterward");
+                Check(game.KeyLog.Contains("+49")&&!game.KeyLog.Contains("+53")&&original.BuyQuantity==80&&original.BuyMaximum,kind+": types one bait regardless of regular MAX settings");
+            }
+
+            game=new FakeGame();engine=new FishingEngine(new Settings{MonitorBait=false},game,RunKind.PurchaseTest);engine.Start(0);
+            for(int t=0;t<=40000;t+=50)
+            {
+                ShopMenu menu=game.ShopClicks==0?ShopMenu.Confirm:game.ShopClicks<3?ShopMenu.Quantity:game.ShopClicks==3?ShopMenu.Done:ShopMenu.Unknown;
+                game.Shop=ShopFrame(menu,t,t,5,1);engine.Tick(t);
+            }
+            Check(!engine.Running&&engine.PurchaseSubmitted&&game.ShopClicks==4&&engine.Status.Contains("no se confirmó cebo"),"Without bait OCR the purchase test reports an unconfirmed outcome and cannot repeat Buy");
+
+            game=new FakeGame();engine=new FishingEngine(new Settings(),game,RunKind.PurchaseTest);engine.Start(0);engine.Tick(1000);engine.Tick(1150);engine.Tick(22000);
+            Check(!engine.Running&&!engine.PurchaseSubmitted&&engine.Status.Contains("E se envió")&&engine.PurchaseDetail.Contains("Comprar enviado: False"),"Diagnostic distinguishes an E/menu failure from a submitted purchase");
+            game=new FakeGame();var p=ReadyToVerify(game,new Settings{BuyMaximum=false,BuyQuantity=1});
+            game.Active=false;p.Tick(3600,null,0);
+            Check(p.State==PurchasePhase.Failed&&game.KeysDown.Count==0&&!p.Submitted,"Losing focus after typing prevents a diagnostic purchase submission");
+            game=new FakeGame();p=ReadyToVerify(game,new Settings{BuyMaximum=false,BuyQuantity=1});p.Tick(25000,null,0);
+            Check(p.Status.Contains("Comprar no se pulsó")&&!p.Submitted,"Quantity verification timeout states that Buy was not clicked");
+            game=new FakeGame();p=ReadyToVerify(game,new Settings{BuyMaximum=false,BuyQuantity=1});
+            FeedShop(p,game,ShopMenu.Quantity,5,3800,5,1,null,0);FeedShop(p,game,ShopMenu.Quantity,6,4800,5,1,null,0);
+            p.Tick(26000,null,0);
+            Check(p.Submitted&&p.State==PurchasePhase.Failed&&p.Status.Contains("botón final")&&game.ShopClicks==3,"Missing ellipsis reports the last incomplete step after one Buy click");
+            game=new FakeGame();engine=new FishingEngine(new Settings(),game,RunKind.PurchaseTest);engine.Start(0);
+            for(int t=0;t<=1000;t+=50)engine.Tick(t);game.Active=false;engine.Tick(1050);engine.Tick(30000);
+            Check(!engine.Running&&game.KeysDown.Count==0&&game.ShopClicks==0,"Focus loss in a diagnostic releases held E without further clicks");
+            game=new FakeGame();engine=new FishingEngine(new Settings{IdleJumpEnabled=true},game,RunKind.EmptyBaitTest);engine.Start(0);
+            for(int t=0;t<=3000;t+=50)engine.Tick(t);engine.Stop("F10");engine.Tick(4000);
+            Check(game.Jumps==1&&!game.JumpHeld&&!engine.Running,"Stopping during the test jump releases Space");
         }
         private sealed class FakeGame : IGameRuntime, IShopRuntime
         {

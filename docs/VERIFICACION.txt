@@ -1,58 +1,45 @@
-SOMEFISHING GPO 0.3.1 - VERIFICACIÓN DE LA COMPILACIÓN LOCAL
-Fecha de verificación: 2026-09-05. Compilación destinada a la versión preliminar 0.3.1.
+SOMEFISHING GPO 0.3.2 - VERIFICACIÓN DE LA COMPILACIÓN LOCAL
+Fecha: 2026-09-05. Esta compilación no se ha publicado en GitHub.
 
 Compilación local x64 con C# 5 / .NET Framework y Windows SDK, sin advertencias.
-Versión del archivo: 0.3.1.0. Código completo incluido, sin dependencias descargadas.
-205 comprobaciones integradas aprobadas, sin capturas privadas.
-263 comprobaciones aprobadas al añadir nueve capturas privadas del desarrollo.
-Se inspeccionaron visualmente las pestañas de cebo y de compra actualizadas.
-No se enviaron clics, teclas, saltos ni compras reales al juego durante las pruebas.
-No se gastó Peli. Las entradas de las pruebas son simuladas.
+Versión del archivo: 0.3.2.0. Código completo incluido, sin descargas de dependencias.
+238 comprobaciones integradas aprobadas; 296 al añadir nueve capturas privadas.
+Se inspeccionó visualmente la nueva pestaña Pruebas, sin activar la ventana.
+No se enviaron clics, teclas, saltos ni compras reales durante la validación.
+No se gastó Peli. Los botones de diagnóstico sí envían entradas al usarlos.
 
-La validación cubre desaparición prolongada de un contador antes confirmado,
-lecturas ausentes o caducadas, finalización de la última pesca, compra completa
-simulada, verificación de cantidad, MAX, un solo envío de Comprar por intento,
-cierre del diálogo, confirmación nueva del cebo y regreso al lanzamiento.
-Se probaron también límites de compra, F10, pérdida de foco, liberación de
-teclas, menús que no llegan, cantidades incorrectas y un MAX que disminuye.
-Tres lanzamientos fallidos por sí solos no autorizan compras.
-
-En las capturas se reconoce la oferta de cebo con Sí/No y el menú de cantidad
-con MAX 5 y cantidad 1. La referencia visual de No se distingue de Sí.
-Se leen 300 y 295 cebos comunes al excluir el borde amarillo del botón.
-Los 42 raros siguen siendo desconocidos cuando no se leen con fiabilidad.
-
-CORRECCIÓN DEL CONTADOR EN 0.3.1
-Si falla la lectura original, se aíslan las letras amarillas/anaranjadas,
-se descartan franjas blancas y se normaliza la altura del texto. Se exigen
-dos lecturas coincidentes y no contradictorias con la imagen original.
-El nuevo recorte de la vista previa con x300 y una franja blanca lee 300.
-Su reconstrucción al tamaño indicado de 44 x 25 píxeles también lee 300.
-Una imagen blanca sin letras o un borde amarillo fino no produce números.
-La imagen aportada es una vista ampliada, no el recorte original de pantalla;
-queda pendiente comprobar la selección real del usuario en la vista de lectura.
+CAMBIO VALIDADO
+Simulación de cero mediante tres lecturas distintas; acciones configuradas
+apagadas, salto único o compra prioritaria de una unidad. Prueba directa con
+cebo positivo. Conservación de ajustes, MAX y cantidad normal. Sin lanzamiento
+automático al finalizar, sin repetir Comprar y sin un segundo intento.
+Parada durante E y Espacio, pérdida de foco, rechazo del minijuego visible,
+regiones seleccionadas fuera de pantalla, fallo de cada paso y contador apagado.
+Se reinicia la secuencia del monitor al pasar del cero simulado al OCR real.
+Se conserva la validación anterior de pesca, OCR, desaparición y reposición.
 
 LIMITACIONES
-El último recorte no muestra el botón de tres puntos. Su detección se probó
-con imágenes sintéticas; falta validarla en el juego con el botón completo.
-El diálogo final oscurece el contador. La reposición se comprueba después
-de cerrarlo y requiere una lectura positiva nueva.
-La detección de desaparición indica una posible falta de cebo; una oclusión
-prolongada de la zona también puede ocultar las letras amarillas.
-Se necesita probar todo el flujo en una partida real, cerca del barril.
-No se garantiza evitar expulsiones, desconexiones ni pérdidas de objetos.
-La compra automática empieza desactivada. Usa Peli del juego si se activa.
+La simulación de cero no valida el OCR ni la desaparición del contador real.
+La compra de prueba puede ejecutarse sin lector, pero no confirma reposición.
+Si no hay zona de pesca, no se comprueba visualmente si el minijuego está abierto.
+Tras Comprar y cerrar el diálogo, el lector confirma disponibilidad; un positivo
+no demuestra un incremento exacto de una unidad si ya había cebo antes.
+La pulsación de Espacio no demuestra que el personaje haya saltado en el juego.
+Las capturas permiten leer 300 y 295 comunes. Los 42 raros no son fiables.
+El recorte final aportado no muestra los puntos; su detector sigue validado
+con imágenes sintéticas. El flujo completo requiere una prueba en la partida.
+La vista x300 con franja blanca y su reconstrucción a 44x25 se leen; no son
+la captura original de la región de pantalla seleccionada por el usuario.
+No se garantiza evitar desconexiones ni preservar objetos del inventario.
 
-Microsoft Defender completó el análisis de este ejecutable y devolvió
-"found no threats". Es un resultado local, no una garantía absoluta ni una
-certificación externa. El ejecutable no tiene firma comercial.
-Las capturas privadas y los ajustes personales no forman parte del paquete.
-Los PNG de docs/ son renders de la interfaz con ejemplos sintéticos.
-El código incluye solo máscaras diminutas de las letras Sí/No, sin jugador
-ni inventario. Se mantiene la decisión de no conceder licencia: NOTICE.md.
+Microsoft Defender completó el análisis del ejecutable con "found no threats".
+Es un resultado local, no una garantía absoluta ni una certificación externa.
+El ejecutable no tiene firma comercial. Las imágenes privadas, los ajustes y
+los informes personales no se incluyen. Los PNG son renders de interfaz y
+ejemplos sintéticos. Se mantiene NOTICE.md, sin licencia concedida por ahora.
 
 SHA256 DEL EJECUTABLE
-125195BD5A9D9E053D721F002FDAE96845FBAFF41396A73638335BD6B710E446  SomeFishingGPO.exe
+8D3F28FD03D9A8E0A9913285074C7AE9D05F9175A25FEC9AC19F37E9465A1D66  SomeFishingGPO.exe
 
 PRUEBAS INTEGRADAS
 OK: Windows INPUT structure matches the platform ABI
@@ -294,8 +281,41 @@ OK: A persistent disappearance begins replenishment only after the last fish clo
 OK: White-only UI strips do not produce counter glyphs
 OK: A white strip never becomes a numeric zero
 OK: A thin gold border cannot become counter text
+OK: Purchase diagnostic forces one order of one bait without automatic casting
+OK: Diagnostic settings do not change the user's fishing settings
+OK: A real purchase diagnostic requires a shop region
+OK: A purchase diagnostic can run without a casting point, fishing region or OCR counter
+OK: An enabled counter must have a valid region during diagnostics
+OK: Valid diagnostic shop and counter regions are accepted
+OK: A configured off-screen fishing region is still rejected during diagnostics
+OK: No-bait simulation preserves disabled reactions and requires no unused regions
+OK: Saving the original settings after diagnostics preserves quantity and permissions
+OK: The simulated zero still requires three distinct readings
+OK: Injected zero is clearly marked as simulated
+OK: No-bait test reports disabled reactions and never launches fishing
+OK: No-bait test gives one immediate test jump and stops despite real positive stock
+OK: A jump-only test sends no purchase or fishing clicks
+OK: EmptyBaitTest: a visible minigame blocks all test inputs
+OK: EmptyBaitTest: test opens the shop once without waiting for real empty bait
+OK: EmptyBaitTest: F10 releases E and cancels future inputs
+OK: PurchaseTest: a visible minigame blocks all test inputs
+OK: PurchaseTest: test opens the shop once without waiting for real empty bait
+OK: PurchaseTest: F10 releases E and cancels future inputs
+OK: EmptyBaitTest: complete purchase test observes real bait and terminates
+OK: EmptyBaitTest: one purchase, no jump or automatic fishing afterward
+OK: EmptyBaitTest: types one bait regardless of regular MAX settings
+OK: PurchaseTest: complete purchase test observes real bait and terminates
+OK: PurchaseTest: one purchase, no jump or automatic fishing afterward
+OK: PurchaseTest: types one bait regardless of regular MAX settings
+OK: Without bait OCR the purchase test reports an unconfirmed outcome and cannot repeat Buy
+OK: Diagnostic distinguishes an E/menu failure from a submitted purchase
+OK: Losing focus after typing prevents a diagnostic purchase submission
+OK: Quantity verification timeout states that Buy was not clicked
+OK: Missing ellipsis reports the last incomplete step after one Buy click
+OK: Focus loss in a diagnostic releases held E without further clicks
+OK: Stopping during the test jump releases Space
 UI: rendered off-screen non-activating form; no hotkeys registered and no clicks sent.
-PASS: 205 checks.
+PASS: 238 checks.
 
 VALIDACIÓN ADICIONAL CON CAPTURAS NO DISTRIBUIDAS
 OK: Windows INPUT structure matches the platform ABI
@@ -604,5 +624,38 @@ OK: A thin gold border cannot become counter text
 OK: The supplied x300 preview is read despite its white strip and enlarged lettering
 OK: The same preview resized to the reported 44x25 selection still reads 300
 COUNTER: the new image is a screenshot of the enlarged preview, not the original screen crop; the 44x25 case is a reconstruction. No live game input was sent.
+OK: Purchase diagnostic forces one order of one bait without automatic casting
+OK: Diagnostic settings do not change the user's fishing settings
+OK: A real purchase diagnostic requires a shop region
+OK: A purchase diagnostic can run without a casting point, fishing region or OCR counter
+OK: An enabled counter must have a valid region during diagnostics
+OK: Valid diagnostic shop and counter regions are accepted
+OK: A configured off-screen fishing region is still rejected during diagnostics
+OK: No-bait simulation preserves disabled reactions and requires no unused regions
+OK: Saving the original settings after diagnostics preserves quantity and permissions
+OK: The simulated zero still requires three distinct readings
+OK: Injected zero is clearly marked as simulated
+OK: No-bait test reports disabled reactions and never launches fishing
+OK: No-bait test gives one immediate test jump and stops despite real positive stock
+OK: A jump-only test sends no purchase or fishing clicks
+OK: EmptyBaitTest: a visible minigame blocks all test inputs
+OK: EmptyBaitTest: test opens the shop once without waiting for real empty bait
+OK: EmptyBaitTest: F10 releases E and cancels future inputs
+OK: PurchaseTest: a visible minigame blocks all test inputs
+OK: PurchaseTest: test opens the shop once without waiting for real empty bait
+OK: PurchaseTest: F10 releases E and cancels future inputs
+OK: EmptyBaitTest: complete purchase test observes real bait and terminates
+OK: EmptyBaitTest: one purchase, no jump or automatic fishing afterward
+OK: EmptyBaitTest: types one bait regardless of regular MAX settings
+OK: PurchaseTest: complete purchase test observes real bait and terminates
+OK: PurchaseTest: one purchase, no jump or automatic fishing afterward
+OK: PurchaseTest: types one bait regardless of regular MAX settings
+OK: Without bait OCR the purchase test reports an unconfirmed outcome and cannot repeat Buy
+OK: Diagnostic distinguishes an E/menu failure from a submitted purchase
+OK: Losing focus after typing prevents a diagnostic purchase submission
+OK: Quantity verification timeout states that Buy was not clicked
+OK: Missing ellipsis reports the last incomplete step after one Buy click
+OK: Focus loss in a diagnostic releases held E without further clicks
+OK: Stopping during the test jump releases Space
 UI: rendered off-screen non-activating form; no hotkeys registered and no clicks sent.
-PASS: 263 checks.
+PASS: 296 checks.

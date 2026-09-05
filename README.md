@@ -2,7 +2,7 @@
 
 Macro visual para el minijuego de pesca de GPO en Windows. Su objetivo es ofrecer un programa sencillo, transparente y revisable, con el código completo y una forma de compilarlo localmente.
 
-**Versión preliminar 0.3.1: corrección de la lectura del contador con franjas blancas.** Incluye reposición de cebo y detección de su desaparición. Todavía necesita validación en partidas reales. No promete una tasa de capturas, evitar todas las desconexiones ni una garantía absoluta de ausencia de virus.
+**Compilación local 0.3.2: pruebas de falta de cebo y compra de una unidad, con un registro de pasos.** Incluye reposición de cebo y detección de su desaparición. Todavía necesita validación en partidas reales. No promete una tasa de capturas, evitar todas las desconexiones ni una garantía absoluta de ausencia de virus.
 
 ![Vista del detector de SomeFishing GPO; imagen sintética](docs/Vista-previa.png)
 
@@ -14,7 +14,7 @@ El ciclo es **lanzar → esperar → seguir al pez → comprobar el cierre del m
 
 ## Descargar y empezar
 
-Descarga `SomeFishing-GPO-v0.3.1-win-x64.zip` de la [versión preliminar 0.3.1](https://github.com/Someflo/SomeFishing-GPO/releases/tag/v0.3.1), extrae toda la carpeta y abre `SomeFishingGPO.exe`. Para conservar las zonas y opciones de una versión anterior, cierra la macro y copia su `ajustes.xml` a la nueva carpeta. Requiere Windows 10 u 11 de 64 bits, .NET Framework 4.8 y el cliente de escritorio de Roblox. La lectura de cebo y de los menús utiliza el reconocimiento de texto de Windows y necesita al menos un idioma OCR disponible para tu perfil. La aplicación no descarga ni instala idiomas. El SDK solo es necesario para recompilar, no para ejecutar el binario entregado.
+Esta compilación se entrega como `SomeFishing-GPO-v0.3.2-win-x64.zip`: extrae toda la carpeta y abre `SomeFishingGPO.exe`. La 0.3.2 todavía no se ha publicado en GitHub; la última publicación es la [versión preliminar 0.3.1](https://github.com/Someflo/SomeFishing-GPO/releases/tag/v0.3.1). Para conservar las zonas y opciones de una versión anterior, cierra la macro y copia su `ajustes.xml` a la nueva carpeta. Requiere Windows 10 u 11 de 64 bits, .NET Framework 4.8 y el cliente de escritorio de Roblox. La lectura de cebo y de los menús utiliza el reconocimiento de texto de Windows y necesita al menos un idioma OCR disponible para tu perfil. La aplicación no descarga ni instala idiomas. El SDK solo es necesario para recompilar, no para ejecutar el binario entregado.
 
 1. Abre Roblox en ventana o sin bordes, equipa la caña y lanza una vez manualmente.
 2. Con el minijuego visible, pulsa **F6**. Dibuja **una sola zona** con toda la altura de la barra azul y sus dos bordes oscuros. Deja margen lateral para su pequeño balanceo. La barra verde puede quedar dentro.
@@ -80,6 +80,30 @@ El diálogo final puede oscurecer el contador. Por eso se cierra su botón «…
 
 **Validación pendiente:** las capturas permiten comprobar la oferta con Sí/No y el menú con MAX 5 y cantidad 1. El botón «…» no aparece dentro del recorte final aportado; su detector se probó con imágenes sintéticas. No se hicieron compras reales ni se gastó Peli durante las pruebas. Comprueba ese último menú con la vista de prueba antes de dejar el ciclo trabajando. Si empiezas con el contador ya ausente y nunca se reconoció, compra cebo manualmente para establecer una primera lectura.
 
+## Probar la falta de cebo y una compra
+
+La pestaña **Pruebas** permite ejecutar acciones reales sin esperar a agotar el inventario. Los botones **Probar lectura** y **Probar menús** de las otras pestañas siguen siendo vistas que solo observan la pantalla.
+
+| Botón | Qué comprueba |
+|---|---|
+| **PROBAR SIN CEBO · 3 s** | Introduce tres lecturas simuladas de 0 en el monitor. Si activaste la compra automática, intenta comprar **1 cebo** con Peli. Si no, solicita **un salto** cuando los saltos están habilitados. Si ambas opciones están apagadas, lo indica sin enviar entradas. |
+| **PROBAR COMPRA · 1 cebo · 3 s** | Inicia directamente **una compra real de 1 cebo con Peli**, aunque todavía tengas cebo y la compra automática esté apagada. Usa la zona de compra que seleccionaste. |
+
+1. Configura la zona de compra si vas a comprar. Para comprobar el salto, desactiva la compra automática y activa **Saltar en espera**. No necesitas configurar un punto de lanzamiento para estas pruebas.
+2. Colócate al alcance de **E** del barril, con el minijuego y los diálogos cerrados. Pulsa el botón deseado y vuelve a Roblox durante la cuenta atrás de **3 segundos**. Pulsar el botón autoriza esa prueba concreta; no hace falta marcar el permiso de inicio de la pesca.
+3. Deja Roblox en primer plano. **F10**, **F8**, cambiar de ventana o la esquina superior izquierda detienen una prueba activa y liberan las entradas. F10/F8 también cancelan la cuenta atrás.
+4. Cuando termine, vuelve a **Pruebas** para leer el resultado y los pasos. El programa guarda el mismo texto en **`ultima-prueba.txt`**, junto al ejecutable, sustituyendo el informe anterior.
+
+Cada prueba termina después de una compra, un salto o un fallo; nunca vuelve a lanzar la caña. La compra queda limitada a **1 cebo y un solo intento**, aunque tus ajustes habituales indiquen MAX o una cantidad mayor. Los ajustes de pesca, cantidad y permisos habituales se conservan.
+
+La prueba de falta de cebo simula el cero; no demuestra que el OCR detecte correctamente tu contador real o su desaparición. Comprueba esa parte por separado con **Probar lectura**. Si no has seleccionado una zona de pesca, la prueba no puede detectar un minijuego abierto: termínalo manualmente antes de probar.
+
+El registro distingue E sin oferta reconocida, Sí sin menú de cantidad, número escrito sin confirmar, Comprar enviado sin reconocer «…» y cierre sin confirmar cebo disponible. Si la lectura de cebo está apagada, la prueba puede enviar Comprar y cerrar el diálogo, pero termina indicando que no pudo confirmar la reposición. No repite Comprar. Un contador positivo después del cierre confirma que hay cebo visible, no que haya aumentado exactamente en uno: revisa el contador y el saldo del juego.
+
+El informe conserva estados y lecturas resumidas del detector, sin capturas ni texto libre obtenido por OCR. Está excluido del repositorio y del paquete. Si algo falla, este archivo permite identificar el paso pendiente.
+
+![Botones de prueba y registro de pasos](docs/Pruebas.png)
+
 ## Ajustes iniciales
 
 | Ajuste | Valor | Función |
@@ -103,9 +127,9 @@ compilar.cmd
 SomeFishingGPO.exe --self-test pruebas
 ```
 
-`compilar.cmd` utiliza `%WINDIR%\Microsoft.NET\Framework64\v4.0.30319\csc.exe`, busca los metadatos `Windows.winmd` del SDK y las bibliotecas locales de interoperabilidad. El modo de prueba no registra atajos globales ni envía clics o teclas reales. Guarda el informe en `pruebas/resultados.txt`; el código de salida 0 indica éxito.
+`compilar.cmd` utiliza `%WINDIR%\Microsoft.NET\Framework64\v4.0.30319\csc.exe`, busca los metadatos `Windows.winmd` del SDK y las bibliotecas locales de interoperabilidad. El modo `--self-test` no registra atajos globales ni envía clics o teclas reales; los botones de la pestaña Pruebas sí ejecutan acciones reales cuando los utilizas. Guarda el informe en `pruebas/resultados.txt`; el código de salida 0 indica éxito.
 
-Las **205 comprobaciones incluidas** cubren seguimiento, balanceo, exclusión del verde, contador, desaparición, espera, compra simulada, límite de compras, regreso a la pesca y liberación de entradas. La validación local alcanzó **263 comprobaciones** al añadir nueve capturas del desarrollo; esas capturas no se distribuyen. Incluye reconocimiento nativo del contador y de los menús de compra, así como la regresión de `x300` con una franja blanca. Los resultados de esta compilación y el análisis de Defender están en [VERIFICACION.txt](docs/VERIFICACION.txt).
+Las **238 comprobaciones incluidas** cubren seguimiento, balanceo, exclusión del verde, contador, desaparición, espera, compra simulada, límite de compras, regreso a la pesca y liberación de entradas. La validación local alcanzó **296 comprobaciones** al añadir nueve capturas del desarrollo; esas capturas no se distribuyen. Incluye 33 comprobaciones nuevas de los modos de prueba, conservación de ajustes, un solo salto o compra, cancelaciones y mensajes de fallo. También incluye reconocimiento nativo del contador y de los menús de compra, así como la regresión de `x300` con una franja blanca. Los resultados de esta compilación y el análisis de Defender están en [VERIFICACION.txt](docs/VERIFICACION.txt).
 
 Puedes comparar la huella del ejecutable descargado con [SHA256.txt](docs/SHA256.txt):
 
