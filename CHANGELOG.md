@@ -1,5 +1,16 @@
 # Cambios
 
+## 0.3.0 — reposición de cebo y contador desaparecido (compilación local)
+
+- Detecta la desaparición prolongada del contador solo después de una lectura confirmada en la sesión: al menos cuatro capturas nuevas y ocho segundos sin texto amarillo. Conserva el estado desaparecido separado del cero.
+- Compra automática opcional al confirmar cero o esa desaparición, con prioridad sobre los saltos. Termina primero cualquier pesca activa. Tres lanzamientos fallidos por sí solos no autorizan compras.
+- Tercera zona para el diálogo y sus botones, con vista de prueba sin clics. Reconocimiento del texto, MAX, cantidad y botones Sí/No.
+- Flujo E → Sí → reemplazar cantidad → comprobar número → Comprar una vez → cerrar «…» → confirmar cebo nuevo → volver a pescar.
+- Cantidad fija o máximo del menú, respetando su límite. Tope inicial de diez intentos por sesión. La compra está desactivada por defecto.
+- Liberación de las teclas de compra, F10/F8, pérdida de foco, límites de espera y bloqueo de reintentos tras un resultado incierto.
+- 202 comprobaciones integradas y 258 con ocho capturas privadas. Reconoce la oferta y el menú MAX 5/cantidad 1; los contadores 300 y 295 se leen al excluir el borde amarillo.
+- El recorte final no muestra «…»; esa detección se validó con ejemplos sintéticos. El contador queda oscurecido por ese diálogo, por lo que se comprueba después de cerrarlo. No se enviaron compras reales durante las pruebas.
+
 ## 0.2.0 — lectura de cebo y saltos en espera (compilación local)
 
 - Pestaña Cebo y espera, con una segunda zona para el número del cebo equipado y una prueba de lectura que no envía entradas al juego.

@@ -44,6 +44,12 @@ namespace SomeFishingGPO
             if (SendInput(1, new[] { input }, Marshal.SizeOf(typeof(Input))) != 1)
                 throw new Win32Exception(Marshal.GetLastWin32Error(), "Windows no aceptó la tecla Espacio.");
         }
+        internal static void PurchaseKey(int key, bool down)
+        {
+            if(key!=0x45&&key!=0x11&&key!=0x41&&key!=0x08&&(key<0x30||key>0x39))throw new ArgumentOutOfRangeException("key");
+            var input=new Input {Type=1,Data=new InputUnion {Keyboard=new KeyboardInput {VirtualKey=(ushort)key,Flags=down?0u:2u}}};
+            if(SendInput(1,new[]{input},Marshal.SizeOf(typeof(Input)))!=1)throw new Win32Exception(Marshal.GetLastWin32Error(),"Windows no aceptó una tecla de compra.");
+        }
         internal static Rectangle ClientBounds(IntPtr window)
         {
             Rect rect; var point = new NativePoint();
@@ -80,21 +86,24 @@ namespace SomeFishingGPO
         }
     }
 
-    internal sealed class GameRuntime : IGameRuntime, IDisposable
+    internal sealed class GameRuntime : IGameRuntime, IShopRuntime, IDisposable
     {
         private readonly Settings settings;
         private readonly IntPtr target;
         private readonly bool sendClicks;
         private readonly MouseLease mouse;
         private readonly MouseLease jump;
+        private readonly MouseLease shopKey, controlKey;
+        private volatile int currentShopKey;
+        private readonly WindowsShopReader shopReader = new WindowsShopReader();
         private readonly WindowsBaitReader baitReader = new WindowsBaitReader();
         private readonly System.Threading.Timer watchdog;
         private readonly Stopwatch clock = Stopwatch.StartNew();
         private volatile bool closing;
         private volatile string safetyReason = "Parada de protección: no se pudo comprobar la ventana de Roblox.";
         public Bitmap LastFrame { get; private set; }
-        internal bool PendingRelease { get { return mouse.PendingRelease || jump.PendingRelease; } }
-        internal string FaultReason { get { return mouse.Fault ?? jump.Fault; } }
+        internal bool PendingRelease { get { return mouse.PendingRelease || jump.PendingRelease || shopKey.PendingRelease || controlKey.PendingRelease; } }
+        internal string FaultReason { get { return mouse.Fault ?? jump.Fault ?? shopKey.Fault ?? controlKey.Fault; } }
         internal GameRuntime(Settings settings, IntPtr target, bool sendClicks)
         {
             this.settings = settings; this.target = target; this.sendClicks = sendClicks;
@@ -102,9 +111,13 @@ namespace SomeFishingGPO
                 delegate { return ForegroundAllowed; }, delegate { return clock.Elapsed.TotalMilliseconds; }, delegate { return safetyReason; });
             jump = new MouseLease(delegate(bool down) { if (sendClicks) Native.JumpKey(down); },
                 delegate { return ForegroundAllowed; }, delegate { return clock.Elapsed.TotalMilliseconds; }, delegate { return safetyReason; }, "Espacio");
+            shopKey = new MouseLease(delegate(bool down){if(sendClicks)Native.PurchaseKey(currentShopKey,down);},
+                delegate{return ForegroundAllowed;},delegate{return clock.Elapsed.TotalMilliseconds;},delegate{return safetyReason;},"la tecla de compra");
+            controlKey = new MouseLease(delegate(bool down){if(sendClicks)Native.PurchaseKey(0x11,down);},
+                delegate{return ForegroundAllowed;},delegate{return clock.Elapsed.TotalMilliseconds;},delegate{return safetyReason;},"Ctrl");
             watchdog = new System.Threading.Timer(delegate
             {
-                mouse.Watchdog(); jump.Watchdog();
+                mouse.Watchdog(); jump.Watchdog(); shopKey.Watchdog(); controlKey.Watchdog();
                 if (closing && !PendingRelease && watchdog != null) watchdog.Dispose();
             }, null, 50, 50);
         }
@@ -113,8 +126,8 @@ namespace SomeFishingGPO
         {
             get
             {
-                bool active = !closing && mouse.Beat() && jump.Beat();
-                if (!active) { mouse.Release(); jump.Release(); }
+                bool active = !closing && mouse.Beat() && jump.Beat() && shopKey.Beat() && controlKey.Beat();
+                if (!active) Release();
                 return active;
             }
         }
@@ -131,7 +144,7 @@ namespace SomeFishingGPO
                 if (Native.InStopCorner())
                 { safetyReason = "Detenida: el ratón llegó a la esquina superior izquierda."; return false; }
                 Rectangle client = Native.ClientBounds(target);
-                bool inside = Settings.ContainsSafely(client, settings.Area) && (!settings.MonitorBait || Settings.ContainsSafely(client, settings.BaitArea)) && (!settings.AutoCast ||
+                bool inside = Settings.ContainsSafely(client, settings.Area) && (!settings.MonitorBait || Settings.ContainsSafely(client, settings.BaitArea)) && (!settings.AutoBuyBait || Settings.ContainsSafely(client,settings.ShopArea)) && (!settings.AutoCast ||
                     (settings.CastPointSet && Settings.ContainsSafely(client, new Rectangle(settings.CastPoint, new Size(1, 1)))));
                 if (!inside) safetyReason = "Detenida: la zona o el punto de lanzamiento quedó fuera de la ventana de Roblox.";
                 return inside;
@@ -149,8 +162,8 @@ namespace SomeFishingGPO
         {
             if (!value) { mouse.Release(); return; }
             Guard();
-            jump.Release();
-            if (jump.PendingRelease) throw new InvalidOperationException("Espacio sigue pendiente de liberación.");
+            jump.Release();shopKey.Release();controlKey.Release();
+            if (jump.PendingRelease||shopKey.PendingRelease||controlKey.PendingRelease) throw new InvalidOperationException("Una tecla sigue pendiente de liberación.");
             mouse.SetHeld(true);
         }
         public void SetJumpHeld(bool value)
@@ -158,13 +171,37 @@ namespace SomeFishingGPO
             if (!value) { jump.Release(); return; }
             Guard();
             if (!settings.IdleJumpEnabled) throw new InvalidOperationException("Los saltos de espera están desactivados.");
-            mouse.Release();
-            if (mouse.PendingRelease) throw new InvalidOperationException("El clic sigue pendiente de liberación.");
+            mouse.Release();shopKey.Release();controlKey.Release();
+            if (mouse.PendingRelease||shopKey.PendingRelease||controlKey.PendingRelease) throw new InvalidOperationException("Una entrada sigue pendiente de liberación.");
             jump.Pulse(100);
         }
         public void Release()
         {
-            mouse.Release(); jump.Release();
+            mouse.Release(); jump.Release(); shopKey.Release(); controlKey.Release();
+        }
+        public ShopReading ReadShop(double now)
+        {
+            Guard();
+            if(!settings.AutoBuyBait)return new ShopReading();
+            if(shopReader.Due(now))shopReader.Submit(Native.Capture(settings.ShopArea),settings.ShopArea.Location,now);
+            return shopReader.Latest;
+        }
+        public void ShopClick(Point point)
+        {
+            Guard();if(!settings.AutoBuyBait||!Settings.ContainsSafely(settings.ShopArea,new Rectangle(point,new Size(1,1))))throw new InvalidOperationException("Clic de compra fuera de la zona autorizada.");
+            Release();if(PendingRelease)throw new InvalidOperationException("Hay una entrada pendiente de liberación.");
+            if(sendClicks&&!Native.SetCursorPos(point.X,point.Y))throw new Win32Exception("No se pudo apuntar al botón de compra.");
+            mouse.Pulse(100);
+        }
+        public void ShopKey(int key,bool held)
+        {
+            if(!held){if(key==0x11)controlKey.Release();else shopKey.Release();return;}
+            Guard();if(!settings.AutoBuyBait)throw new InvalidOperationException("La compra automática está desactivada.");
+            if(key!=0x45&&key!=0x11&&key!=0x41&&key!=0x08&&(key<0x30||key>0x39))throw new ArgumentOutOfRangeException("key");
+            mouse.Release();jump.Release();if(mouse.PendingRelease||jump.PendingRelease)throw new InvalidOperationException("Hay una entrada pendiente de liberación.");
+            if(key==0x11){controlKey.SetHeld(true);return;}
+            shopKey.Release();if(shopKey.PendingRelease)throw new InvalidOperationException("No se pudo liberar la tecla anterior.");
+            currentShopKey=key;shopKey.Pulse(key==0x45?150:100);
         }
         public BaitReading ReadBait(double now)
         {
@@ -183,7 +220,7 @@ namespace SomeFishingGPO
         }
         public void Dispose()
         {
-            closing = true; mouse.Stop(); jump.Stop(); baitReader.Dispose();
+            closing = true; mouse.Stop(); jump.Stop(); shopKey.Stop(); controlKey.Stop(); baitReader.Dispose(); shopReader.Dispose();
             if (!PendingRelease) watchdog.Dispose();
             // If Windows rejected button-up, the timer retains this object and retries
             // until it is accepted. The UI blocks a new run while release is pending.

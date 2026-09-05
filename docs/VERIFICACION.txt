@@ -1,41 +1,48 @@
-SOMEFISHING GPO 0.2.0 - VERIFICACIÓN DE LA COMPILACIÓN LOCAL
-Fecha: 2026-09-05. Esta compilación todavía no está publicada en GitHub.
+SOMEFISHING GPO 0.3.0 - VERIFICACIÓN DE LA COMPILACIÓN LOCAL
+Fecha: 2026-09-05. Esta compilación no se ha publicado en GitHub.
 
-Compilación x64 local con C# 5 / .NET Framework y Windows SDK, sin advertencias.
-Producto: SomeFishing GPO. Versión del archivo: 0.2.0.0.
-162 comprobaciones integradas aprobadas sin capturas privadas.
-213 comprobaciones aprobadas al añadir cuatro capturas del desarrollo.
-Tres de las comprobaciones adicionales ejercitan el OCR nativo de Windows.
-Se revisaron visualmente los renders de todas las pestañas y el selector.
-No se enviaron clics ni pulsaciones de Espacio al juego durante las pruebas.
+Compilación local x64 con C# 5 / .NET Framework y Windows SDK, sin advertencias.
+Versión del archivo: 0.3.0.0. Código completo incluido, sin dependencias descargadas.
+202 comprobaciones integradas aprobadas, sin capturas privadas.
+258 comprobaciones aprobadas al añadir ocho capturas privadas del desarrollo.
+Se inspeccionaron visualmente las pestañas de cebo y de compra actualizadas.
+No se enviaron clics, teclas, saltos ni compras reales al juego durante las pruebas.
+No se gastó Peli. Las entradas de las pruebas son simuladas.
 
-El OCR reconoce 300 cebos comunes en la captura nueva. La tipografía del
-contador de 42 raros no se reconoce con fiabilidad: devuelve desconocido.
-Seleccionar ambas filas del contador se rechaza, sin sumar ni unir números.
-Las comprobaciones cubren confirmación del cero en tres capturas diferentes,
-lecturas ausentes y caducadas, repetición normal de pesca, última picada,
-espera tras tres lanzamientos fallidos, saltos simulados y reanudación.
-También cubren F10/parada, pérdida de foco y liberación de Espacio aunque
-se retrase la interfaz o el sistema rechace inicialmente soltar la tecla.
+La validación cubre desaparición prolongada de un contador antes confirmado,
+lecturas ausentes o caducadas, finalización de la última pesca, compra completa
+simulada, verificación de cantidad, MAX, un solo envío de Comprar por intento,
+cierre del diálogo, confirmación nueva del cebo y regreso al lanzamiento.
+Se probaron también límites de compra, F10, pérdida de foco, liberación de
+teclas, menús que no llegan, cantidades incorrectas y un MAX que disminuye.
+Tres lanzamientos fallidos por sí solos no autorizan compras.
 
-Microsoft Defender completó el análisis de este ejecutable con el resultado
-"found no threats". Esto documenta un análisis local, no una garantía absoluta
-de seguridad ni una certificación externa. El binario no tiene firma comercial.
+En las capturas se reconoce la oferta de cebo con Sí/No y el menú de cantidad
+con MAX 5 y cantidad 1. La referencia visual de No se distingue de Sí.
+Se leen 300 y 295 cebos comunes al excluir el borde amarillo del botón.
+Los 42 raros siguen siendo desconocidos cuando no se leen con fiabilidad.
 
 LIMITACIONES
-El contador y los saltos aún necesitan validarse durante una partida real.
-No se garantiza que el juego acepte Espacio o lo contabilice como actividad,
-ni que la función evite expulsiones, desconexiones o pérdidas de objetos.
-El OCR puede no reconocer otros dígitos, tamaños, idiomas o fondos.
-Los fallos de lectura nunca se interpretan automáticamente como cero.
-La lectura y los saltos están desactivados por defecto.
+El último recorte no muestra el botón de tres puntos. Su detección se probó
+con imágenes sintéticas; falta validarla en el juego con el botón completo.
+El diálogo final oscurece el contador. La reposición se comprueba después
+de cerrarlo y requiere una lectura positiva nueva.
+La detección de desaparición indica una posible falta de cebo; una oclusión
+prolongada de la zona también puede ocultar las letras amarillas.
+Se necesita probar todo el flujo en una partida real, cerca del barril.
+No se garantiza evitar expulsiones, desconexiones ni pérdidas de objetos.
+La compra automática empieza desactivada. Usa Peli del juego si se activa.
 
-Las capturas originales, los ajustes personales y los informes locales de uso
-no forman parte del paquete. docs/ contiene renders sintéticos de la interfaz.
-Se incluye el código completo, sin licencia concedida por ahora: ver NOTICE.md.
+Microsoft Defender completó el análisis de este ejecutable y devolvió
+"found no threats". Es un resultado local, no una garantía absoluta ni una
+certificación externa. El ejecutable no tiene firma comercial.
+Las capturas privadas y los ajustes personales no forman parte del paquete.
+Los PNG de docs/ son renders de la interfaz con ejemplos sintéticos.
+El código incluye solo máscaras diminutas de las letras Sí/No, sin jugador
+ni inventario. Se mantiene la decisión de no conceder licencia: NOTICE.md.
 
 SHA256 DEL EJECUTABLE
-E30D86557A0E1D4C284A86A24685C0988E292D7997C7BED1A0673BE81A224D88  SomeFishingGPO.exe
+F21E63318D699564BD666CBB44858A886FF13801A9D2E056C0B591D4416E0BCE  SomeFishingGPO.exe
 
 PRUEBAS INTEGRADAS
 OK: Windows INPUT structure matches the platform ABI
@@ -234,10 +241,50 @@ OK: A small bait counter rectangle is accepted
 OK: A counter outside the screen is rejected
 OK: An excessively wide inventory selection is rejected
 OK: The counter selector allows a 17-pixel-high numeric region
+OK: A never-readable counter cannot trigger disappearance replenishment
+OK: Short counter disappearance is ignored
+OK: Counter disappearance waits the full eight seconds
+OK: Confirmed visual disappearance remains distinct from a numeric zero
+OK: A stalled OCR worker cannot maintain disappearance evidence
+OK: Unreadable but still visible yellow lettering does not imply disappearance
+OK: Restart clears disappearance history
+OK: A counter crop without yellow text reports visual absence
+OK: Parse the displayed purchase maximum
+OK: Ambiguous and letter-based purchase limits are rejected
+OK: Recognize the bait offer in game currency
+OK: A Robux prompt cannot authorize a purchase
+OK: Other item offers are rejected
+OK: Short numeric fields require matching copies of the same glyph image
+OK: Repeated-glyph disagreements and letters are rejected
+OK: Three aligned white dots identify the final central button
+OK: Additional lettering prevents a false ellipsis button
+OK: Purchase opens once, confirms Yes and types the displayed maximum
+OK: Quantity entry sends E and Ctrl+A then 5, releasing every key
+OK: Wrong displayed quantity cannot click Buy
+OK: Verified quantity submits Buy exactly once
+OK: The final ellipsis can close while the dialogue obscures the bait counter
+OK: Old positive bait readings cannot confirm a new purchase
+OK: A closed dialogue with fresh bait completes replenishment
+OK: Completed purchase cannot repeat any click
+OK: A fixed quantity is capped by the visible maximum
+OK: Losing game focus stops a purchase and releases keys
+OK: Repeated cached shop frames cannot authorize Yes
+OK: Missing menus time out without any purchase clicks
+OK: A maximum that drops below the typed amount blocks Buy
+OK: Auto replenishment takes priority over idle jumps on confirmed zero
+OK: F10 cancels a purchase while E is held
+OK: Three failed casts alone cannot authorize spending on bait
+OK: The purchase dialogue area is accepted
+OK: Purchase areas outside the desktop are rejected
+OK: Automatic spending is disabled in new configurations
+OK: The fishing engine completes the whole replenishment cycle and casts again
+OK: The session purchase limit prevents another order and permits idle jumps
+OK: Counter disappearance cannot interrupt the active last fish
+OK: A persistent disappearance begins replenishment only after the last fish closes
 UI: rendered off-screen non-activating form; no hotkeys registered and no clicks sent.
-PASS: 162 checks.
+PASS: 202 checks.
 
-VALIDACIÓN LOCAL ADICIONAL CON CAPTURAS NO DISTRIBUIDAS
+VALIDACIÓN ADICIONAL CON CAPTURAS NO DISTRIBUIDAS
 OK: Windows INPUT structure matches the platform ABI
 OK: Detect cyan bar, interior gap and thin white marker
 OK: Target center agrees with synthetic image
@@ -492,5 +539,51 @@ OK: The difficult rare-bait lettering is unknown instead of guessed as a number 
 OK: Selecting both bait rows is rejected instead of combining the quantities
 OCR: two image scales agree on 300; the rare bait row is outside the selected region.
 OCR LIMIT: the 42 rare-bait crop was not recognized reliably; the reader reports unknown. Both rows together are rejected.
+OK: A never-readable counter cannot trigger disappearance replenishment
+OK: Short counter disappearance is ignored
+OK: Counter disappearance waits the full eight seconds
+OK: Confirmed visual disappearance remains distinct from a numeric zero
+OK: A stalled OCR worker cannot maintain disappearance evidence
+OK: Unreadable but still visible yellow lettering does not imply disappearance
+OK: Restart clears disappearance history
+OK: A counter crop without yellow text reports visual absence
+OK: Parse the displayed purchase maximum
+OK: Ambiguous and letter-based purchase limits are rejected
+OK: Recognize the bait offer in game currency
+OK: A Robux prompt cannot authorize a purchase
+OK: Other item offers are rejected
+OK: Short numeric fields require matching copies of the same glyph image
+OK: Repeated-glyph disagreements and letters are rejected
+OK: Three aligned white dots identify the final central button
+OK: Additional lettering prevents a false ellipsis button
+OK: Purchase opens once, confirms Yes and types the displayed maximum
+OK: Quantity entry sends E and Ctrl+A then 5, releasing every key
+OK: Wrong displayed quantity cannot click Buy
+OK: Verified quantity submits Buy exactly once
+OK: The final ellipsis can close while the dialogue obscures the bait counter
+OK: Old positive bait readings cannot confirm a new purchase
+OK: A closed dialogue with fresh bait completes replenishment
+OK: Completed purchase cannot repeat any click
+OK: A fixed quantity is capped by the visible maximum
+OK: Losing game focus stops a purchase and releases keys
+OK: Repeated cached shop frames cannot authorize Yes
+OK: Missing menus time out without any purchase clicks
+OK: A maximum that drops below the typed amount blocks Buy
+OK: Auto replenishment takes priority over idle jumps on confirmed zero
+OK: F10 cancels a purchase while E is held
+OK: Three failed casts alone cannot authorize spending on bait
+OK: The purchase dialogue area is accepted
+OK: Purchase areas outside the desktop are rejected
+OK: Automatic spending is disabled in new configurations
+OK: The fishing engine completes the whole replenishment cycle and casts again
+OK: The session purchase limit prevents another order and permits idle jumps
+OK: Counter disappearance cannot interrupt the active last fish
+OK: A persistent disappearance begins replenishment only after the last fish closes
+OK: The supplied purchase offer and Sí/No buttons are recognized
+OK: The actual No button does not match Sí
+OK: The supplied amount dialogue reads MAX 5 and quantity 1
+OK: The cropped final screenshot without visible dots cannot authorize a close click
+SHOP LIMIT: the supplied final screenshot does not show the ellipsis button; that detector is validated with synthetic dots only. No live purchases were sent.
+OK: The supplied 295-bait counter is readable when the yellow button border is excluded
 UI: rendered off-screen non-activating form; no hotkeys registered and no clicks sent.
-PASS: 213 checks.
+PASS: 258 checks.

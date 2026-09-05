@@ -1,0 +1,135 @@
+using System;
+using System.Drawing;
+using System.Globalization;
+using System.Text;
+using System.Text.RegularExpressions;
+
+namespace SomeFishingGPO
+{
+    public enum ShopMenu { Unknown, Confirm, Quantity, Done }
+    public sealed class ShopReading
+    {
+        public ShopMenu Menu;
+        public int? Maximum, Quantity;
+        public Point Left, Middle;
+        public long Sequence;
+        public double SampledAt;
+        public string Detail = "Esperando menú de compra";
+    }
+    public static class ShopText
+    {
+        public static string Clean(string text)
+        {
+            var result = new StringBuilder();
+            foreach(char c in (text ?? "").Normalize(NormalizationForm.FormD))
+                if(CharUnicodeInfo.GetUnicodeCategory(c)!=UnicodeCategory.NonSpacingMark)result.Append(char.ToUpperInvariant(c));
+            return result.ToString().Normalize(NormalizationForm.FormC).Trim();
+        }
+        public static int? Maximum(string text)
+        {
+            // Windows sometimes reads the X of this fixed MAX label as Y.
+            MatchCollection matches=Regex.Matches(Clean(text), @"\bMA[XY][.:\s]*([0-9]{1,4})\b");
+            int value;
+            return matches.Count==1 && int.TryParse(matches[0].Groups[1].Value,out value) && value<=9999 ? (int?)value:null;
+        }
+        public static bool Confirmation(string text)
+        {
+            string t=Clean(text);
+            return t.Contains("PURCHASE") && t.Contains("FISH") && t.Contains("BAITS") && t.Contains("PELI") && !t.Contains("ROBUX");
+        }
+        public static bool Yes(string text) { string t=Clean(text);return t=="SI"||t=="YES"; }
+        public static bool Buy(string text) { string t=Clean(text);return t=="COMPRAR"||t=="BUY"; }
+        public static bool Dots(string text) { return Regex.IsMatch(Clean(text),@"\A(?:\.[\s]*){3}\z") || Clean(text)=="…"; }
+    }
+    public interface IShopRuntime
+    {
+        ShopReading ReadShop(double now);
+        void ShopClick(Point point);
+        void ShopKey(int key, bool held);
+    }
+    public enum PurchasePhase { Opening, Confirming, Editing, Selecting, Clearing, Typing, Verifying, Finishing, Closing, Complete, Failed }
+    public sealed class PurchaseController
+    {
+        private readonly Settings settings;
+        private readonly IShopRuntime shop;
+        private readonly IGameRuntime game;
+        private double deadline, next, after, started, boughtAt;
+        private long lastSequence=-1;
+        private ShopReading candidate;
+        private int stable, digitIndex, key;
+        private bool keyHeld;
+        private string digits;
+        public PurchasePhase State { get; private set; }
+        public string Status { get; private set; }
+        public int Quantity { get; private set; }
+        public bool Submitted { get; private set; }
+        public PurchaseController(Settings settings, IGameRuntime game, IShopRuntime shop)
+        { this.settings=settings;this.game=game;this.shop=shop; }
+        public void Start(double now)
+        {
+            game.Release(); started=now; State=PurchasePhase.Opening; Status="Abriendo compra con E…";
+            shop.ShopKey(0x45,true); keyHeld=true; key=0x45; next=now+150; deadline=now+20000; after=now;
+        }
+        public void Fail(string reason) { game.Release();State=PurchasePhase.Failed;Status="Compra detenida: "+reason; }
+        private void Wait(PurchasePhase state,double now,string message)
+        { State=state;after=now+200;deadline=now+20000;candidate=null;stable=0;Status=message; }
+        private bool FreshStable(ShopReading reading,double now)
+        {
+            if(reading==null||reading.SampledAt<after||reading.SampledAt>now||now-reading.SampledAt>4000||reading.Sequence<=lastSequence)return false;
+            lastSequence=reading.Sequence;
+            bool same=candidate!=null&&reading.SampledAt-candidate.SampledAt<=4000&&candidate.Menu==reading.Menu&&candidate.Maximum==reading.Maximum&&candidate.Quantity==reading.Quantity
+                && Math.Abs(candidate.Left.X-reading.Left.X)<12&&Math.Abs(candidate.Left.Y-reading.Left.Y)<12
+                && Math.Abs(candidate.Middle.X-reading.Middle.X)<12&&Math.Abs(candidate.Middle.Y-reading.Middle.Y)<12;
+            stable=same?stable+1:1;candidate=reading;return stable>=2;
+        }
+        private void Press(int virtualKey,double now)
+        { shop.ShopKey(virtualKey,true);key=virtualKey;keyHeld=true;next=now+100; }
+        public void Tick(double now,int? baitCount,double baitConfirmedAt)
+        {
+            if(State==PurchasePhase.Complete||State==PurchasePhase.Failed)return;
+            if(!game.IsActive){Fail("Roblox perdió el foco");return;}
+            if(now-started>90000||now>deadline){Fail("el menú no se reconoció o no confirmó la reposición. Revisa la zona y el saldo");return;}
+            if(State==PurchasePhase.Opening)
+            {
+                if(now<next)return;shop.ShopKey(key,false);keyHeld=false;Wait(PurchasePhase.Confirming,now,"Esperando Sí y la oferta de cebo en Peli…");return;
+            }
+            if(State==PurchasePhase.Selecting)
+            {
+                if(now<next)return;
+                if(!keyHeld){shop.ShopKey(0x11,true);Press(0x41,now);return;}
+                shop.ShopKey(0x41,false);shop.ShopKey(0x11,false);keyHeld=false;Press(0x08,now);State=PurchasePhase.Clearing;return;
+            }
+            if(State==PurchasePhase.Clearing)
+            {
+                if(now<next)return;shop.ShopKey(0x08,false);keyHeld=false;State=PurchasePhase.Typing;digitIndex=0;next=now+100;return;
+            }
+            if(State==PurchasePhase.Typing)
+            {
+                if(now<next)return;
+                if(keyHeld){shop.ShopKey(key,false);keyHeld=false;digitIndex++;next=now+100;return;}
+                if(digitIndex<digits.Length){Press(0x30+digits[digitIndex]-'0',now);return;}
+                Wait(PurchasePhase.Verifying,now,"Verificando la cantidad escrita antes de Comprar…");return;
+            }
+            ShopReading reading=shop.ReadShop(now);
+            if(!FreshStable(reading,now))return;
+            if(State==PurchasePhase.Confirming&&reading.Menu==ShopMenu.Confirm)
+            { shop.ShopClick(reading.Left);Wait(PurchasePhase.Editing,now,"Esperando cantidad y MAX…");return; }
+            if(State==PurchasePhase.Editing&&reading.Menu==ShopMenu.Quantity&&reading.Maximum.HasValue)
+            {
+                Quantity=settings.BuyMaximum?reading.Maximum.Value:Math.Min(settings.BuyQuantity,reading.Maximum.Value);
+                if(Quantity<1){Fail("el máximo disponible es 0");return;}
+                digits=Quantity.ToString(CultureInfo.InvariantCulture);shop.ShopClick(reading.Middle);
+                State=PurchasePhase.Selecting;deadline=now+20000;next=now+250;Status="Escribiendo "+digits+" cebos…";return;
+            }
+            if(State==PurchasePhase.Verifying&&reading.Menu==ShopMenu.Quantity&&reading.Quantity==Quantity&&reading.Maximum>=Quantity)
+            {
+                shop.ShopClick(reading.Left);Submitted=true;boughtAt=now;
+                Wait(PurchasePhase.Finishing,now,"Compra enviada una vez · esperando cebo y «…»");return;
+            }
+            if(State==PurchasePhase.Finishing&&reading.Menu==ShopMenu.Done&&reading.SampledAt>boughtAt)
+            { shop.ShopClick(reading.Middle);Wait(PurchasePhase.Closing,now,"Cerrando «…» y comprobando reposición…");return; }
+            if(State==PurchasePhase.Closing&&reading.Menu==ShopMenu.Unknown&&baitCount>0&&baitConfirmedAt>after)
+            { game.Release();State=PurchasePhase.Complete;Status="Cebo repuesto · reanudando pesca"; }
+        }
+    }
+}

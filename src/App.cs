@@ -52,6 +52,13 @@ namespace SomeFishingGPO
         private WindowsBaitReader previewReader;
         private readonly BaitMonitor previewBaitMonitor = new BaitMonitor();
         private bool previewingBait;
+        private CheckBox autoBuy, buyMaximum;
+        private NumericUpDown buyQuantity, purchaseLimit;
+        private Button shopAreaButton, shopPreviewButton;
+        private Label shopAreaLabel, shopDetail;
+        private PictureBox shopPreview;
+        private WindowsShopReader previewShopReader;
+        private bool previewingShop;
 
         public MainForm(bool testMode)
         {
@@ -69,7 +76,7 @@ namespace SomeFishingGPO
             string loadWarning = null;
             try { settings = testMode ? new Settings() : Settings.Load(settingsPath); }
             catch (Exception error) { settings = new Settings(); loadWarning = "No se pudieron cargar los ajustes: " + error.Message; }
-            Text = "SomeFishing GPO · v0.2.0";
+            Text = "SomeFishing GPO · v0.3.0";
             ClientSize = new Size(1040, 760);
             AutoScaleMode = AutoScaleMode.None;
             Font = new Font("Segoe UI", 10);
@@ -113,13 +120,14 @@ namespace SomeFishingGPO
         {
             LabelAt(this, "SOMEFISHING GPO", 24, 17, 620, 43, 25, true);
             LabelAt(this, "Mantener para subir. Soltar para bajar. Repetir a tu ritmo.", 26, 63, 760, 28, 11, false).ForeColor = muted;
-            LabelAt(this, "CÓDIGO INCLUIDO  /  v0.2.0", 771, 35, 250, 26, 10, true).ForeColor = accent;
+            LabelAt(this, "CÓDIGO INCLUIDO  /  v0.3.0", 771, 35, 250, 26, 10, true).ForeColor = accent;
             var tabs = new TabControl { Location = new Point(24, 105), Size = new Size(992, 567), Padding = new Point(22, 9) };
             var fishing = new TabPage("Pesca") { BackColor = Color.White };
             var calibration = new TabPage("Calibración") { BackColor = Color.White };
             var guide = new TabPage("Guía rápida") { BackColor = Color.White };
             var baitTab = new TabPage("Cebo y espera") { BackColor = Color.White };
-            tabs.TabPages.AddRange(new[] { fishing, calibration, baitTab, guide }); Controls.Add(tabs);
+            var shopTab = new TabPage("Comprar cebo") { BackColor = Color.White };
+            tabs.TabPages.AddRange(new[] { fishing, calibration, baitTab, shopTab, guide }); Controls.Add(tabs);
 
             LabelAt(fishing, "01  ELIGE LA BARRA", 20, 18, 410, 28, 12, true);
             LabelAt(fishing, "Barra azul completa y margen para su balanceo.", 20, 52, 430, 24, 10, false).ForeColor = muted;
@@ -134,7 +142,7 @@ namespace SomeFishingGPO
             castLabel.ForeColor = muted;
             castTime = NumberAt(fishing, "Mantener al lanzar (ms)", 20, 325, 50, 3000, 220);
             biteTime = NumberAt(fishing, "Espera de picada (s)", 239, 325, 5, 120, 15);
-            allowClicks = CheckAt(fishing, "Permitir clics y saltos al iniciar", 20, 399, 425);
+            allowClicks = CheckAt(fishing, "Permitir clics y teclas al iniciar", 20, 399, 425);
             startButton = ButtonAt(fishing, "Preparar inicio · 3 segundos", 20, 439, 410, delegate { Arm(); }, true);
             var stopLink = new LinkLabel { Text = "Ver última parada", Location = new Point(20, 490),
                 Size = new Size(410, 25), LinkColor = accent };
@@ -162,11 +170,26 @@ namespace SomeFishingGPO
             baitPreviewButton = ButtonAt(baitTab, "Probar lectura · sin teclas", 470, 177, 486, delegate { ToggleBaitPreview(); }, false);
             baitValueLabel = LabelAt(baitTab, "Cebos: —", 470, 224, 480, 34, 17, true);
             baitDetailLabel = LabelAt(baitTab, "El lector debe confirmar el número antes de usarlo.", 470, 263, 480, 46, 10, false);
-            idleJump = CheckAt(baitTab, "Saltar en espera si el cebo llega a 0 o fallan 3 lanzamientos", 22, 321, 930);
+            idleJump = CheckAt(baitTab, "Saltar en espera: cebo en 0, contador desaparecido o 3 lanzamientos fallidos", 22, 321, 930);
             jumpSeconds = NumberAt(baitTab, "Segundos entre saltos", 22, 365, 15, 300, 60);
             LabelAt(baitTab, "Pulsa solo Espacio, sin mover al personaje con WASD.\nF10, F8 y cambiar de ventana detienen también los saltos.\nNo guarda objetos ni garantiza evitar una desconexión.",
                 250, 369, 710, 84, 10, false).ForeColor = muted;
             ButtonAt(baitTab, "Guardar ajustes", 22, 470, 250, delegate { SaveSettings(); }, true);
+
+            LabelAt(shopTab,"Reponer cebo sin salir del sitio",22,18,930,36,18,true);
+            autoBuy=CheckAt(shopTab,"Comprar al confirmar 0 o desaparecer el contador durante 8 s",22,62,930);
+            LabelAt(shopTab,"Colócate al alcance de E del barril de cebo. Abre E manualmente para configurar.\nRodea el diálogo entero y la fila de botones, con poco margen: una tercera zona.",22,99,930,54,10,false).ForeColor=muted;
+            shopAreaButton=ButtonAt(shopTab,"Seleccionar zona de compra",22,161,420,delegate{SelectShopArea();},true);
+            shopAreaLabel=LabelAt(shopTab,"Zona de compra sin seleccionar",22,207,430,35,9,false);
+            shopPreview=new PictureBox{Location=new Point(475,161),Size=new Size(480,142),BackColor=Color.FromArgb(40,40,40),SizeMode=PictureBoxSizeMode.Zoom};shopTab.Controls.Add(shopPreview);
+            buyMaximum=CheckAt(shopTab,"Comprar el MAX del menú",22,250,430);
+            buyQuantity=NumberAt(shopTab,"Cantidad si no usas MAX",22,290,1,9999,5);
+            purchaseLimit=NumberAt(shopTab,"Compras por sesión (tope)",245,290,1,100,10);
+            buyMaximum.CheckedChanged+=delegate{buyQuantity.Enabled=!buyMaximum.Checked&&!IsRunning;};
+            shopPreviewButton=ButtonAt(shopTab,"Probar menús · sin clics",475,314,480,delegate{ToggleShopPreview();},false);
+            shopDetail=LabelAt(shopTab,"Prueba Sí y cantidad cambiando los menús manualmente.",475,365,480,69,10,false);
+            LabelAt(shopTab,"E → Sí → cantidad → Comprar → … → pesca.\nUsa Peli. Si falla, se detiene sin repetir la compra.\nLos saltos se suspenden mientras compra.",22,383,435,75,9.5f,false).ForeColor=muted;
+            ButtonAt(shopTab,"Guardar ajustes",22,470,250,delegate{SaveSettings();},true);
 
             LabelAt(calibration, "Ajusta lo que ve y cómo responde", 22, 23, 900, 40, 18, true);
             LabelAt(calibration, "Deja margen a los lados para el balanceo. La barra verde puede quedar dentro: se excluye del seguimiento.",
@@ -208,6 +231,8 @@ namespace SomeFishingGPO
             SetNumber(anticipation, settings.AnticipationMilliseconds);
             monitorBait.Checked = settings.MonitorBait; idleJump.Checked = settings.IdleJumpEnabled;
             SetNumber(jumpSeconds, settings.IdleJumpSeconds);
+            autoBuy.Checked=settings.AutoBuyBait;buyMaximum.Checked=settings.BuyMaximum;
+            SetNumber(buyQuantity,settings.BuyQuantity);SetNumber(purchaseLimit,settings.PurchaseLimit);buyQuantity.Enabled=!buyMaximum.Checked;
             UpdateAreaLabels();
         }
         private static void SetNumber(NumericUpDown control, int value)
@@ -221,7 +246,9 @@ namespace SomeFishingGPO
                 AnticipationMilliseconds = (int)anticipation.Value,
                 BlueArgb = settings.BlueArgb, MarkerArgb = settings.MarkerArgb,
                 MonitorBait = monitorBait.Checked, BaitArea = settings.BaitArea,
-                IdleJumpEnabled = idleJump.Checked, IdleJumpSeconds = (int)jumpSeconds.Value };
+                IdleJumpEnabled = idleJump.Checked, IdleJumpSeconds = (int)jumpSeconds.Value,
+                AutoBuyBait=autoBuy.Checked,ShopArea=settings.ShopArea,BuyMaximum=buyMaximum.Checked,
+                BuyQuantity=(int)buyQuantity.Value,PurchaseLimit=(int)purchaseLimit.Value };
         }
         private void UpdateAreaLabels()
         {
@@ -235,6 +262,7 @@ namespace SomeFishingGPO
             markerButton.BackColor = Color.FromArgb(settings.MarkerArgb); markerButton.ForeColor = Color.Black;
             baitAreaLabel.Text = settings.BaitArea.IsEmpty ? "Contador sin zona" :
                 string.Format("Contador: {0} × {1} px · posición {2}, {3}", settings.BaitArea.Width, settings.BaitArea.Height, settings.BaitArea.X, settings.BaitArea.Y);
+            shopAreaLabel.Text=settings.ShopArea.IsEmpty?"Zona de compra sin seleccionar":string.Format("Compra: {0} × {1} px · posición {2}, {3}",settings.ShopArea.Width,settings.ShopArea.Height,settings.ShopArea.X,settings.ShopArea.Y);
         }
         protected override void OnHandleCreated(EventArgs e)
         {
@@ -266,6 +294,19 @@ namespace SomeFishingGPO
             base.WndProc(ref message);
         }
         private bool IsRunning { get { return engine != null && engine.Running; } }
+        private void SelectShopArea()
+        {
+            if(activePicker!=null)return;StopAll("Seleccionando diálogo de compra…");Hide();
+            try{using(var picker=new SelectionOverlay(false,settings.ShopArea,null,SystemInformation.VirtualScreen,false,true)){
+                activePicker=picker;if(picker.ShowDialog()==DialogResult.OK){settings.ShopArea=picker.Selection;UpdateAreaLabels();ReadSettings().Save(settingsPath);statusLabel.Text="Zona guardada. Prueba cada menú antes de habilitar las compras.";}
+            }}catch(Exception error){statusLabel.Text=error.Message;}finally{activePicker=null;Show();Activate();}
+        }
+        private void ToggleShopPreview()
+        {
+            bool wasActive=previewingShop;StopAll("Prueba de compra detenida");if(wasActive)return;
+            string issue=Settings.ValidateShopArea(settings.ShopArea,SystemInformation.VirtualScreen);if(issue!=null){statusLabel.Text=issue;return;}
+            previewShopReader=new WindowsShopReader();previewingShop=true;shopPreviewButton.Text="Detener prueba";statusLabel.Text="Solo lee los menús · no compra ni envía teclas";
+        }
         private void SelectBaitArea()
         {
             if (activePicker != null) return;
@@ -351,7 +392,7 @@ namespace SomeFishingGPO
             if (runtime != null && runtime.PendingRelease)
             { statusLabel.Text = "Hay una liberación de clic pendiente. Espera antes de iniciar otra ronda."; return false; }
             if (!stopHotkey) { statusLabel.Text = "F10 no está disponible. Cierra otras macros y vuelve a abrir SomeFishing GPO."; return false; }
-            if (!allowClicks.Checked) { statusLabel.Text = "Marca «Permitir clics y saltos» antes de iniciar. Puedes usar las vistas de prueba."; return false; }
+            if (!allowClicks.Checked) { statusLabel.Text = "Marca «Permitir clics y teclas» antes de iniciar. Puedes usar las vistas de prueba."; return false; }
             string problem = ReadSettings().Validate(SystemInformation.VirtualScreen, true);
             if (problem != null) { statusLabel.Text = problem; return false; }
             return true;
@@ -388,7 +429,9 @@ namespace SomeFishingGPO
         {
             foreach (Control control in new Control[] { areaButton, pointButton, autoCast, castTime, biteTime, restTime,
                 tolerance, anticipation, holdUp, blueButton, markerButton, allowClicks,
-                monitorBait, idleJump, jumpSeconds, baitAreaButton, baitPreviewButton }) control.Enabled = value;
+                monitorBait, idleJump, jumpSeconds, baitAreaButton, baitPreviewButton,
+                autoBuy,buyMaximum,buyQuantity,purchaseLimit,shopAreaButton,shopPreviewButton }) control.Enabled = value;
+            buyQuantity.Enabled=value&&!buyMaximum.Checked;
         }
         private void StopAll(string reason)
         {
@@ -397,6 +440,7 @@ namespace SomeFishingGPO
             armedUntil = 0; previewing = false;
             previewingBait = false;
             if (previewReader != null) { previewReader.Dispose(); previewReader = null; }
+            previewingShop=false;if(previewShopReader!=null){previewShopReader.Dispose();previewShopReader=null;}
             try { if (engine != null) engine.Stop(reason); }
             catch (Exception error) { reason += " · Revisa el botón del ratón: " + error.Message; }
             try { if (runtime != null) runtime.Dispose(); }
@@ -404,16 +448,17 @@ namespace SomeFishingGPO
             if (runtime != null && runtime.FaultReason != null) reason = runtime.FaultReason;
             if (hadSession && !testMode)
             {
-                lastStop = string.Format("SomeFishing GPO 0.2.0 · {0:yyyy-MM-dd HH:mm:ss}\r\n\r\n{1}\r\n\r\n" +
+                lastStop = string.Format("SomeFishing GPO 0.3.0 · {0:yyyy-MM-dd HH:mm:ss}\r\n\r\n{1}\r\n\r\n" +
                     "Estado al parar: {2}\r\nRondas terminadas: {3}\r\nDuración: {4:F1} s\r\n" +
                     "Mayor intervalo entre revisiones: {5:F0} ms\r\nLanzamiento: {6} ms · Espera: {7} s\r\n" +
                     "Anticipación: {8} ms · Tolerancia: {9}\r\nÚltima detección: {10}\r\n" +
-                    "Cebos: {11} · Saltos habilitados: {12} · Espacios solicitados: {13}\r\n",
+                    "Cebos: {11} · Saltos habilitados: {12} · Espacios solicitados: {13}\r\n" +
+                    "Intentos de reposición: {14} · Última compra enviada: {15}\r\n",
                     DateTime.Now, reason.Length > 2000 ? reason.Substring(0, 2000) : reason, phase, engine.Cycles,
                     (clock.Elapsed.TotalMilliseconds - runStarted) / 1000, maxTickGap,
                     settings.CastMilliseconds, settings.BiteSeconds, settings.AnticipationMilliseconds, settings.Tolerance,
                     engine.LastObservation == null ? "Sin imagen" : engine.LastObservation.Detail,
-                    engine.BaitCount.HasValue ? engine.BaitCount.Value.ToString() : "Desconocido", settings.IdleJumpEnabled, engine.JumpRequests);
+                    engine.BaitCount.HasValue ? engine.BaitCount.Value.ToString() : "Desconocido", settings.IdleJumpEnabled, engine.JumpRequests,engine.PurchaseAttempts,engine.PurchaseSubmitted);
                 try { File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ultima-parada.txt"), lastStop); }
                 catch (Exception error) { reason += " · No se pudo guardar el informe: " + error.Message; }
             }
@@ -423,6 +468,7 @@ namespace SomeFishingGPO
             if (startButton != null) startButton.Text = "Preparar inicio · 3 segundos";
             if (previewButton != null) previewButton.Text = "Ver detector";
             if (baitPreviewButton != null) baitPreviewButton.Text = "Probar lectura · sin teclas";
+            if(shopPreviewButton!=null)shopPreviewButton.Text="Probar menús · sin clics";
             if (areaButton != null) SetEditable(true);
         }
         private void ShowLastStop()
@@ -488,6 +534,14 @@ namespace SomeFishingGPO
                     previewBaitMonitor.Update(previewReader.Latest, now);
                     ShowBaitCount(previewBaitMonitor.Count, previewBaitMonitor.Detail);
                 }
+                else if(previewingShop&&previewShopReader!=null)
+                {
+                    if(previewShopReader.Due(now)){
+                        Bitmap frame=Native.Capture(settings.ShopArea);Image old=shopPreview.Image;shopPreview.Image=(Bitmap)frame.Clone();if(old!=null)old.Dispose();
+                        previewShopReader.Submit(frame,settings.ShopArea.Location,now);
+                    }
+                    shopDetail.Text=previewShopReader.Latest.Detail;
+                }
             }
             catch (Exception error) { StopAll("Error: " + error.Message); }
         }
@@ -544,6 +598,8 @@ namespace SomeFishingGPO
                 timer.Dispose();
                 if (runtime != null) runtime.Dispose();
                 if (previewReader != null) previewReader.Dispose();
+                if(previewShopReader!=null)previewShopReader.Dispose();
+                if(shopPreview!=null&&shopPreview.Image!=null){shopPreview.Image.Dispose();shopPreview.Image=null;}
                 if (baitPreview != null && baitPreview.Image != null) { baitPreview.Image.Dispose(); baitPreview.Image = null; }
                 if (preview != null && preview.Image != null) { preview.Image.Dispose(); preview.Image = null; }
             }
@@ -577,6 +633,7 @@ namespace SomeFishingGPO
     {
         private readonly bool pointOnly;
         private readonly bool counterOnly;
+        private readonly bool shopOnly;
         private readonly Bitmap screenshot;
         private Point origin, current;
         private bool dragging;
@@ -586,9 +643,9 @@ namespace SomeFishingGPO
         public SelectionOverlay(bool pointOnly) : this(pointOnly, Rectangle.Empty) { }
         public SelectionOverlay(bool pointOnly, Rectangle initialArea)
             : this(pointOnly, initialArea, null, SystemInformation.VirtualScreen) { }
-        internal SelectionOverlay(bool pointOnly, Rectangle initialArea, Bitmap background, Rectangle desktop, bool counterOnly = false)
+        internal SelectionOverlay(bool pointOnly, Rectangle initialArea, Bitmap background, Rectangle desktop, bool counterOnly = false, bool shopOnly = false)
         {
-            this.pointOnly = pointOnly; this.counterOnly = counterOnly;
+            this.pointOnly = pointOnly; this.counterOnly = counterOnly; this.shopOnly=shopOnly;
             FormBorderStyle = FormBorderStyle.None; StartPosition = FormStartPosition.Manual;
             Bounds = desktop; TopMost = true; ShowInTaskbar = false;
             Cursor = Cursors.Cross; KeyPreview = true; DoubleBuffered = true;
@@ -606,7 +663,7 @@ namespace SomeFishingGPO
         {
             if (pointOnly || dragging) return false;
             Rectangle proposed = draft; proposed.Offset(Bounds.Location);
-            selectionHint = counterOnly ? Settings.ValidateBaitArea(proposed, Bounds) : new Settings { Area = proposed, AutoCast = false }.Validate(Bounds, false);
+            selectionHint = shopOnly?Settings.ValidateShopArea(proposed,Bounds):counterOnly ? Settings.ValidateBaitArea(proposed, Bounds) : new Settings { Area = proposed, AutoCast = false }.Validate(Bounds, false);
             if (selectionHint != null) { Invalidate(); return false; }
             Selection = proposed; DialogResult = DialogResult.OK; Close(); return true;
         }
@@ -662,9 +719,9 @@ namespace SomeFishingGPO
             {
                 int bannerWidth = Math.Min(1080, monitor.Width - 40);
                 e.Graphics.FillRectangle(background, monitor.Left + 20, monitor.Top + 20, bannerWidth, 106);
-                e.Graphics.DrawString(pointOnly ? "ELIGE EL PUNTO DE LANZAMIENTO" : counterOnly ? "SELECCIONAR CONTADOR DE CEBO" : "SELECCIONAR ZONA DE PESCA", font, Brushes.White, monitor.Left + 35, monitor.Top + 32);
+                e.Graphics.DrawString(pointOnly ? "ELIGE EL PUNTO DE LANZAMIENTO" : shopOnly?"SELECCIONAR DIÁLOGO DE COMPRA":counterOnly ? "SELECCIONAR CONTADOR DE CEBO" : "SELECCIONAR ZONA DE PESCA", font, Brushes.White, monitor.Left + 35, monitor.Top + 32);
                 string help = selectionHint ?? (pointOnly ? "Haz clic sobre el agua. Esc cancela." :
-                    counterOnly ? "Rodea solo x y la cantidad del cebo equipado (por ejemplo, x300), sin nombres ni otros números.\nEnter o F6: guardar · Esc: cancelar" :
+                    shopOnly?"Rodea la burbuja entera y su fila de botones (Sí/No o Comprar/cantidad/Cancelar), con poco margen.\nEnter o F6: guardar · Esc: cancelar":counterOnly ? "Rodea solo x y la cantidad del cebo equipado (por ejemplo, x300), sin nombres ni otros números.\nEnter o F6: guardar · Esc: cancelar" :
                     "Incluye toda la altura de la barra azul y margen lateral para el balanceo. La verde se ignora.\nEnter o F6: guardar la selección · Esc: cancelar");
                 e.Graphics.DrawString(help, helpFont, selectionHint == null ? Brushes.White : Brushes.Salmon,
                     new RectangleF(monitor.Left + 35, monitor.Top + 66, bannerWidth - 30, 55));

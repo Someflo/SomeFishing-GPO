@@ -45,6 +45,7 @@ namespace SomeFishingGPO
         }
         internal static BaitReading ReadImage(Bitmap image)
         {
+            if (!HasCounterInk(image)) return new BaitReading { VisuallyAbsent = true, Detail = "No se ve el texto amarillo del contador" };
             if (MultipleYellowRows(image)) return new BaitReading { Detail = "Hay varias filas en la zona. Selecciona un solo contador." };
             var engine = OcrEngine.TryCreateFromUserProfileLanguages();
             if (engine == null) return new BaitReading { Detail = "Windows no tiene un idioma de OCR disponible." };
@@ -53,6 +54,16 @@ namespace SomeFishingGPO
             if (!a.HasValue || !b.HasValue || a != b)
                 return new BaitReading { Detail = "Número no reconocido con claridad. Selecciona solo x y la cantidad." };
             return new BaitReading { Count = a, Detail = "Lectura: " + a.Value };
+        }
+        private static bool HasCounterInk(Bitmap image)
+        {
+            int count = 0;
+            for (int y=0;y<image.Height;y++) for(int x=0;x<image.Width;x++)
+            {
+                Color p=image.GetPixel(x,y);
+                if(p.R>180 && p.G>100 && p.B<140 && ++count>=3)return true;
+            }
+            return false;
         }
         private static bool MultipleYellowRows(Bitmap image)
         {
@@ -70,7 +81,7 @@ namespace SomeFishingGPO
             }
             return groups>1;
         }
-        private static string Recognize(OcrEngine engine, Bitmap image, int scale)
+        internal static string Recognize(OcrEngine engine, Bitmap image, int scale)
         {
             using (var enlarged = new Bitmap(image.Width * scale + 40, image.Height * scale + 40, PixelFormat.Format32bppArgb))
             using (var stream = new MemoryStream())
