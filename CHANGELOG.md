@@ -1,5 +1,12 @@
 # Cambios
 
+## 0.5.2 — destino del doble clic (compilación local)
+
+- Cada pulsación de compra incluye la coordenada de destino en el propio evento del ratón, además del movimiento previo. La liberación de protección conserva su comportamiento sin mover el puntero.
+- Sí recibe un único clic, sin reintentos. Las dos pulsaciones de cantidad conservan una posición propia, distinta del botón de compra; una lectura que superponga ambos destinos detiene el proceso.
+- El registro identifica tanto la posición del número como la de Comprar. Si aparece el diálogo final antes de confirmar la cantidad, informa del cambio inesperado y se detiene.
+- 371 comprobaciones integradas y 447 con once capturas privadas. Incluye las coordenadas del fallo informado, separación de destinos y eventos con posición en escritorios múltiples. Falta validar la recepción de los clics dentro de Roblox.
+
 ## 0.5.1 — flujo de compra y umbral OCR (compilación local)
 
 - Doble clic en el número central antes de seleccionar y reemplazar la cantidad; pausa de menús y apuntado ajustable, inicialmente 700 ms.

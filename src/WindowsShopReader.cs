@@ -95,7 +95,7 @@ namespace SomeFishingGPO
                 if(!numberTarget.HasValue&&result.Quantity.HasValue&&numberBox.Width<center.Width*.7&&numberBox.Height<center.Height*.9)numberTarget=InkTarget(image,center);
                 if(!numberTarget.HasValue){result.Menu=ShopMenu.Unknown;result.Detail="MAX reconocido, pero no se localiza el número para hacer doble clic";return result;}
                 result.Middle=numberTarget.Value;
-                result.Detail="MAX: "+ma+" · cantidad: "+(result.Quantity.HasValue?result.Quantity.Value.ToString():"ilegible");return result;
+                result.Detail="MAX: "+ma+" · cantidad: "+(result.Quantity.HasValue?result.Quantity.Value.ToString():"ilegible")+" · número en "+result.Middle.X+", "+result.Middle.Y+" · Comprar en "+result.Left.X+", "+result.Left.Y;return result;
             }
             Rectangle dots=ThreeDotsBounds(image,center);
             if(!dots.IsEmpty)

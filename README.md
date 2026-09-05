@@ -2,7 +2,7 @@
 
 Macro visual para el minijuego de pesca de GPO en Windows. Su objetivo es ofrecer un programa sencillo, transparente y revisable, con el código completo y una forma de compilarlo localmente.
 
-**Compilación local 0.5.1: doble clic en la cantidad, pausas ajustables, umbral de reposición e idioma OCR seleccionable.** Incluye compra por cronómetro y cierre del diálogo final. Todavía necesita validación en partidas reales. No promete una tasa de capturas, evitar todas las desconexiones ni una garantía absoluta de ausencia de virus.
+**Compilación local 0.5.2: clics con destino explícito y doble clic reservado al número central.** Incluye compra por cronómetro y cierre del diálogo final. Todavía necesita validación en partidas reales. No promete una tasa de capturas, evitar todas las desconexiones ni una garantía absoluta de ausencia de virus.
 
 ![Vista del detector de SomeFishing GPO; imagen sintética](docs/Vista-previa.png)
 
@@ -20,7 +20,7 @@ El ciclo es **lanzar → esperar → seguir al pez → comprobar el cierre del m
 
 ## Descargar y empezar
 
-Esta compilación se entrega como `SomeFishing-GPO-v0.5.1-win-x64.zip`: extrae toda la carpeta y abre `SomeFishingGPO.exe`. La 0.5.1 todavía no se ha publicado en GitHub; la última publicación es la [versión preliminar 0.3.1](https://github.com/Someflo/SomeFishing-GPO/releases/tag/v0.3.1). Para conservar las zonas y opciones de una versión anterior, cierra la macro y copia su `ajustes.xml` a la nueva carpeta. Requiere Windows 10 u 11 de 64 bits, .NET Framework 4.8 y el cliente de escritorio de Roblox. La lectura de cebo y de los menús utiliza el reconocimiento de texto de Windows y necesita al menos un idioma OCR disponible. La aplicación no descarga ni instala idiomas. El SDK solo es necesario para recompilar, no para ejecutar el binario entregado.
+Esta compilación se entrega como `SomeFishing-GPO-v0.5.2-win-x64.zip`: extrae toda la carpeta y abre `SomeFishingGPO.exe`. La 0.5.2 todavía no se ha publicado en GitHub; la última publicación es la [versión preliminar 0.3.1](https://github.com/Someflo/SomeFishing-GPO/releases/tag/v0.3.1). Para conservar las zonas y opciones de una versión anterior, cierra la macro y copia su `ajustes.xml` a la nueva carpeta. Requiere Windows 10 u 11 de 64 bits, .NET Framework 4.8 y el cliente de escritorio de Roblox. La lectura de cebo y de los menús utiliza el reconocimiento de texto de Windows y necesita al menos un idioma OCR disponible. La aplicación no descarga ni instala idiomas. El SDK solo es necesario para recompilar, no para ejecutar el binario entregado.
 
 1. Abre Roblox en ventana o sin bordes, equipa la caña y lanza una vez manualmente.
 2. Con el minijuego visible, pulsa **F6**. Dibuja **una sola zona** con toda la altura de la barra azul y sus dos bordes oscuros. Deja margen lateral para su pequeño balanceo. La barra verde puede quedar dentro.
@@ -126,13 +126,15 @@ El informe conserva estados, posiciones de clic y lecturas resumidas del detecto
 
 ![Botones de prueba y registro de pasos](docs/Pruebas.png)
 
-## OCR y entradas en la 0.5.1
+## OCR y entradas en la 0.5.2
 
 El OCR añade contraste suave para conservar los bordes de dígitos pequeños. Exige el prefijo x, × o * junto a la cantidad: evita aceptar solo el 2 de x42 si el OCR omite los caracteres anteriores. Sigue exigiendo coincidencia entre escalas y capturas. Las lecturas ambiguas permanecen desconocidas. No se afirma que reconozca todas las cantidades: varias imágenes reducidas y x42 siguen fallando.
 
 E y las teclas de compra utilizan códigos físicos, como Espacio. En **Compra → Pausa entre pasos (ms)** se configura la espera de los menús y el apuntado: inicialmente **700 ms**, ajustable entre 200 y 3000. Antes de pulsar un botón exige otra lectura estable y comprueba que el cursor haya llegado al texto reconocido. Los clics duran **180 ms**. El doble clic del número mantiene 250 ms entre el inicio de ambas pulsaciones, seguido de la pausa antes de escribir. No muevas el ratón durante la prueba.
 
-Si tras el primer Sí sigue reconociendo la misma oferta en capturas nuevas, permite un único reintento de Sí, con una nueva pausa. No repite E ni el botón que confirma la compra. El botón «…» se busca por su forma y posición entre las otras etiquetas del menú. El registro distingue que Windows aceptara la entrada de que el juego mostrara el menú siguiente. Estos cambios aún requieren una prueba en Roblox.
+Sí recibe un solo clic; no se reintenta si la oferta sigue visible. El doble clic usa exclusivamente la posición del número central y bloquea una lectura que lo confunda con el botón de compra. Cada pulsación de compra incluye su posición absoluta en el propio evento de ratón, además del apuntado previo. La liberación de protección no mueve el puntero. No repite E ni el botón que confirma el pedido. Si aparece «…» antes de verificar la cantidad, se detiene e informa del cambio inesperado.
+
+El botón «…» se busca por su forma y posición entre las otras etiquetas del menú. El registro distingue que Windows aceptara la entrada de que el juego mostrara el menú siguiente. Estos cambios aún requieren una prueba en Roblox. El envío de coordenadas y pulsaciones utiliza los indicadores documentados de [MOUSEINPUT](https://learn.microsoft.com/en-us/windows/win32/api/winuser/ns-winuser-mouseinput).
 
 La implementación utiliza [KEYBDINPUT](https://learn.microsoft.com/en-us/windows/win32/api/winuser/ns-winuser-keybdinput) y [SendInput](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-sendinput). No eleva privilegios ni inyecta código en el juego.
 
@@ -174,7 +176,7 @@ SomeFishingGPO.exe --self-test pruebas
 
 `compilar.cmd` utiliza `%WINDIR%\Microsoft.NET\Framework64\v4.0.30319\csc.exe`, busca los metadatos `Windows.winmd` del SDK y las bibliotecas locales de interoperabilidad. El modo `--self-test` no registra atajos globales ni envía clics o teclas reales; los botones de la sección Pruebas sí ejecutan acciones reales cuando los utilizas. Guarda el informe en `pruebas/resultados.txt`; el código de salida 0 indica éxito.
 
-Las **361 comprobaciones integradas realizadas en este equipo** cubren seguimiento, balanceo, exclusión del verde, contador, desaparición, espera, compra simulada, límite de compras, regreso a la pesca y liberación de entradas. La validación local alcanzó **437 comprobaciones** al añadir once capturas del desarrollo; esas capturas no se distribuyen. Incluye umbral, rearme, idioma OCR, pausas, reintento limitado de Sí, doble clic, cancelación entre sus pulsaciones y posición real de los tres puntos. También cubre cronómetro, modos de prueba, conservación de ajustes, duración de E, respaldo x2 y la regresión de `x300` con una franja blanca. La cantidad de comprobaciones depende de los idiomas OCR disponibles. Los resultados de esta compilación y el análisis de Defender están en [VERIFICACION.txt](docs/VERIFICACION.txt).
+Las **371 comprobaciones integradas realizadas en este equipo** cubren seguimiento, balanceo, exclusión del verde, contador, desaparición, espera, compra simulada, límite de compras, regreso a la pesca y liberación de entradas. La validación local alcanzó **447 comprobaciones** al añadir once capturas del desarrollo; esas capturas no se distribuyen. Incluye umbral, rearme, idioma OCR, pausas, un solo clic en Sí y posición incluida en cada pulsación, doble clic, cancelación entre sus pulsaciones y posición real de los tres puntos. También cubre cronómetro, modos de prueba, conservación de ajustes, duración de E, respaldo x2 y la regresión de `x300` con una franja blanca. La cantidad de comprobaciones depende de los idiomas OCR disponibles. Los resultados de esta compilación y el análisis de Defender están en [VERIFICACION.txt](docs/VERIFICACION.txt).
 
 Puedes comparar la huella del ejecutable descargado con [SHA256.txt](docs/SHA256.txt):
 

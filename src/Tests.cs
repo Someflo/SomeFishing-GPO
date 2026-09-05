@@ -1027,16 +1027,16 @@ namespace SomeFishingGPO
             Check(game.ShopClicks==0,"Configured 700 ms pointer settling is respected despite fresh OCR frames");
             FeedShop(p,game,ShopMenu.Confirm,5,2400,null,null,null,0);
             Check(game.ShopClicks==1&&p.YesAttempts==1,"Stable offer receives the first Yes only after its pause");
-            p.Tick(4000,null,0);Check(game.ShopClicks==1,"Cached confirmation cannot authorize a Yes retry");
+            p.Tick(4000,null,0);Check(game.ShopClicks==1,"Cached confirmation cannot repeat Yes");
             FeedShop(p,game,ShopMenu.Confirm,6,4000,null,null,null,0);FeedShop(p,game,ShopMenu.Confirm,7,4700,null,null,null,0);
-            Check(game.ShopClicks==2&&p.YesAttempts==2&&!p.Submitted,"An unchanged freshly recognized offer permits exactly one Yes retry");
+            Check(game.ShopClicks==1&&p.YesAttempts==1&&!p.Submitted,"Even an unchanged freshly recognized offer cannot repeat Yes");
             FeedShop(p,game,ShopMenu.Confirm,8,6200,null,null,null,0);FeedShop(p,game,ShopMenu.Confirm,9,7000,null,null,null,0);
-            Check(game.ShopClicks==2,"A persistent offer cannot cause a third Yes click");
+            Check(game.ShopClicks==1,"A persistent offer still receives only one Yes click");
             FeedShop(p,game,ShopMenu.Quantity,10,7500,50,1,null,0);FeedShop(p,game,ShopMenu.Quantity,11,8200,50,1,null,0);
-            Check(game.ShopClicks==3&&p.Quantity==50,"The displayed MAX is chosen only after recognizing the quantity screen");
-            p.Tick(8449,null,0);Check(game.ShopClicks==3,"The number double-click leaves time to release its first press");
+            Check(game.ShopClicks==2&&p.Quantity==50,"The displayed MAX is chosen only after recognizing the quantity screen");
+            p.Tick(8449,null,0);Check(game.ShopClicks==2,"The number double-click leaves time to release its first press");
             p.Tick(8450,null,0);
-            Check(game.ShopClicks==4&&game.ClickPoints[2]==game.ClickPoints[3],"Quantity entry sends two clicks to the same number, 250 ms apart");
+            Check(game.ShopClicks==3&&game.ClickPoints[1]==game.ClickPoints[2]&&game.ClickPoints[1]!=game.ClickPoints[0],"Quantity receives both clicks 250 ms apart; neither can reuse the Yes point");
             p.Tick(9000,null,0);Check(!game.KeyLog.Contains("+17"),"Typing waits for the field after the second click");
             p.Tick(9150,null,0);Check(game.KeyLog.Contains("+17")&&game.KeyLog.Contains("+65"),"Ctrl+A follows the double-click and configured pause");p.Fail("test");
 
@@ -1045,6 +1045,33 @@ namespace SomeFishingGPO
             FeedShop(p,game,ShopMenu.Quantity,3,800,5,1,null,0);FeedShop(p,game,ShopMenu.Quantity,4,1000,5,1,null,0);
             int before=game.ShopClicks;p.Fail("F10");p.Tick(1250,null,0);
             Check(game.ShopClicks==before&&game.KeysDown.Count==0,"Cancellation between the number clicks prevents the second click and all typing");
+
+            game=new FakeGame();p=new PurchaseController(new Settings{ShopOpenMilliseconds=150,ShopSettleMilliseconds=200,BuyMaximum=false,BuyQuantity=4},game,game);p.Start(0);p.Tick(150,null,0);
+            for(int i=0;i<2;i++){
+                double t=400+i*300;game.Shop=ShopFrame(ShopMenu.Confirm,i+1,t,null,null);game.Shop.Left=new Point(1102,928);p.Tick(t,null,0);
+            }
+            for(int i=0;i<2;i++){
+                double t=1000+i*300;game.Shop=ShopFrame(ShopMenu.Quantity,i+3,t,295,1);game.Shop.Left=new Point(1102,931);game.Shop.Middle=new Point(1251,931);p.Tick(t,null,0);
+            }
+            p.Tick(1550,null,0);
+            Check(game.ClickPoints.Count==3&&game.ClickPoints[0]==new Point(1102,928)&&game.ClickPoints[1]==new Point(1251,931)&&game.ClickPoints[2]==new Point(1251,931),"Replaying the reported coordinates keeps Yes separate from both central clicks");p.Fail("test");
+
+            game=new FakeGame();p=new PurchaseController(new Settings{ShopOpenMilliseconds=150,ShopSettleMilliseconds=200},game,game);p.Start(0);p.Tick(150,null,0);
+            FeedShop(p,game,ShopMenu.Confirm,1,400,null,null,null,0);FeedShop(p,game,ShopMenu.Confirm,2,600,null,null,null,0);
+            game.Shop=ShopFrame(ShopMenu.Quantity,3,900,5,1);game.Shop.Middle=game.Shop.Left;p.Tick(900,null,0);
+            Check(p.State==PurchasePhase.Failed&&game.ShopClicks==1&&!game.KeyLog.Contains("+17"),"A numeric target overlapping the purchase button blocks the double-click and typing");
+            game=new FakeGame();p=ReadyToVerify(game,new Settings());
+            FeedShop(p,game,ShopMenu.Done,5,3800,null,null,null,0);FeedShop(p,game,ShopMenu.Done,6,4800,null,null,null,0);
+            Check(p.State==PurchasePhase.Failed&&!p.Submitted&&game.ShopClicks==3,"An unexpected final dialogue before quantity verification stops without another purchase");
+
+            foreach(var desktop in new[]{new Rectangle(0,0,1920,1080),new Rectangle(-1920,-200,4480,1640),new Rectangle(0,0,3840,2160)}){
+                var target=new Point(1251,931);var down=Native.PointerInput(target,desktop,true);var move=Native.PointerInput(target,desktop,false);
+                var received=new Point(desktop.Left+(int)((long)down.Data.Mouse.X*desktop.Width/65536),desktop.Top+(int)((long)down.Data.Mouse.Y*desktop.Height/65536));
+                Check(received==target&&(down.Data.Mouse.Flags&0xE003u)==0xE003u&&(down.Data.Mouse.Flags&4u)==0,"The click event itself carries the exact central target across the virtual desktop: "+desktop);
+                Check(move.Data.Mouse.X==down.Data.Mouse.X&&move.Data.Mouse.Y==down.Data.Mouse.Y&&(move.Data.Mouse.Flags&6u)==0,"Aiming carries the same position without pressing or releasing a button");
+            }
+            bool badPointer=false;try{Native.PointerInput(new Point(-1,20),new Rectangle(0,0,1920,1080),true);}catch(InvalidOperationException){badPointer=true;}
+            Check(badPointer,"Pointer input rejects a destination outside the desktop before sending an event");
 
             var selected=new Settings{OcrLanguage="es-MX",BuyBaitAt=2,ShopSettleMilliseconds=1100};selected.Save(Path.Combine(output,"ocr-language-settings.xml"));
             selected=Settings.Load(Path.Combine(output,"ocr-language-settings.xml"));
@@ -1092,8 +1119,9 @@ namespace SomeFishingGPO
             public void Release() { Held = false; JumpHeld = false; KeysDown.Clear(); }
             public ShopReading ReadShop(double now){return Shop;}
             public int Aims;
-            public void ShopAim(Point point){if(!Active)throw new Exception("Inactive shop aim");Aims++;}
-            public void ShopClick(Point point){if(!Active)throw new Exception("Inactive shop click");ShopClicks++;ClickPoints.Add(point);}
+            private Point cursor;
+            public void ShopAim(Point point){if(!Active)throw new Exception("Inactive shop aim");Aims++;cursor=point;}
+            public void ShopClick(Point point){if(!Active)throw new Exception("Inactive shop click");if(Math.Abs(point.X-cursor.X)>3||Math.Abs(point.Y-cursor.Y)>3)throw new Exception("Click target was not aimed at");ShopClicks++;ClickPoints.Add(point);}
             public void ShopKey(int key,bool held){if(held&&!Active)throw new Exception("Inactive shop key");KeyLog.Add((held?"+":"-")+key);if(held)KeysDown.Add(key);else KeysDown.Remove(key);}
             public Observation Observe() { return Current; }
             public int BaitReads;

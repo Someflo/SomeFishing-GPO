@@ -110,7 +110,7 @@ namespace SomeFishingGPO
             Hint(save,"Guarda las zonas y los ajustes actuales.");
             save.BackColor=Color.FromArgb(34,48,61);save.ForeColor=Color.White;
             ((ModernButton)save).BorderVisible=false;
-            LabelAt(rail,"Local  /  v0.5.1",22,657,145,23,9,false).ForeColor=Color.FromArgb(145,166,177);
+            LabelAt(rail,"Local  /  v0.5.2",22,657,145,23,9,false).ForeColor=Color.FromArgb(145,166,177);
             LabelAt(rail,"Código incluido",22,681,145,23,9,false).ForeColor=Color.FromArgb(145,166,177);
             pageTitle=LabelAt(this,"",212,15,800,49,25,true);
             pageSubtitle=LabelAt(this,"",214,69,820,27,10.5f,false);pageSubtitle.ForeColor=muted;
@@ -201,7 +201,7 @@ namespace SomeFishingGPO
             Hint(shopPreviewButton,"Solo observa: cambia los menús manualmente para comprobar Sí, MAX, cantidad y …");
             shopDetail=LabelAt(shopView,"Solo lectura. No compra ni envía teclas.",20,314,416,48,10,false);FullTextHint(shopDetail);
             shopSettle=NumberAt(shopView,"Pausa entre pasos (ms)",20,374,200,3000,700,202);
-            Hint(shopSettle,"Tiempo mínimo tras abrir o cambiar menú, apuntar y antes de escribir. Inicial: 700 ms. Doble clic en el número, luego Ctrl+A y escritura. Si Sí sigue visible puede reintentarlo una vez; Comprar no se repite.");
+            Hint(shopSettle,"Tiempo mínimo tras abrir o cambiar menú, apuntar y antes de escribir. Inicial: 700 ms. Un clic en Sí; doble clic solo en el número, luego Ctrl+A y escritura. No repite Sí ni Comprar.");
             purchaseCountdown=LabelAt(shopView,"El cronómetro empieza al iniciar la pesca.",236,380,200,64,9.5f,true);FullTextHint(purchaseCountdown);
             Hint(purchaseMinutes,"Cuenta desde el inicio. Espera al fin de la ronda para comprar y reinicia el intervalo tras cerrar el diálogo. Al detener la macro se cancela.");
             ButtonAt(shopView,"Ir a pruebas",20,459,416,delegate{SelectPage(3);},false);
