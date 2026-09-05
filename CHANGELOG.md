@@ -1,5 +1,12 @@
 # Cambios
 
+## 0.3.1 — lectura del contador con franjas blancas (compilación local)
+
+- Corrige el caso en el que la vista muestra `x300` pero el lector no confirma el contador al incluir una franja blanca o recibir letras de distinto tamaño.
+- Como alternativa a la lectura original, aísla los píxeles amarillos/anaranjados y normaliza la altura del texto. Mantiene la confirmación entre dos escalas y rechaza cualquier número contradictorio.
+- 205 comprobaciones integradas y 263 con nueve capturas privadas. La nueva vista ampliada y su reconstrucción a 44 × 25 píxeles reconocen 300. Franjas blancas sin letras y bordes finos no se convierten en cantidades.
+- La captura nueva corresponde a la vista previa ampliada, no al recorte original de pantalla. Falta comprobar la selección real con la vista de lectura del usuario. No se enviaron entradas al juego durante las pruebas.
+
 ## 0.3.0 — reposición de cebo y contador desaparecido (compilación local)
 
 - Detecta la desaparición prolongada del contador solo después de una lectura confirmada en la sesión: al menos cuatro capturas nuevas y ocho segundos sin texto amarillo. Conserva el estado desaparecido separado del cero.

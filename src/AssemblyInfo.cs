@@ -1,9 +1,9 @@
-﻿using System.Reflection;
+using System.Reflection;
 
 [assembly: AssemblyTitle("SomeFishing GPO")]
 [assembly: AssemblyProduct("SomeFishing GPO")]
 [assembly: AssemblyDescription("Macro visual de pesca para Windows con código disponible para revisión.")]
-[assembly: AssemblyVersion("0.3.0.0")]
-[assembly: AssemblyFileVersion("0.3.0.0")]
-[assembly: AssemblyInformationalVersion("0.3.0")]
+[assembly: AssemblyVersion("0.3.1.0")]
+[assembly: AssemblyFileVersion("0.3.1.0")]
+[assembly: AssemblyInformationalVersion("0.3.1")]
 

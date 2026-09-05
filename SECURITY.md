@@ -19,6 +19,8 @@ La aplicación no tiene funciones de red, descargas, actualizaciones automática
 
 El lector de cebo usa la API de OCR local de Windows sobre imágenes en memoria. No transmite capturas a un servicio externo. Necesita un idioma OCR disponible en el perfil de Windows y no lo instala automáticamente. Una tarea separada procesa como máximo una captura pendiente por lector; no envía entradas al juego. Al cerrar el lector se descarta cualquier resultado pendiente.
 
+Si la lectura original no coincide entre escalas, puede intentar una imagen que conserva únicamente los píxeles amarillos o anaranjados del contador y normaliza el tamaño de las letras. Exige dos lecturas iguales en esa imagen y que no contradigan ningún número reconocido en la original. Este procesamiento no sustituye letras por dígitos ni transforma una imagen blanca o vacía en cero.
+
 El lector de compra usa el mismo OCR local en una tarea separada. El código incluye referencias binarias diminutas de las letras de los botones Sí/No, sin capturas del jugador ni su inventario. Los campos de un solo dígito se repiten visualmente en memoria para ayudar al OCR: exige resultados coincidentes entre las copias y las dos escalas, sin convertir letras en números. No escribe textos libres ni comandos.
 
 El script de compilación ejecuta el compilador local de .NET Framework y utiliza los metadatos del Windows SDK instalado. El modo `--self-test` crea imágenes sintéticas, renders de la interfaz e informes en la carpeta indicada, sin enviar clics ni teclas al juego.

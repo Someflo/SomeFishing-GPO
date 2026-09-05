@@ -2,7 +2,7 @@
 
 Macro visual para el minijuego de pesca de GPO en Windows. Su objetivo es ofrecer un programa sencillo, transparente y revisable, con el código completo y una forma de compilarlo localmente.
 
-**Versión 0.3.0: reposición de cebo y detección de su desaparición.** Esta compilación se entrega para pruebas locales; su publicación en GitHub está pendiente. Todavía necesita validación en partidas reales. No promete una tasa de capturas, evitar todas las desconexiones ni una garantía absoluta de ausencia de virus.
+**Versión 0.3.1: corrección de la lectura del contador con franjas blancas.** Incluye reposición de cebo y detección de su desaparición. Esta compilación se entrega para pruebas locales; su publicación en GitHub está pendiente. Todavía necesita validación en partidas reales. No promete una tasa de capturas, evitar todas las desconexiones ni una garantía absoluta de ausencia de virus.
 
 ![Vista del detector de SomeFishing GPO; imagen sintética](docs/Vista-previa.png)
 
@@ -14,7 +14,7 @@ El ciclo es **lanzar → esperar → seguir al pez → comprobar el cierre del m
 
 ## Descargar y empezar
 
-Extrae toda la carpeta del ZIP `SomeFishing-GPO-v0.3.0-win-x64.zip` y abre `SomeFishingGPO.exe`. Requiere Windows 10 u 11 de 64 bits, .NET Framework 4.8 y el cliente de escritorio de Roblox. La lectura de cebo y de los menús utiliza el reconocimiento de texto de Windows y necesita al menos un idioma OCR disponible para tu perfil. La aplicación no descarga ni instala idiomas. El SDK solo es necesario para recompilar, no para ejecutar el binario entregado.
+Extrae toda la carpeta del ZIP `SomeFishing-GPO-v0.3.1-win-x64.zip` y abre `SomeFishingGPO.exe`. Para conservar las zonas y opciones de una versión anterior, cierra la macro y copia su `ajustes.xml` a la nueva carpeta. Requiere Windows 10 u 11 de 64 bits, .NET Framework 4.8 y el cliente de escritorio de Roblox. La lectura de cebo y de los menús utiliza el reconocimiento de texto de Windows y necesita al menos un idioma OCR disponible para tu perfil. La aplicación no descarga ni instala idiomas. El SDK solo es necesario para recompilar, no para ejecutar el binario entregado.
 
 1. Abre Roblox en ventana o sin bordes, equipa la caña y lanza una vez manualmente.
 2. Con el minijuego visible, pulsa **F6**. Dibuja **una sola zona** con toda la altura de la barra azul y sus dos bordes oscuros. Deja margen lateral para su pequeño balanceo. La barra verde puede quedar dentro.
@@ -39,6 +39,8 @@ Estas funciones empiezan desactivadas y se configuran en la pestaña **Cebo y es
 ![Configuración de lectura del cebo y saltos](docs/Cebo-y-espera.png)
 
 El lector procesa únicamente la zona del contador con OCR local de Windows, en un segundo plano. Exige que dos tamaños de la imagen produzcan el mismo número. Además, confirma los números positivos en dos capturas diferentes y el cero en tres. Una imagen ausente, ilegible o ambigua se muestra como **desconocida**, nunca se convierte automáticamente en cero. No suma los dos tipos de cebo ni cambia entre ellos.
+
+Desde la 0.3.1, si la lectura original falla, el lector aísla las letras amarillas o anaranjadas, elimina franjas blancas y normaliza su tamaño antes de volver a leerlas. También exige coincidencia entre dos escalas y rechaza números contradictorios con la lectura original. En la captura de la vista previa con `x300` y una franja blanca reconoce **300**; también lo hace al reconstruir esa vista al tamaño de selección de **44 × 25 px**. Esa reconstrucción no sustituye la comprobación de la selección real: usa **Probar lectura** y espera a ver **Cebos: 300** confirmado antes de iniciar.
 
 **Límite observado:** en las capturas de desarrollo reconoce los **300 y 295 cebos comunes** al excluir el borde del botón, pero no reconoce con fiabilidad los **42 raros**. Otros tamaños, fondos y dígitos también requieren comprobar la lectura. Si no reconoce tu contador, puedes usar los saltos tras tres lanzamientos sin minijuego con la lectura de cebo desactivada; la compra automática necesita la lectura activada.
 
@@ -103,7 +105,7 @@ SomeFishingGPO.exe --self-test pruebas
 
 `compilar.cmd` utiliza `%WINDIR%\Microsoft.NET\Framework64\v4.0.30319\csc.exe`, busca los metadatos `Windows.winmd` del SDK y las bibliotecas locales de interoperabilidad. El modo de prueba no registra atajos globales ni envía clics o teclas reales. Guarda el informe en `pruebas/resultados.txt`; el código de salida 0 indica éxito.
 
-Las **202 comprobaciones incluidas** cubren seguimiento, balanceo, exclusión del verde, contador, desaparición, espera, compra simulada, límite de compras, regreso a la pesca y liberación de entradas. La validación local alcanzó **258 comprobaciones** al añadir ocho capturas del desarrollo; esas capturas no se distribuyen. Incluye reconocimiento nativo del contador y de los menús de compra. Los resultados de esta compilación y el análisis de Defender están en [VERIFICACION.txt](docs/VERIFICACION.txt).
+Las **205 comprobaciones incluidas** cubren seguimiento, balanceo, exclusión del verde, contador, desaparición, espera, compra simulada, límite de compras, regreso a la pesca y liberación de entradas. La validación local alcanzó **263 comprobaciones** al añadir nueve capturas del desarrollo; esas capturas no se distribuyen. Incluye reconocimiento nativo del contador y de los menús de compra, así como la regresión de `x300` con una franja blanca. Los resultados de esta compilación y el análisis de Defender están en [VERIFICACION.txt](docs/VERIFICACION.txt).
 
 Puedes comparar la huella del ejecutable descargado con [SHA256.txt](docs/SHA256.txt):
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -76,7 +76,7 @@ namespace SomeFishingGPO
             string loadWarning = null;
             try { settings = testMode ? new Settings() : Settings.Load(settingsPath); }
             catch (Exception error) { settings = new Settings(); loadWarning = "No se pudieron cargar los ajustes: " + error.Message; }
-            Text = "SomeFishing GPO · v0.3.0";
+            Text = "SomeFishing GPO · v0.3.1";
             ClientSize = new Size(1040, 760);
             AutoScaleMode = AutoScaleMode.None;
             Font = new Font("Segoe UI", 10);
@@ -120,7 +120,7 @@ namespace SomeFishingGPO
         {
             LabelAt(this, "SOMEFISHING GPO", 24, 17, 620, 43, 25, true);
             LabelAt(this, "Mantener para subir. Soltar para bajar. Repetir a tu ritmo.", 26, 63, 760, 28, 11, false).ForeColor = muted;
-            LabelAt(this, "CÓDIGO INCLUIDO  /  v0.3.0", 771, 35, 250, 26, 10, true).ForeColor = accent;
+            LabelAt(this, "CÓDIGO INCLUIDO  /  v0.3.1", 771, 35, 250, 26, 10, true).ForeColor = accent;
             var tabs = new TabControl { Location = new Point(24, 105), Size = new Size(992, 567), Padding = new Point(22, 9) };
             var fishing = new TabPage("Pesca") { BackColor = Color.White };
             var calibration = new TabPage("Calibración") { BackColor = Color.White };
@@ -448,7 +448,7 @@ namespace SomeFishingGPO
             if (runtime != null && runtime.FaultReason != null) reason = runtime.FaultReason;
             if (hadSession && !testMode)
             {
-                lastStop = string.Format("SomeFishing GPO 0.3.0 · {0:yyyy-MM-dd HH:mm:ss}\r\n\r\n{1}\r\n\r\n" +
+                lastStop = string.Format("SomeFishing GPO 0.3.1 · {0:yyyy-MM-dd HH:mm:ss}\r\n\r\n{1}\r\n\r\n" +
                     "Estado al parar: {2}\r\nRondas terminadas: {3}\r\nDuración: {4:F1} s\r\n" +
                     "Mayor intervalo entre revisiones: {5:F0} ms\r\nLanzamiento: {6} ms · Espera: {7} s\r\n" +
                     "Anticipación: {8} ms · Tolerancia: {9}\r\nÚltima detección: {10}\r\n" +

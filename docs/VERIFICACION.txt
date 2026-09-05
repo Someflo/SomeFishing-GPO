@@ -1,10 +1,10 @@
-SOMEFISHING GPO 0.3.0 - VERIFICACIÓN DE LA COMPILACIÓN LOCAL
+SOMEFISHING GPO 0.3.1 - VERIFICACIÓN DE LA COMPILACIÓN LOCAL
 Fecha: 2026-09-05. Esta compilación no se ha publicado en GitHub.
 
 Compilación local x64 con C# 5 / .NET Framework y Windows SDK, sin advertencias.
-Versión del archivo: 0.3.0.0. Código completo incluido, sin dependencias descargadas.
-202 comprobaciones integradas aprobadas, sin capturas privadas.
-258 comprobaciones aprobadas al añadir ocho capturas privadas del desarrollo.
+Versión del archivo: 0.3.1.0. Código completo incluido, sin dependencias descargadas.
+205 comprobaciones integradas aprobadas, sin capturas privadas.
+263 comprobaciones aprobadas al añadir nueve capturas privadas del desarrollo.
 Se inspeccionaron visualmente las pestañas de cebo y de compra actualizadas.
 No se enviaron clics, teclas, saltos ni compras reales al juego durante las pruebas.
 No se gastó Peli. Las entradas de las pruebas son simuladas.
@@ -21,6 +21,16 @@ En las capturas se reconoce la oferta de cebo con Sí/No y el menú de cantidad
 con MAX 5 y cantidad 1. La referencia visual de No se distingue de Sí.
 Se leen 300 y 295 cebos comunes al excluir el borde amarillo del botón.
 Los 42 raros siguen siendo desconocidos cuando no se leen con fiabilidad.
+
+CORRECCIÓN DEL CONTADOR EN 0.3.1
+Si falla la lectura original, se aíslan las letras amarillas/anaranjadas,
+se descartan franjas blancas y se normaliza la altura del texto. Se exigen
+dos lecturas coincidentes y no contradictorias con la imagen original.
+El nuevo recorte de la vista previa con x300 y una franja blanca lee 300.
+Su reconstrucción al tamaño indicado de 44 x 25 píxeles también lee 300.
+Una imagen blanca sin letras o un borde amarillo fino no produce números.
+La imagen aportada es una vista ampliada, no el recorte original de pantalla;
+queda pendiente comprobar la selección real del usuario en la vista de lectura.
 
 LIMITACIONES
 El último recorte no muestra el botón de tres puntos. Su detección se probó
@@ -42,7 +52,7 @@ El código incluye solo máscaras diminutas de las letras Sí/No, sin jugador
 ni inventario. Se mantiene la decisión de no conceder licencia: NOTICE.md.
 
 SHA256 DEL EJECUTABLE
-F21E63318D699564BD666CBB44858A886FF13801A9D2E056C0B591D4416E0BCE  SomeFishingGPO.exe
+125195BD5A9D9E053D721F002FDAE96845FBAFF41396A73638335BD6B710E446  SomeFishingGPO.exe
 
 PRUEBAS INTEGRADAS
 OK: Windows INPUT structure matches the platform ABI
@@ -281,8 +291,11 @@ OK: The fishing engine completes the whole replenishment cycle and casts again
 OK: The session purchase limit prevents another order and permits idle jumps
 OK: Counter disappearance cannot interrupt the active last fish
 OK: A persistent disappearance begins replenishment only after the last fish closes
+OK: White-only UI strips do not produce counter glyphs
+OK: A white strip never becomes a numeric zero
+OK: A thin gold border cannot become counter text
 UI: rendered off-screen non-activating form; no hotkeys registered and no clicks sent.
-PASS: 202 checks.
+PASS: 205 checks.
 
 VALIDACIÓN ADICIONAL CON CAPTURAS NO DISTRIBUIDAS
 OK: Windows INPUT structure matches the platform ABI
@@ -585,5 +598,11 @@ OK: The supplied amount dialogue reads MAX 5 and quantity 1
 OK: The cropped final screenshot without visible dots cannot authorize a close click
 SHOP LIMIT: the supplied final screenshot does not show the ellipsis button; that detector is validated with synthetic dots only. No live purchases were sent.
 OK: The supplied 295-bait counter is readable when the yellow button border is excluded
+OK: White-only UI strips do not produce counter glyphs
+OK: A white strip never becomes a numeric zero
+OK: A thin gold border cannot become counter text
+OK: The supplied x300 preview is read despite its white strip and enlarged lettering
+OK: The same preview resized to the reported 44x25 selection still reads 300
+COUNTER: the new image is a screenshot of the enlarged preview, not the original screen crop; the 44x25 case is a reconstruction. No live game input was sent.
 UI: rendered off-screen non-activating form; no hotkeys registered and no clicks sent.
-PASS: 258 checks.
+PASS: 263 checks.

@@ -158,6 +158,7 @@ namespace SomeFishingGPO
                 TestSelection(output);
                 TestBaitAndIdle(args);
                 TestPurchases(args);
+                TestCounterIsolation(args);
 
                 using (var form = new MainForm(true)) form.RenderExample(Path.Combine(output, "interfaz.png"));
                 results.Add("UI: rendered off-screen non-activating form; no hotkeys registered and no clicks sent.");
@@ -674,6 +675,28 @@ namespace SomeFishingGPO
             }
             if(args.Length>9)using(var source=new Bitmap(args[9]))using(var crop=source.Clone(new Rectangle(403,388,30,17),PixelFormat.Format32bppArgb))
                 Check(WindowsBaitReader.ReadImage(crop).Count==295,"The supplied 295-bait counter is readable when the yellow button border is excluded");
+        }
+        private static void TestCounterIsolation(string[] args)
+        {
+            using(var image=new Bitmap(80,30))
+            {
+                using(var graphics=Graphics.FromImage(image))graphics.Clear(Color.White);
+                using(var isolated=WindowsBaitReader.NormalizeCounterText(image))Check(isolated==null,"White-only UI strips do not produce counter glyphs");
+                Check(!WindowsBaitReader.ReadImage(image).Count.HasValue,"A white strip never becomes a numeric zero");
+                using(var graphics=Graphics.FromImage(image))graphics.FillRectangle(Brushes.Gold,0,15,80,2);
+                using(var isolated=WindowsBaitReader.NormalizeCounterText(image))Check(isolated==null,"A thin gold border cannot become counter text");
+            }
+            if(args.Length>10)using(var source=new Bitmap(args[10]))using(var crop=source.Clone(new Rectangle(631,87,159,91),PixelFormat.Format32bppArgb))
+            {
+                Check(WindowsBaitReader.ReadImage(crop).Count==300,"The supplied x300 preview is read despite its white strip and enlarged lettering");
+                using(var resized=new Bitmap(44,25))
+                {
+                    using(var g=Graphics.FromImage(resized)){g.InterpolationMode=System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;g.DrawImage(crop,0,0,44,25);}
+                    var reading=WindowsBaitReader.ReadImage(resized);
+                    Check(reading.Count==300,"The same preview resized to the reported 44x25 selection still reads 300");
+                }
+                results.Add("COUNTER: the new image is a screenshot of the enlarged preview, not the original screen crop; the 44x25 case is a reconstruction. No live game input was sent.");
+            }
         }
         private sealed class FakeGame : IGameRuntime, IShopRuntime
         {

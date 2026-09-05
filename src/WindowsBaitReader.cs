@@ -51,9 +51,46 @@ namespace SomeFishingGPO
             if (engine == null) return new BaitReading { Detail = "Windows no tiene un idioma de OCR disponible." };
             string first = Recognize(engine, image, 3), second = Recognize(engine, image, 5);
             int? a = BaitText.Parse(first), b = BaitText.Parse(second);
-            if (!a.HasValue || !b.HasValue || a != b)
-                return new BaitReading { Detail = "Número no reconocido con claridad. Selecciona solo x y la cantidad." };
-            return new BaitReading { Count = a, Detail = "Lectura: " + a.Value };
+            if (a.HasValue && a == b) return new BaitReading { Count = a, Detail = "Lectura: " + a.Value };
+            // Conflicting numeric evidence must stay unknown; do not choose a preferred result.
+            if (!a.HasValue || !b.HasValue || a == b)
+            using (Bitmap isolated = NormalizeCounterText(image))
+            {
+                if (isolated != null)
+                {
+                    int? c = BaitText.Parse(Recognize(engine, isolated, 3));
+                    int? d = BaitText.Parse(Recognize(engine, isolated, 5));
+                    if (c.HasValue && c == d && (!a.HasValue || a == c) && (!b.HasValue || b == c))
+                        return new BaitReading { Count = c, Detail = "Lectura: " + c.Value + " · texto amarillo aislado" };
+                }
+            }
+            return new BaitReading { Detail = "Número no reconocido con claridad. Rodea x y la cantidad, sin bordes ni otros números." };
+        }
+        internal static Bitmap NormalizeCounterText(Bitmap image)
+        {
+            // Keep the yellow/orange glyphs, discard white UI strips, then normalize their
+            // height. This is only an OCR fallback: it never changes letters into digits.
+            var ink = new bool[image.Width, image.Height];
+            int left=image.Width, top=image.Height, right=-1, bottom=-1;
+            for(int y=0;y<image.Height;y++)for(int x=0;x<image.Width;x++)
+            {
+                Color c=image.GetPixel(x,y);
+                ink[x,y]=c.R>140 && c.G>75 && c.R-c.G>20 && c.G-c.B>35;
+                if(ink[x,y]){left=Math.Min(left,x);right=Math.Max(right,x);top=Math.Min(top,y);bottom=Math.Max(bottom,y);}
+            }
+            int width=right-left+1, height=bottom-top+1;
+            if(height<3 || width<3 || width>height*12) return null;
+            using(var glyphs=new Bitmap(width,height,PixelFormat.Format32bppArgb))
+            {
+                for(int y=0;y<height;y++)for(int x=0;x<width;x++)glyphs.SetPixel(x,y,ink[x+left,y+top]?Color.Black:Color.White);
+                var normalized=new Bitmap((int)Math.Ceiling(width*16.0/height)+16,32,PixelFormat.Format32bppArgb);
+                using(Graphics graphics=Graphics.FromImage(normalized))
+                {
+                    graphics.Clear(Color.White);graphics.InterpolationMode=InterpolationMode.HighQualityBicubic;
+                    graphics.DrawImage(glyphs,new Rectangle(8,8,normalized.Width-16,16));
+                }
+                return normalized;
+            }
         }
         private static bool HasCounterInk(Bitmap image)
         {
