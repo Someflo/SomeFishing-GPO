@@ -60,7 +60,6 @@ namespace SomeFishingGPO
         private ComboBox ocrLanguage;
         private readonly System.Collections.Generic.List<string> ocrTags=new System.Collections.Generic.List<string>();
         private Panel timerCondition, ocrCondition;
-        private Panel purchaseQuantityCondition, capacityCondition;
         private Button[] shopPointButtons;
         private Label[] shopPointLabels;
         private int selectedShopPoints;
@@ -92,7 +91,7 @@ namespace SomeFishingGPO
             string loadWarning = null;
             try { settings = testMode ? new Settings() : Settings.Load(settingsPath); }
             catch (Exception error) { settings = new Settings(); loadWarning = "No se pudieron cargar los ajustes: " + error.Message; }
-            Text = "SomeFishing GPO · v0.6.1";
+            Text = "SomeFishing GPO · v0.7.0";
             ClientSize = new Size(1080, 730);
             AutoScaleMode = AutoScaleMode.None;
             Font = new Font("Segoe UI", 10);
@@ -276,6 +275,8 @@ namespace SomeFishingGPO
             baitValueLabel.ForeColor = count.HasValue && count.Value <= 10 ? Color.FromArgb(174,85,15) : ink;
             baitDetailLabel.Text = count.HasValue&&autoBuy.Checked&&purchaseMode.SelectedIndex==0&&count.Value>(int)baitThreshold.Value&&count.Value<=(int)baitThreshold.Value+2?
                 "Compra próxima · se activa con "+baitThreshold.Value+" cebos o menos.":detail ?? "Esperando lectura…";
+            baitReadoutLabel.Text=baitValueLabel.Text;baitReadoutLabel.ForeColor=baitValueLabel.ForeColor;
+            baitReadoutDetail.Text=baitDetailLabel.Text;
         }
         private void SelectArea()
         {
@@ -353,7 +354,7 @@ namespace SomeFishingGPO
         {
             StopAll("Preparando prueba…");
             diagnosticLog.Clear();lastDiagnosticStep=null;
-            AppendDiagnostic("SomeFishing GPO 0.6.1 · "+DiagnosticName(kind));
+            AppendDiagnostic("SomeFishing GPO 0.7.0 · "+DiagnosticName(kind));
             if(testMode){AppendDiagnostic("Render de interfaz: entradas reales desactivadas.");return;}
             if(!CanStartDiagnostic(kind))return;
             Settings selected=ReadSettings().ForDiagnostic(kind);
@@ -441,7 +442,7 @@ namespace SomeFishingGPO
             }
             if (hadSession && !testMode)
             {
-                lastStop = string.Format("SomeFishing GPO 0.6.1 · {0:yyyy-MM-dd HH:mm:ss}\r\n\r\n{1}\r\n\r\n" +
+                lastStop = string.Format("SomeFishing GPO 0.7.0 · {0:yyyy-MM-dd HH:mm:ss}\r\n\r\n{1}\r\n\r\n" +
                     "Estado al parar: {2}\r\nRondas terminadas: {3}\r\nDuración: {4:F1} s\r\n" +
                     "Mayor intervalo entre revisiones: {5:F0} ms\r\nLanzamiento: {6} ms · Espera: {7} s\r\n" +
                     "Anticipación: {8} ms · Tolerancia: {9}\r\nÚltima detección: {10}\r\n" +
@@ -616,7 +617,14 @@ namespace SomeFishingGPO
                 using(var bitmap=new Bitmap(Width,Height))
                 {DrawToBitmap(bitmap,new Rectangle(0,0,Width,Height));bitmap.Save(Path.Combine(Path.GetDirectoryName(path),"interfaz-"+i+".png"));}
             }
-            purchaseMode.SelectedIndex=1;SelectPage(2);Application.DoEvents();
+            SelectPage(2);SelectTestView(true);Application.DoEvents();
+            using(var bitmap=new Bitmap(Width,Height))
+            {DrawToBitmap(bitmap,new Rectangle(0,0,Width,Height));bitmap.Save(Path.Combine(Path.GetDirectoryName(path),"lecturas.png"));}
+            SelectTestView(false);SelectPage(3);advancedScroll.AutoScrollPosition=new Point(0,730);Application.DoEvents();
+            using(var bitmap=new Bitmap(Width,Height))
+            {DrawToBitmap(bitmap,new Rectangle(0,0,Width,Height));bitmap.Save(Path.Combine(Path.GetDirectoryName(path),"avanzado-abajo.png"));}
+            advancedScroll.AutoScrollPosition=Point.Empty;
+            purchaseMode.SelectedIndex=1;SelectPage(0);Application.DoEvents();
             using(var bitmap=new Bitmap(Width,Height))
             {DrawToBitmap(bitmap,new Rectangle(0,0,Width,Height));bitmap.Save(Path.Combine(Path.GetDirectoryName(path),"cronometro.png"));}
             Close();

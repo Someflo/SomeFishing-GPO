@@ -143,7 +143,7 @@ namespace SomeFishingGPO
         }
     }
 
-    internal sealed class GameRuntime : IGameRuntime, IShopRuntime, IShopPointerRuntime, IShopVisualRuntime, IDisposable
+    internal sealed class GameRuntime : IGameRuntime, IShopRuntime, IShopPointerRuntime, IShopVisualRuntime, ICastPointerRuntime, IDisposable
     {
         private readonly Settings settings;
         private readonly IntPtr target;
@@ -151,6 +151,8 @@ namespace SomeFishingGPO
         private readonly bool requireFishingArea;
         private readonly MouseLease mouse;
         private readonly RelativePointer shopPointer;
+        private readonly RelativePointer castPointer;
+        private bool castPressPending;
         private Point? settledShopPoint;
         private Point shopAimTarget;
         private ShopVisualReading lastShopVisual;
@@ -195,6 +197,8 @@ namespace SomeFishingGPO
                 delegate{return ForegroundAllowed;},delegate{return clock.Elapsed.TotalMilliseconds;},delegate{return safetyReason;},"Ctrl");
             shopPointer=new RelativePointer(delegate{return Cursor.Position;},delegate(Point delta){if(sendClicks)Native.MoveRelative(delta);},
                 delegate{return ForegroundAllowed;},delegate(Point point){return Settings.ContainsSafely(Native.ClientBounds(target),new Rectangle(point,new Size(1,1)));});
+            castPointer=new RelativePointer(delegate{return Cursor.Position;},delegate(Point delta){if(sendClicks)Native.MoveRelative(delta);},
+                delegate{return ForegroundAllowed;},delegate(Point point){return Settings.ContainsSafely(Native.ClientBounds(target),new Rectangle(point,new Size(1,1)));});
             watchdog = new System.Threading.Timer(delegate
             {
                 mouse.Watchdog(); jump.Watchdog(); shopKey.Watchdog(); controlKey.Watchdog();
@@ -236,16 +240,34 @@ namespace SomeFishingGPO
         public void MoveToCastPoint()
         {
             Guard();
-            if (sendClicks && !Native.SetCursorPos(settings.CastPoint.X, settings.CastPoint.Y))
-                throw new Win32Exception("No se pudo mover el ratón al punto de lanzamiento.");
+            Release();if(PendingRelease)throw new InvalidOperationException("Hay una entrada pendiente de liberación antes de volver al agua.");
+            if(sendClicks)castPointer.Start(settings.CastPoint,clock.Elapsed.TotalMilliseconds);castPressPending=true;
+            inputStatus="Moviendo con desplazamientos relativos al punto del agua";
+        }
+        public bool TickCastAim(double now)
+        {
+            Guard();
+            if(!castPressPending)throw new InvalidOperationException("El movimiento al agua fue cancelado.");
+            if(!sendClicks)return true;
+            castPointer.Tick(clock.Elapsed.TotalMilliseconds);
+            inputStatus=castPointer.Status;
+            return castPointer.Ready;
         }
         public void SetHeld(bool value)
         {
             if (!value) { mouse.Release(); return; }
             Guard();
+            if(castPressPending&&sendClicks)
+            {
+                Point actual=Cursor.Position;
+                if(!castPointer.Ready||Math.Abs((long)actual.X-settings.CastPoint.X)>3||Math.Abs((long)actual.Y-settings.CastPoint.Y)>3)
+                    throw new InvalidOperationException("El puntero no quedó sobre el punto del agua. Lanzamiento cancelado.");
+                if(Native.WindowAt(actual)!=Native.RootWindow(target))throw new InvalidOperationException("Otra ventana cubre el punto del agua. Lanzamiento cancelado.");
+            }
             jump.Release();shopKey.Release();controlKey.Release();
             if (jump.PendingRelease||shopKey.PendingRelease||controlKey.PendingRelease) throw new InvalidOperationException("Una tecla sigue pendiente de liberación.");
             mouse.SetHeld(true);
+            castPressPending=false;
         }
         public void SetJumpHeld(bool value)
         {
@@ -259,6 +281,7 @@ namespace SomeFishingGPO
         public void Release()
         {
             if(shopPointer!=null)shopPointer.Cancel();settledShopPoint=null;
+            if(castPointer!=null)castPointer.Cancel();castPressPending=false;
             ReleaseInputs();
         }
         private void TraceKey(int key,bool down)
@@ -362,6 +385,7 @@ namespace SomeFishingGPO
         public void Dispose()
         {
             shopPointer.Cancel();settledShopPoint=null;
+            castPointer.Cancel();castPressPending=false;
             closing = true; mouse.Stop(); jump.Stop(); shopKey.Stop(); controlKey.Stop(); baitReader.Dispose(); shopReader.Dispose();
             if (!PendingRelease) watchdog.Dispose();
             // If Windows rejected button-up, the timer retains this object and retries

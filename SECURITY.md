@@ -4,7 +4,7 @@ SomeFishing GPO funciona localmente: captura las zonas elegidas, analiza píxele
 
 ## Entradas y datos
 
-El seguimiento usa clic sostenido y un punto de lanzamiento elegido por el usuario. Los saltos opcionales usan Espacio, sin direcciones. Las compras usan E, cinco clics en los puntos marcados, Ctrl+A, Retroceso y dígitos. Pueden gastar Peli del juego. No leen el portapapeles ni escriben textos libres.
+El seguimiento usa clic sostenido y un punto de lanzamiento elegido por el usuario. Desde 0.7.0, antes de lanzar se mueve gradualmente hasta ese punto con el mismo controlador relativo de la compra. Espera llegada, estabilidad y 200 ms adicionales antes de mantener el clic; la duración del lanzamiento se cuenta desde la pulsación efectiva. El primer clic comprueba de nuevo la posición y la ventana bajo el cursor. Si aparece un minijuego durante el recorrido, cancela el lanzamiento pendiente. Los saltos opcionales usan Espacio, sin direcciones. Las compras usan E, cinco clics en los puntos marcados, Ctrl+A, Retroceso y dígitos. Pueden gastar Peli del juego. No leen el portapapeles ni escriben textos libres.
 
 F6/F8/F10 controlan la selección, inicio y parada. No se registra lo escrito en otras aplicaciones. Antes de cada entrada se comprueba el foco de Roblox y que los puntos estén dentro de su ventana. La ventana bajo el cursor también debe corresponder a Roblox. Se cancela un clic si el cursor se apartó del destino.
 
@@ -12,9 +12,9 @@ Los ajustes y registros se guardan junto al ejecutable: `ajustes.xml`, `ultima-p
 
 ## Compra por puntos
 
-La interfaz 0.6.1 usa tres puntos marcados expresamente. El izquierdo corresponde a Sí/Comprar; el central, al número y al cierre; el derecho se valida y observa, sin pulsarlo. No deriva destinos de un rectángulo ni exige OCR de los menús. Los diálogos deben mantener esos destinos y estar cerrados antes de iniciar.
+La interfaz usa tres puntos marcados expresamente. El izquierdo corresponde a Sí/Comprar; el central, al número y al cierre; el derecho se valida y observa, sin pulsarlo. No deriva destinos de un rectángulo ni exige OCR de los menús. Los diálogos deben mantener esos destinos y estar cerrados antes de iniciar.
 
-El movimiento de compra usa desplazamientos relativos de hasta 64 unidades por eje, como máximo uno cada 50 ms. Corrige el recorrido con la posición devuelta por Windows y estima la respuesta por eje; no cambia la configuración global del ratón. Exige llegada a dos píxeles del destino, estabilidad de 100 ms y después la pausa elegida. Si el puntero no llega en 12 segundos, sale del juego o se pierde el foco, cancela. Todas las pulsaciones, también las del número, usan eventos sin coordenadas ni movimiento. El clic de pesca conserva su comportamiento anterior.
+El movimiento de compra usa desplazamientos relativos de hasta 64 unidades por eje, como máximo uno cada 50 ms. Corrige el recorrido con la posición devuelta por Windows y estima la respuesta por eje; no cambia la configuración global del ratón. Exige llegada a dos píxeles del destino, estabilidad de 100 ms y después la pausa elegida. Si el puntero no llega en 12 segundos, sale del juego o se pierde el foco, cancela. Todas las pulsaciones, también las del número, usan eventos sin coordenadas ni movimiento. El seguimiento del pez conserva su comportamiento anterior.
 
 La elección de movimiento relativo con corrección responde a la distinción entre eventos relativos y absolutos y a los efectos de aceleración documentados en [MOUSEINPUT de Microsoft](https://learn.microsoft.com/en-us/windows/win32/api/winuser/ns-winuser-mouseinput). La posición del cursor de Windows no demuestra que el juego haya procesado el clic.
 

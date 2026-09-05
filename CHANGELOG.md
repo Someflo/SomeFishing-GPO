@@ -1,5 +1,13 @@
 # Historial de cambios
 
+## 0.7.0 · Regreso gradual al agua e interfaz sencilla
+
+- Todos los lanzamientos, incluido el regreso de una compra, mueven el puntero gradualmente al agua y esperan llegada, estabilidad y 200 ms antes de pulsar. La duración del clic empieza al presionar.
+- Cancela el lanzamiento pendiente si aparece un minijuego, se detiene la sesión, cambia el foco o toca una compra antes de lanzar.
+- Menú con Inicio, Zonas, Pruebas y Avanzado. OCR o cronómetro y los valores sencillos quedan en Inicio; áreas y botones se marcan en Zonas.
+- Los ajustes técnicos pasan a Avanzado con el aviso «Si no conoces estos ajustes, déjalos como están». Se conservan valores, puntos y preferencias anteriores.
+- La secuencia de compra de 0.6.1, cuyo funcionamiento confirmó el usuario, se conserva. Las pruebas de compra siguen terminando sin lanzar la caña.
+
 ## 0.6.1 · Sincronización de los clics de compra
 
 - Sustituye el movimiento absoluto de compra por desplazamientos relativos con corrección de posición, estabilidad y pausa antes de pulsar.

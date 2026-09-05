@@ -1,6 +1,6 @@
 # SomeFishing GPO
 
-Macro visual de pesca para GPO en Windows, con código disponible para revisar y compilar. **Versión local 0.6.1.**
+Macro visual de pesca para GPO en Windows, con código disponible para revisar y compilar. **Versión local 0.7.0.**
 
 ![Interfaz con un ejemplo sintético](docs/Vista-previa.png)
 
@@ -10,16 +10,29 @@ Extrae el ZIP completo y abre `SomeFishingGPO.exe`. Requiere Windows 10 u 11 de 
 
 1. Equipa la caña y lanza manualmente una vez.
 2. Pulsa **F6** y rodea toda la barra azul, con margen para su movimiento lateral. Enter o F6 confirma; Esc cancela.
-3. Usa **Ver detector** y **Elegir punto en el agua**. La barra verde se ignora.
+3. En **Zonas**, marca el punto en el agua. Comprueba la barra en **Pruebas → Lecturas → Ver detector**; la barra verde se ignora.
 4. Activa **Permitir clics y teclas**, vuelve a Roblox y pulsa **F8**.
 
 **F10 detiene**. Cambiar de ventana o llevar el ratón a la esquina superior izquierda también detiene la macro y libera las entradas. Iniciar desde la aplicación deja tres segundos para volver al juego.
 
 Mantener clic sube el hueco gris; soltarlo lo baja. La macro sigue la línea blanca, comprueba el cierre de cada ronda y vuelve a lanzar. Las rondas cuentan tanto capturas como escapes.
 
+Antes de cada lanzamiento, también después de comprar, mueve el puntero gradualmente al agua. Espera a que llegue y se estabilice y después pulsa durante el tiempo configurado. Si aparece el minijuego durante ese movimiento, cancela el lanzamiento pendiente y pasa a seguirlo.
+
+## Menú sencillo
+
+| Apartado | Contenido |
+|---|---|
+| **Inicio** | Elegir OCR o cronómetro, activar compras, cantidad e intervalo del cronómetro, estado de la sesión |
+| **Zonas** | Barra de pesca, punto en el agua, contador de cebo y tres botones de compra |
+| **Pruebas** | Compra de prueba, simulación de falta de cebo y vistas del detector y contador en **Lecturas** |
+| **Avanzado** | Tiempos, colores, respuesta del detector, idioma OCR, umbral, capacidad y saltos |
+
+**Avanzado** muestra: «Si no conoces estos ajustes, déjalos como están». No hace falta cambiar esos valores para usar el programa. **Guardar**, el permiso de entradas y los botones de inicio y parada permanecen accesibles. La actualización conserva los ajustes y puntos guardados.
+
 ## Compra: tres botones y dos modos
 
-Coloca al personaje junto al barril, al alcance de **E**, desde un lugar donde pueda pescar. En **Compra**, marca el centro de estos botones:
+Coloca al personaje junto al barril, al alcance de **E**, desde un lugar donde pueda pescar. En **Zonas**, marca el centro de estos botones:
 
 | Punto | Función |
 |---|---|
@@ -29,11 +42,11 @@ Coloca al personaje junto al barril, al alcance de **E**, desde un lugar donde p
 
 Abre manualmente el menú correspondiente antes de marcar cada punto. La selección se hace sobre una captura: ese clic no se envía al juego. Los tres deben estar en la misma fila y mantener sus posiciones entre diálogos. Si cambias la ventana, resolución o posición del menú, vuelve a marcarlos. Cierra los diálogos antes de iniciar una sesión o prueba.
 
-![Configuración de compras](docs/Comprar-cebo.png)
+![Zonas y botones](docs/Zonas.png)
 
-Activa **Reponer cebo** y elige un modo:
+En **Inicio**, activa **Comprar cebo** y elige un modo:
 
-- **Contador OCR:** al confirmar **2 cebos o menos**, repone hasta **300**. Por ejemplo, con 2 solicita **298**; con 1 solicita **299**. Umbral y capacidad son ajustables. Aquí «máximo» significa completar la capacidad configurada: no lee el MAX del diálogo ni calcula cuánto permite comprar tu saldo.
+- **Contador OCR:** al confirmar **2 cebos o menos**, repone hasta **300**. Por ejemplo, con 2 solicita **298**; con 1 solicita **299**. Umbral y capacidad se ajustan en **Avanzado**. Aquí «máximo» significa completar la capacidad configurada: no lee el MAX del diálogo ni calcula cuánto permite comprar tu saldo.
 - **Cronómetro:** solicita **50 cebos cada 40 minutos**, ambos ajustables. No necesita OCR ni seleccionar el contador.
 
 Cuando toca comprar, suelta el clic de pesca y espera que cierre el minijuego. Si había un lanzamiento pendiente, conserva su ventana de picada. Después ejecuta **E → Sí → doble clic en el número → escribir cantidad → Comprar → …** con pausas. Al terminar la secuencia reanuda la pesca y comienza un intervalo nuevo. Al soltar el clic durante una ronda, el pez puede escaparse.
@@ -46,9 +59,9 @@ Comprueba **verde en Comprar, blanco en el número y rojo en Cancelar**, en dos 
 
 ## Contador y aviso previo
 
-En **Cebo**, selecciona solo el contador del cebo equipado, por ejemplo `x300`, dejando margen para tres dígitos. Evita el borde del botón y otros números. **Probar lectura** solo observa.
+En **Zonas**, selecciona solo el contador del cebo equipado, por ejemplo `x300`, dejando margen para tres dígitos. Evita el borde del botón y otros números. **Pruebas → Lecturas → Probar lectura** solo observa.
 
-Puedes elegir entre **Automático (Windows)** y los idiomas OCR instalados. El procesamiento es local. Las lecturas positivas requieren dos capturas coincidentes y el cero requiere tres. Una lectura desconocida o un contador desaparecido nunca se convierten en cero para calcular una compra.
+En **Avanzado** puedes elegir entre **Automático (Windows)** y los idiomas OCR instalados. El procesamiento es local. Las lecturas positivas requieren dos capturas coincidentes y el cero requiere tres. Una lectura desconocida o un contador desaparecido nunca se convierten en cero para calcular una compra.
 
 Los recortes pequeños de **x2, x3 y x4** tienen apoyo de reconocimiento visual. Con 3 o 4 confirmados aparece un aviso de compra próxima al usar el umbral inicial de 2. El aviso no compra antes del umbral. Esto mejora las muestras probadas, pero no garantiza reconocer cualquier fuente, escala o fondo.
 

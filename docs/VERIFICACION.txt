@@ -1,46 +1,37 @@
-SomeFishing GPO 0.6.1 - verificacion local, 2026-09-05
+SomeFishing GPO 0.7.0 - verificacion local, 2026-09-05
 
-743 comprobaciones integradas; 866 con quince capturas privadas del usuario.
-Incluye 28 comprobaciones del movimiento relativo, 27 de sincronizacion,
-16 sinteticas de los botones y 10 comprobaciones de parches en fotos reales.
-Todas las entradas son simuladas: no se enviaron clics o teclas a Roblox.
+770 comprobaciones integradas; 893 con quince capturas privadas del usuario.
+Todas las entradas de prueba son simuladas: no se enviaron clics o teclas a
+Roblox. El usuario confirmo que la compra de la version 0.6.1 funciono.
+Esta version conserva esa secuencia, sus puntos y sus verificaciones.
+El regreso nuevo al agua aun necesita comprobacion dentro del juego.
 
-Evidencia del fallo reportado en 0.6.0: Windows aceptaba los cinco clics;
-las liberaciones observadas tardaban entre 182 y 238 ms. El usuario veia
-que Si fallaba y el doble clic del numero terminaba adelantando el dialogo.
-Esto no prueba la causa interna de Roblox. Se cambia la mezcla anterior
-de movimiento absoluto, clic simple y movimiento combinado con pulsacion.
+Antes de lanzar, tambien despues de comprar, el puntero vuelve gradualmente
+al punto marcado usando el controlador relativo con feedback de Windows.
+Espera llegada, estabilidad y 200 ms adicionales antes de mantener el clic.
+La duracion configurada del lanzamiento empieza con la pulsacion efectiva.
+Comprueba posicion y ventana bajo el puntero antes de pulsar. Si aparece el
+minijuego durante el recorrido, cancela el lanzamiento pendiente y lo sigue.
 
-0.6.1 usa movimiento relativo con feedback de la posicion de Windows.
-Eventos sin fusion de movimiento, maximo 64 unidades por eje y uno cada
-50 ms. Aprende la respuesta de cada eje sin cambiar ajustes del raton.
-Requiere llegada a 2 pixeles, estabilidad100 ms y pausa completa despues.
-Un puntero ya colocado sale6 pixeles y vuelve antes de estar listo.
-Cancela por foco, limites, reloj, error o12 segundos sin llegar. Los eventos
-de down/up no mueven el cursor, incluidas ambas pulsaciones del numero.
-Las pruebas simulan ganancias0.5,1,2,3 y distintas respuestas por eje.
+27 comprobaciones nuevas cubren el primer lanzamiento y compra -> regreso
+al agua -> lanzamiento, movimiento pendiente, pausa completa y duracion de
+220 ms contada desde el clic. Incluyen cancelacion por foco y F10 durante
+movimiento o pausa, minijuego aparecido, modo manual y diagnosticos sin
+lanzamiento. Un umbral bajo o cronometro vencido durante el recorrido cancela
+el lanzamiento no enviado y no espera una picada inexistente.
 
-La posicion de Windows no demuestra que el juego haya aceptado el clic.
-Por ello se comprueba el menu de cantidad tras Si y antes del doble clic,
-la escritura y Comprar: verde izquierdo, blanco central, rojo derecho.
-Solo captura3 parches49x33 en los puntos marcados. No requiere OCR.
-Exige2 imagenes nuevas separadas al menos100 ms; rechaza muestras antiguas,
-futuras, repetidas o contradictorias. Si falta el menu durante8 segundos,
-se detiene en ese paso. Si no entro Si, no pulsa el numero ni el teclado.
-Si desaparece durante el movimiento al numero, tambien se bloquean ambos
-clics. Cada accion se envia una vez; no se reintenta una compra incierta.
+La interfaz se organiza en Inicio, Zonas, Pruebas y Avanzado. Inicio permite
+elegir OCR o cronometro, con cantidad e intervalo ajustables. Zonas reune
+barra, agua, contador y los tres botones. Avanzado muestra siempre el aviso
+de dejar los ajustes igual si no se conocen. Pruebas conserva compra de
+cantidad elegida, simulacion sin cebo y lecturas. Se revisaron siete renders
+sin activar ventanas ni registrar atajos. No hay emojis en la interfaz.
 
-La foto nueva MAX297 y las anteriores MAX294 y MAX5 pasan el detector por
-colores. Las fotos de la pregunta Si/No y del cierre no pasan. No se leen
-MAX, cantidad ni foco del campo: el numero escrito, pago y cierre siguen
-sin verificar dentro del juego. Se conserva ese limite en la interfaz.
-El registro ahora incluye teclas propias enviadas a Windows ademas de los
-clics y colores; no registra lo que escribe el usuario ni guarda capturas.
-
-Regresiones de pesca, umbral2/capacidad300, timer50/40min, x2/x3/x4,
-pruebas sin OCR de contador, persistencia, focus y liberaciones aprobadas.
-Interfaz renderizada sin activar ventanas ni registrar atajos; Compra
-revisada visualmente. No se modificaron ni borraron los puntos del usuario.
+Las regresiones de compra por puntos, comprobacion visual del menu,
+movimiento relativo, umbral 2/capacidad 300, cronometro 50/40 minutos,
+lecturas x2/x3/x4, persistencia, foco y liberacion siguen aprobadas.
+Las comprobaciones visuales de compra no verifican el numero escrito,
+el pago ni el cierre en Roblox. Se conserva ese limite en la interfaz.
 
 Microsoft Defender completo el analisis del ejecutable: found no threats.
 No es una garantia absoluta ni certificacion. Ejecutable sin firma comercial.
@@ -49,7 +40,7 @@ capturas privadas, ajustes, registros personales, credenciales ni rutas locales.
 La documentacion visual contiene renders y ejemplos sinteticos.
 
 SHA256 DEL EJECUTABLE
-C4F50116A86ACA88AC674CD53CBACD1285A0CFF3572C0F087CA9ABB71E800C64  SomeFishingGPO.exe
+0B6A03FBDE03F2140DFB508CE436D3F3DC360A2AE5CB96361BD47C8839114281  SomeFishingGPO.exe
 
 PRUEBAS INTEGRADAS
 OK: Windows INPUT structure matches the platform ABI
@@ -829,8 +820,35 @@ OK: One fresh quantity-menu frame does not authorize moving to the number
 OK: Reading the same cached visual frame again does not satisfy two-frame confirmation
 OK: Two visual samples separated by less than 100 ms cannot authorize the next stage
 OK: Two distinct fresh samples spaced by at least 100 ms advance to the number
+OK: The first cast begins by moving to water without pressing the mouse
+OK: Initial casting waits until the asynchronous pointer actually arrives
+OK: Initial casting waits an extra 200 ms after pointer arrival
+OK: The actual first cast starts only after arrival plus the full 200 ms settling interval
+OK: The cast retains its full configured hold after movement and settling
+OK: Cast hold duration is measured from button-down, not from the earlier pointer request
+OK: A due purchase starts before any water movement in the return-after-buy fixture
+OK: The purchase completes its five shop clicks before preparing a return to the water
+OK: The post-purchase preparation pause does not move or launch early
+OK: After buying, the engine requests the same marked water destination through asynchronous aiming
+OK: Returning from the shop waits for both pointer travel and 200 ms of settling
+OK: The first post-purchase launch happens only after the pointer is ready at the water
+OK: The returned cast holds exactly 220 ms and the timer path still needs no OCR
+OK: Focus loss during return movement cancels the aim and prevents any future launch or movement tick
+OK: F10 while moving to water leaves no delayed cast behind
+OK: F10 during the extra 200 ms settling interval also cancels the pending cast
+OK: Focus is rechecked at the final casting deadline after the pointer has arrived
+OK: A fishing minigame appearing during water movement cancels the aim and waits without a launch
+OK: A menu appearing during the final settling interval prevents a cast even without complete fish detection
+OK: Manual casting mode never starts the asynchronous water pointer or presses to launch
+OK: A successful purchase diagnostic ends without returning to water or auto-casting
+OK: The no-bait diagnostic cannot start water movement or a fishing click
+OK: Low-bait interruption fixture is moving to water before any launch
+OK: A newly confirmed low counter interrupts and cancels water aiming before it can cast
+OK: A low-bait interruption still requires the 1600 ms clear-menu pause
+OK: An interrupted aim is not treated as an in-flight cast requiring a bite window before buying
+OK: Timer expiration during water aiming also cancels the unsent cast and buys after only the clear-menu pause
 UI: rendered off-screen non-activating form; no hotkeys registered and no clicks sent.
-PASS: 743 checks.
+PASS: 770 checks.
 
 VALIDACION CON CAPTURAS NO DISTRIBUIDAS
 OK: Windows INPUT structure matches the platform ABI
@@ -1707,6 +1725,33 @@ OK: One fresh quantity-menu frame does not authorize moving to the number
 OK: Reading the same cached visual frame again does not satisfy two-frame confirmation
 OK: Two visual samples separated by less than 100 ms cannot authorize the next stage
 OK: Two distinct fresh samples spaced by at least 100 ms advance to the number
+OK: The first cast begins by moving to water without pressing the mouse
+OK: Initial casting waits until the asynchronous pointer actually arrives
+OK: Initial casting waits an extra 200 ms after pointer arrival
+OK: The actual first cast starts only after arrival plus the full 200 ms settling interval
+OK: The cast retains its full configured hold after movement and settling
+OK: Cast hold duration is measured from button-down, not from the earlier pointer request
+OK: A due purchase starts before any water movement in the return-after-buy fixture
+OK: The purchase completes its five shop clicks before preparing a return to the water
+OK: The post-purchase preparation pause does not move or launch early
+OK: After buying, the engine requests the same marked water destination through asynchronous aiming
+OK: Returning from the shop waits for both pointer travel and 200 ms of settling
+OK: The first post-purchase launch happens only after the pointer is ready at the water
+OK: The returned cast holds exactly 220 ms and the timer path still needs no OCR
+OK: Focus loss during return movement cancels the aim and prevents any future launch or movement tick
+OK: F10 while moving to water leaves no delayed cast behind
+OK: F10 during the extra 200 ms settling interval also cancels the pending cast
+OK: Focus is rechecked at the final casting deadline after the pointer has arrived
+OK: A fishing minigame appearing during water movement cancels the aim and waits without a launch
+OK: A menu appearing during the final settling interval prevents a cast even without complete fish detection
+OK: Manual casting mode never starts the asynchronous water pointer or presses to launch
+OK: A successful purchase diagnostic ends without returning to water or auto-casting
+OK: The no-bait diagnostic cannot start water movement or a fishing click
+OK: Low-bait interruption fixture is moving to water before any launch
+OK: A newly confirmed low counter interrupts and cancels water aiming before it can cast
+OK: A low-bait interruption still requires the 1600 ms clear-menu pause
+OK: An interrupted aim is not treated as an in-flight cast requiring a bite window before buying
+OK: Timer expiration during water aiming also cancels the unsent cast and buys after only the clear-menu pause
 OK: The supplied complete x3 image matches its own low-count shape
 OK: The supplied x3 image is readable with automatic OCR language
 OK: The supplied x3 image is readable with en-US
@@ -1744,4 +1789,4 @@ OK: Initial Yes No screenshot: Esperando botones de cantidad · verde izquierdo:
 OK: Final screenshot contains all three marked-point patches
 OK: Final screenshot: Esperando botones de cantidad · verde izquierdo: 0 · blanco central: 29 · rojo derecho: 0
 UI: rendered off-screen non-activating form; no hotkeys registered and no clicks sent.
-PASS: 866 checks.
+PASS: 893 checks.

@@ -487,8 +487,12 @@ namespace SomeFishingGPO
         BaitReading ReadBait(double now);
         void SetJumpHeld(bool held);
     }
+    public interface ICastPointerRuntime
+    {
+        bool TickCastAim(double now);
+    }
 
-    public enum Phase { Stopped, Preparing, Casting, Waiting, Tracking, Resting, IdleWaiting, Jumping, Purchasing, PausingPurchase }
+    public enum Phase { Stopped, Preparing, Casting, Waiting, Tracking, Resting, IdleWaiting, Jumping, Purchasing, PausingPurchase, AimingCast }
 
     // Nonblocking state machine. A GUI timer drives this; no delayed background click
     // can survive Stop(). Every tick checks game focus before any action.
@@ -498,6 +502,7 @@ namespace SomeFishingGPO
         private readonly IGameRuntime runtime;
         private readonly Controller controller = new Controller();
         private double deadline, missingSince = -1, invalidSince = -1, trackingStarted;
+        private double castReadySince=-1;
         private int stableFrames, failures;
         private readonly BaitMonitor bait = new BaitMonitor();
         private double nextJump, jumpUntil, idleMenuMissingSince;
@@ -566,8 +571,29 @@ namespace SomeFishingGPO
             if (TryTimedPurchase(now) || HandleNoBait(now)) return;
             if (!settings.AutoCast)
             { State = Phase.Waiting; deadline = double.PositiveInfinity; Status = "Esperando a que lances manualmente…"; return; }
-            runtime.MoveToCastPoint(); runtime.SetHeld(true);
+            runtime.MoveToCastPoint();
+            if(runtime is ICastPointerRuntime)
+            {State=Phase.AimingCast;castReadySince=-1;SuggestedHold=false;Status="Moviendo el puntero al agua…";return;}
+            StartCastPress(now);
+        }
+        private void StartCastPress(double now)
+        {
+            runtime.SetHeld(true);
             State = Phase.Casting; deadline = now + settings.CastMilliseconds; Status = "Lanzando la caña";
+        }
+        private void TickCastAim(double now)
+        {
+            LastObservation=runtime.Observe();
+            if(LastObservation.Found||LastObservation.MenuVisible)
+            {
+                runtime.Release();State=Phase.Waiting;deadline=now+settings.BiteSeconds*1000;
+                stableFrames=0;castReadySince=-1;Status="Minijuego visible · lanzamiento cancelado";return;
+            }
+            if(!((ICastPointerRuntime)runtime).TickCastAim(now))
+            {castReadySince=-1;Status="Moviendo el puntero al agua…";return;}
+            if(castReadySince<0)castReadySince=now;
+            Status="Puntero en el agua · preparando lanzamiento";
+            if(now-castReadySince>=200)StartCastPress(now);
         }
         private bool HandleNoBait(double now)
         {
@@ -709,6 +735,7 @@ namespace SomeFishingGPO
                     if((TimerAvailable&&now>=nextPurchase)||low){PauseForPurchase(now);return;}
                 }
                 if (State == Phase.IdleWaiting || State == Phase.Jumping) { TickIdle(now); return; }
+                if(State==Phase.AimingCast){TickCastAim(now);return;}
                 if (State == Phase.Tracking && now - trackingStarted > 120000)
                 { Stop("Detenida: la ronda superó 2 minutos. Revisa la detección."); return; }
                 if (State == Phase.Preparing)
