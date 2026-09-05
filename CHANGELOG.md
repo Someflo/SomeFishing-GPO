@@ -1,6 +1,6 @@
 # Cambios
 
-## 0.3.1 — lectura del contador con franjas blancas (compilación local)
+## 0.3.1 — lectura del contador con franjas blancas (versión preliminar)
 
 - Corrige el caso en el que la vista muestra `x300` pero el lector no confirma el contador al incluir una franja blanca o recibir letras de distinto tamaño.
 - Como alternativa a la lectura original, aísla los píxeles amarillos/anaranjados y normaliza la altura del texto. Mantiene la confirmación entre dos escalas y rechaza cualquier número contradictorio.

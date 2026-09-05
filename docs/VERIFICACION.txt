@@ -1,5 +1,5 @@
 SOMEFISHING GPO 0.3.1 - VERIFICACIÓN DE LA COMPILACIÓN LOCAL
-Fecha: 2026-09-05. Esta compilación no se ha publicado en GitHub.
+Fecha de verificación: 2026-09-05. Compilación destinada a la versión preliminar 0.3.1.
 
 Compilación local x64 con C# 5 / .NET Framework y Windows SDK, sin advertencias.
 Versión del archivo: 0.3.1.0. Código completo incluido, sin dependencias descargadas.

@@ -2,7 +2,7 @@
 
 Macro visual para el minijuego de pesca de GPO en Windows. Su objetivo es ofrecer un programa sencillo, transparente y revisable, con el código completo y una forma de compilarlo localmente.
 
-**Versión 0.3.1: corrección de la lectura del contador con franjas blancas.** Incluye reposición de cebo y detección de su desaparición. Esta compilación se entrega para pruebas locales; su publicación en GitHub está pendiente. Todavía necesita validación en partidas reales. No promete una tasa de capturas, evitar todas las desconexiones ni una garantía absoluta de ausencia de virus.
+**Versión preliminar 0.3.1: corrección de la lectura del contador con franjas blancas.** Incluye reposición de cebo y detección de su desaparición. Todavía necesita validación en partidas reales. No promete una tasa de capturas, evitar todas las desconexiones ni una garantía absoluta de ausencia de virus.
 
 ![Vista del detector de SomeFishing GPO; imagen sintética](docs/Vista-previa.png)
 
@@ -14,7 +14,7 @@ El ciclo es **lanzar → esperar → seguir al pez → comprobar el cierre del m
 
 ## Descargar y empezar
 
-Extrae toda la carpeta del ZIP `SomeFishing-GPO-v0.3.1-win-x64.zip` y abre `SomeFishingGPO.exe`. Para conservar las zonas y opciones de una versión anterior, cierra la macro y copia su `ajustes.xml` a la nueva carpeta. Requiere Windows 10 u 11 de 64 bits, .NET Framework 4.8 y el cliente de escritorio de Roblox. La lectura de cebo y de los menús utiliza el reconocimiento de texto de Windows y necesita al menos un idioma OCR disponible para tu perfil. La aplicación no descarga ni instala idiomas. El SDK solo es necesario para recompilar, no para ejecutar el binario entregado.
+Descarga `SomeFishing-GPO-v0.3.1-win-x64.zip` de la [versión preliminar 0.3.1](https://github.com/Someflo/SomeFishing-GPO/releases/tag/v0.3.1), extrae toda la carpeta y abre `SomeFishingGPO.exe`. Para conservar las zonas y opciones de una versión anterior, cierra la macro y copia su `ajustes.xml` a la nueva carpeta. Requiere Windows 10 u 11 de 64 bits, .NET Framework 4.8 y el cliente de escritorio de Roblox. La lectura de cebo y de los menús utiliza el reconocimiento de texto de Windows y necesita al menos un idioma OCR disponible para tu perfil. La aplicación no descarga ni instala idiomas. El SDK solo es necesario para recompilar, no para ejecutar el binario entregado.
 
 1. Abre Roblox en ventana o sin bordes, equipa la caña y lanza una vez manualmente.
 2. Con el minijuego visible, pulsa **F6**. Dibuja **una sola zona** con toda la altura de la barra azul y sus dos bordes oscuros. Deja margen lateral para su pequeño balanceo. La barra verde puede quedar dentro.
