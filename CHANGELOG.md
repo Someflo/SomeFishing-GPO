@@ -1,5 +1,12 @@
 # Cambios
 
+## 0.3.3 — contador x2 y apertura de compra con E (compilación local)
+
+- Respaldo visual del x2 aportado cuando el OCR no lo reconoce. Dos máscaras binarias pequeñas, margen obligatorio y comparación de la forma completa; solo aportan 2 y nunca reemplazan cantidades contradictorias ni confirman cero.
+- Mantener E para abrir configurable de 100 a 3000 ms, con 1000 ms iniciales en lugar de 150. Se conserva la respuesta a F10, pérdida de foco y vigilancia de entradas. No hay reintentos automáticos de E tras un fallo.
+- El registro muestra la duración de E. Los ajustes anteriores siguen siendo compatibles, sin perder zonas u opciones.
+- 277 comprobaciones integradas y 347 con diez capturas privadas. La captura x2 y sus reconstrucciones se reconocen; se rechazan otras formas y recortes del x300 real. No se realizaron compras reales durante la validación.
+
 ## 0.3.2 — botones de prueba y diagnóstico de compra (compilación local)
 
 - Nueva pestaña Pruebas: simular 0 cebos y probar una compra real de una unidad, con cuenta atrás de tres segundos.

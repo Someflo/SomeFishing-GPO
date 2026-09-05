@@ -53,7 +53,7 @@ namespace SomeFishingGPO
         private readonly BaitMonitor previewBaitMonitor = new BaitMonitor();
         private bool previewingBait;
         private CheckBox autoBuy, buyMaximum;
-        private NumericUpDown buyQuantity, purchaseLimit;
+        private NumericUpDown buyQuantity, purchaseLimit, shopOpenTime;
         private Button shopAreaButton, shopPreviewButton;
         private Label shopAreaLabel, shopDetail;
         private PictureBox shopPreview;
@@ -82,7 +82,7 @@ namespace SomeFishingGPO
             string loadWarning = null;
             try { settings = testMode ? new Settings() : Settings.Load(settingsPath); }
             catch (Exception error) { settings = new Settings(); loadWarning = "No se pudieron cargar los ajustes: " + error.Message; }
-            Text = "SomeFishing GPO · v0.3.2";
+            Text = "SomeFishing GPO · v0.3.3";
             ClientSize = new Size(1040, 760);
             AutoScaleMode = AutoScaleMode.None;
             Font = new Font("Segoe UI", 10);
@@ -132,7 +132,7 @@ namespace SomeFishingGPO
         {
             LabelAt(this, "SOMEFISHING GPO", 24, 17, 620, 43, 25, true);
             LabelAt(this, "Mantener para subir. Soltar para bajar. Repetir a tu ritmo.", 26, 63, 760, 28, 11, false).ForeColor = muted;
-            LabelAt(this, "CÓDIGO INCLUIDO  /  v0.3.2", 771, 35, 250, 26, 10, true).ForeColor = accent;
+            LabelAt(this, "CÓDIGO INCLUIDO  /  v0.3.3", 771, 35, 250, 26, 10, true).ForeColor = accent;
             var tabs = new TabControl { Location = new Point(24, 105), Size = new Size(992, 567), Padding = new Point(22, 9) };
             var fishing = new TabPage("Pesca") { BackColor = Color.White };
             var calibration = new TabPage("Calibración") { BackColor = Color.White };
@@ -201,7 +201,8 @@ namespace SomeFishingGPO
             buyMaximum.CheckedChanged+=delegate{buyQuantity.Enabled=!buyMaximum.Checked&&!IsRunning;};
             shopPreviewButton=ButtonAt(shopTab,"Probar menús · sin clics",475,314,480,delegate{ToggleShopPreview();},false);
             shopDetail=LabelAt(shopTab,"Prueba Sí y cantidad cambiando los menús manualmente.",475,365,480,69,10,false);
-            LabelAt(shopTab,"E → Sí → cantidad → Comprar → … → pesca.\nUsa Peli. Si falla, se detiene sin repetir la compra.\nLos saltos se suspenden mientras compra.",22,383,435,75,9.5f,false).ForeColor=muted;
+            shopOpenTime=NumberAt(shopTab,"Mantener E para abrir (ms)",22,371,100,3000,1000);
+            LabelAt(shopTab,"Usa Peli. Un fallo detiene\nla compra sin repetirla.\nPrueba E con 1000 ms.",245,383,225,75,9.5f,false).ForeColor=muted;
             ButtonAt(shopTab,"Guardar ajustes",22,470,250,delegate{SaveSettings();},true);
 
             LabelAt(diagnosticsTab,"Prueba cada paso sin agotar tu cebo",22,18,930,38,18,true);
@@ -259,6 +260,7 @@ namespace SomeFishingGPO
             SetNumber(jumpSeconds, settings.IdleJumpSeconds);
             autoBuy.Checked=settings.AutoBuyBait;buyMaximum.Checked=settings.BuyMaximum;
             SetNumber(buyQuantity,settings.BuyQuantity);SetNumber(purchaseLimit,settings.PurchaseLimit);buyQuantity.Enabled=!buyMaximum.Checked;
+            SetNumber(shopOpenTime,settings.ShopOpenMilliseconds);
             UpdateAreaLabels();
         }
         private static void SetNumber(NumericUpDown control, int value)
@@ -274,7 +276,7 @@ namespace SomeFishingGPO
                 MonitorBait = monitorBait.Checked, BaitArea = settings.BaitArea,
                 IdleJumpEnabled = idleJump.Checked, IdleJumpSeconds = (int)jumpSeconds.Value,
                 AutoBuyBait=autoBuy.Checked,ShopArea=settings.ShopArea,BuyMaximum=buyMaximum.Checked,
-                BuyQuantity=(int)buyQuantity.Value,PurchaseLimit=(int)purchaseLimit.Value };
+                BuyQuantity=(int)buyQuantity.Value,PurchaseLimit=(int)purchaseLimit.Value,ShopOpenMilliseconds=(int)shopOpenTime.Value };
         }
         private void UpdateAreaLabels()
         {
@@ -445,11 +447,12 @@ namespace SomeFishingGPO
         {
             StopAll("Preparando prueba…");
             diagnosticLog.Clear();lastDiagnosticStep=null;
-            AppendDiagnostic("SomeFishing GPO 0.3.2 · "+DiagnosticName(kind));
+            AppendDiagnostic("SomeFishing GPO 0.3.3 · "+DiagnosticName(kind));
             if(testMode){AppendDiagnostic("Render de interfaz: entradas reales desactivadas.");return;}
             if(!CanStartDiagnostic(kind))return;
             Settings selected=ReadSettings().ForDiagnostic(kind);
             AppendDiagnostic("Compra: "+selected.AutoBuyBait+" · saltos: "+selected.IdleJumpEnabled+" · lector: "+selected.MonitorBait);
+            if(selected.AutoBuyBait)AppendDiagnostic("Mantener E: "+selected.ShopOpenMilliseconds+" ms. El diálogo debe abrirse antes de pulsar Sí.");
             if(selected.Area.IsEmpty)AppendDiagnostic("Sin zona de pesca: comprueba manualmente que no esté abierto el minijuego.");
             if(selected.AutoBuyBait&&!selected.MonitorBait)AppendDiagnostic("Lector apagado: podrá enviar Comprar, pero no confirmar la reposición.");
             AppendDiagnostic("Preparada. Vuelve a Roblox en 3 s. F10/F8 cancela. Como máximo 1 compra de 1 cebo o 1 salto.");
@@ -503,7 +506,7 @@ namespace SomeFishingGPO
             foreach (Control control in new Control[] { areaButton, pointButton, autoCast, castTime, biteTime, restTime,
                 tolerance, anticipation, holdUp, blueButton, markerButton, allowClicks,
                 monitorBait, idleJump, jumpSeconds, baitAreaButton, baitPreviewButton,
-                autoBuy,buyMaximum,buyQuantity,purchaseLimit,shopAreaButton,shopPreviewButton,
+                autoBuy,buyMaximum,buyQuantity,purchaseLimit,shopOpenTime,shopAreaButton,shopPreviewButton,
                 emptyTestButton,purchaseTestButton }) control.Enabled = value;
             buyQuantity.Enabled=value&&!buyMaximum.Checked;
         }
@@ -529,7 +532,7 @@ namespace SomeFishingGPO
             }
             if (hadSession && !testMode)
             {
-                lastStop = string.Format("SomeFishing GPO 0.3.2 · {0:yyyy-MM-dd HH:mm:ss}\r\n\r\n{1}\r\n\r\n" +
+                lastStop = string.Format("SomeFishing GPO 0.3.3 · {0:yyyy-MM-dd HH:mm:ss}\r\n\r\n{1}\r\n\r\n" +
                     "Estado al parar: {2}\r\nRondas terminadas: {3}\r\nDuración: {4:F1} s\r\n" +
                     "Mayor intervalo entre revisiones: {5:F0} ms\r\nLanzamiento: {6} ms · Espera: {7} s\r\n" +
                     "Anticipación: {8} ms · Tolerancia: {9}\r\nÚltima detección: {10}\r\n" +

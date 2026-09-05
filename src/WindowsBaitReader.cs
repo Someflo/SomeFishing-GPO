@@ -51,6 +51,7 @@ namespace SomeFishingGPO
             if (engine == null) return new BaitReading { Detail = "Windows no tiene un idioma de OCR disponible." };
             string first = Recognize(engine, image, 3), second = Recognize(engine, image, 5);
             int? a = BaitText.Parse(first), b = BaitText.Parse(second);
+            int? isolatedFirst=null, isolatedSecond=null;
             if (a.HasValue && a == b) return new BaitReading { Count = a, Detail = "Lectura: " + a.Value };
             // Conflicting numeric evidence must stay unknown; do not choose a preferred result.
             if (!a.HasValue || !b.HasValue || a == b)
@@ -60,10 +61,17 @@ namespace SomeFishingGPO
                 {
                     int? c = BaitText.Parse(Recognize(engine, isolated, 3));
                     int? d = BaitText.Parse(Recognize(engine, isolated, 5));
+                    isolatedFirst=c;isolatedSecond=d;
                     if (c.HasValue && c == d && (!a.HasValue || a == c) && (!b.HasValue || b == c))
                         return new BaitReading { Count = c, Detail = "Lectura: " + c.Value + " · texto amarillo aislado" };
                 }
             }
+            // A narrow positive-only visual reference handles the supplied touching
+            // x2 glyphs when Windows returns no text. It never supplies a zero and
+            // cannot override contradictory numeric OCR evidence at any scale.
+            if(CounterGlyphs.MatchTwo(image)&&(!a.HasValue||a==2)&&(!b.HasValue||b==2)
+                &&(!isolatedFirst.HasValue||isolatedFirst==2)&&(!isolatedSecond.HasValue||isolatedSecond==2))
+                return new BaitReading{Count=2,Detail="Lectura: 2 · referencia visual x2"};
             return new BaitReading { Detail = "Número no reconocido con claridad. Rodea x y la cantidad, sin bordes ni otros números." };
         }
         internal static Bitmap NormalizeCounterText(Bitmap image)

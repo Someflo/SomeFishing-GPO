@@ -31,6 +31,7 @@ namespace SomeFishingGPO
         public bool BuyMaximum = true;
         public int BuyQuantity = 5;
         public int PurchaseLimit = 10;
+        public int ShopOpenMilliseconds = 1000;
 
         public Settings ForDiagnostic(RunKind kind)
         {
@@ -47,7 +48,8 @@ namespace SomeFishingGPO
                 var areaCheck=(Settings)MemberwiseClone();areaCheck.AutoCast=false;areaCheck.MonitorBait=false;areaCheck.AutoBuyBait=false;
                 string issue=areaCheck.Validate(desktop,false);if(issue!=null)return issue;
             }
-            if(AutoBuyBait){string issue=ValidateShopArea(ShopArea,desktop);if(issue!=null)return issue;}
+            if(AutoBuyBait){string issue=ValidateShopArea(ShopArea,desktop);if(issue!=null)return issue;
+                if(ShopOpenMilliseconds<100||ShopOpenMilliseconds>3000)return "Mantener E debe estar entre 100 y 3000 ms.";}
             if(MonitorBait){string issue=ValidateBaitArea(BaitArea,desktop);if(issue!=null)return issue;}
             return null;
         }
@@ -66,6 +68,7 @@ namespace SomeFishingGPO
             if (MonitorBait) { string problem = ValidateBaitArea(BaitArea, desktop); if (problem != null) return problem; }
             if (AutoBuyBait)
             {
+                if(ShopOpenMilliseconds<100||ShopOpenMilliseconds>3000)return "Mantener E debe estar entre 100 y 3000 ms.";
                 if (!MonitorBait) return "Activa y configura la lectura del cebo antes de habilitar las compras.";
                 string problem = ValidateShopArea(ShopArea, desktop); if (problem != null) return problem;
                 if (BuyQuantity<1||BuyQuantity>9999||PurchaseLimit<1||PurchaseLimit>100) return "Revisa la cantidad de compra y el límite de compras por sesión.";

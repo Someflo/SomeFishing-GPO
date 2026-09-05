@@ -203,7 +203,10 @@ namespace SomeFishingGPO
             mouse.Release();jump.Release();if(mouse.PendingRelease||jump.PendingRelease)throw new InvalidOperationException("Hay una entrada pendiente de liberación.");
             if(key==0x11){controlKey.SetHeld(true);return;}
             shopKey.Release();if(shopKey.PendingRelease)throw new InvalidOperationException("No se pudo liberar la tecla anterior.");
-            currentShopKey=key;shopKey.Pulse(key==0x45?150:100);
+            currentShopKey=key;
+            // E can require a sustained interaction. The state machine releases it
+            // at the configured deadline; the 500 ms heartbeat guard still applies.
+            if(key==0x45)shopKey.SetHeld(true);else shopKey.Pulse(100);
         }
         public BaitReading ReadBait(double now)
         {

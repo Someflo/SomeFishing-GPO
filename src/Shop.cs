@@ -69,8 +69,9 @@ namespace SomeFishingGPO
         { this.settings=settings;this.game=game;this.shop=shop; }
         public void Start(double now)
         {
-            game.Release(); started=now; State=PurchasePhase.Opening; Status="Abriendo compra con E…";
-            shop.ShopKey(0x45,true); keyHeld=true; key=0x45; next=now+150; deadline=now+20000; after=now;
+            if(settings.ShopOpenMilliseconds<100||settings.ShopOpenMilliseconds>3000){Fail("Mantener E debe estar entre 100 y 3000 ms");return;}
+            game.Release(); started=now; State=PurchasePhase.Opening; Status="Manteniendo E durante "+settings.ShopOpenMilliseconds+" ms para abrir compra…";
+            shop.ShopKey(0x45,true); keyHeld=true; key=0x45; next=now+settings.ShopOpenMilliseconds; deadline=now+settings.ShopOpenMilliseconds+20000; after=now;
         }
         public void Fail(string reason) { game.Release();State=PurchasePhase.Failed;Status="Compra detenida: "+reason; }
         private void Wait(PurchasePhase state,double now,string message)
@@ -139,7 +140,7 @@ namespace SomeFishingGPO
             string reason;
             switch(State)
             {
-                case PurchasePhase.Confirming:reason="E se envió, pero no se confirmó la oferta con Sí/No. Revisa la distancia al barril y la zona";break;
+                case PurchasePhase.Confirming:reason="E se envió durante "+settings.ShopOpenMilliseconds+" ms, pero no se confirmó la oferta con Sí/No. Revisa la distancia al barril, Mantener E y la zona";break;
                 case PurchasePhase.Editing:reason="se pulsó Sí, pero no se confirmó el menú de cantidad y MAX";break;
                 case PurchasePhase.Verifying:reason="la cantidad escrita no se confirmó como "+Quantity+" dentro del MAX. Comprar no se pulsó";break;
                 case PurchasePhase.Finishing:reason="Comprar se envió una vez, pero no se reconoció el botón final «…». Revisa el diálogo y el saldo";break;

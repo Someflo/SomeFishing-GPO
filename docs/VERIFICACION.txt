@@ -1,45 +1,41 @@
-SOMEFISHING GPO 0.3.2 - VERIFICACIÓN DE LA COMPILACIÓN LOCAL
-Fecha: 2026-09-05. Esta compilación no se ha publicado en GitHub.
+SOMEFISHING GPO 0.3.3 - VERIFICACIÓN LOCAL
+Fecha: 2026-09-05. Compilación local, todavía no publicada en GitHub.
+Compilación x64 C# 5 / .NET Framework con Windows SDK, sin advertencias.
+277 comprobaciones integradas y 347 con diez capturas privadas aprobadas.
+Interfaz de Comprar cebo inspeccionada visualmente, sin activar el juego.
+No se enviaron clics, teclas ni compras reales durante las pruebas de desarrollo.
 
-Compilación local x64 con C# 5 / .NET Framework y Windows SDK, sin advertencias.
-Versión del archivo: 0.3.2.0. Código completo incluido, sin descargas de dependencias.
-238 comprobaciones integradas aprobadas; 296 al añadir nueve capturas privadas.
-Se inspeccionó visualmente la nueva pestaña Pruebas, sin activar la ventana.
-No se enviaron clics, teclas, saltos ni compras reales durante la validación.
-No se gastó Peli. Los botones de diagnóstico sí envían entradas al usarlos.
+CAMBIOS Y EVIDENCIA
+Windows OCR devolvía texto vacío para la nueva vista x2. Dos referencias
+binarias del x2 completo permiten reconocer el positivo 2, con confirmación
+temporal y sin reemplazar otra cantidad OCR. El respaldo no puede aportar cero.
+Se reconoce la vista ampliada y su reconstrucción a 38x33 y 52x45 píxeles.
+Se rechazan otras letras y cantidades sintéticas, selecciones parciales de x300,
+una imagen amarilla uniforme, el dígito sin x y una referencia muy tapada.
+No se incluyen capturas privadas: únicamente dos máscaras de texto de 32x24.
 
-CAMBIO VALIDADO
-Simulación de cero mediante tres lecturas distintas; acciones configuradas
-apagadas, salto único o compra prioritaria de una unidad. Prueba directa con
-cebo positivo. Conservación de ajustes, MAX y cantidad normal. Sin lanzamiento
-automático al finalizar, sin repetir Comprar y sin un segundo intento.
-Parada durante E y Espacio, pérdida de foco, rechazo del minijuego visible,
-regiones seleccionadas fuera de pantalla, fallo de cada paso y contador apagado.
-Se reinicia la secuencia del monitor al pasar del cero simulado al OCR real.
-Se conserva la validación anterior de pesca, OCR, desaparición y reposición.
+E se mantiene de 100 a 3000 ms (1000 iniciales). Se probaron los plazos exactos,
+duraciones inválidas, falta de diálogo sin repetición, F10 y pérdida de foco.
+La protección independiente sigue soltando E cuando no recibe latidos durante
+más de 500 ms. XML anterior sin el nuevo campo conserva las opciones existentes.
 
 LIMITACIONES
-La simulación de cero no valida el OCR ni la desaparición del contador real.
-La compra de prueba puede ejecutarse sin lector, pero no confirma reposición.
-Si no hay zona de pesca, no se comprueba visualmente si el minijuego está abierto.
-Tras Comprar y cerrar el diálogo, el lector confirma disponibilidad; un positivo
-no demuestra un incremento exacto de una unidad si ya había cebo antes.
-La pulsación de Espacio no demuestra que el personaje haya saltado en el juego.
-Las capturas permiten leer 300 y 295 comunes. Los 42 raros no son fiables.
-El recorte final aportado no muestra los puntos; su detector sigue validado
-con imágenes sintéticas. El flujo completo requiere una prueba en la partida.
-La vista x300 con franja blanca y su reconstrucción a 44x25 se leen; no son
-la captura original de la región de pantalla seleccionada por el usuario.
-No se garantiza evitar desconexiones ni preservar objetos del inventario.
+La imagen aportada es una vista ampliada, no la captura original de la selección.
+El respaldo visual solo conoce la forma x2; otros números siguen dependiendo
+del OCR, que puede fallar (incluidos los 42 raros observados anteriormente).
+La pulsación de E de 150 ms no abrió el diálogo en la prueba del usuario.
+El tiempo nuevo es ajustable y todavía debe comprobarse cerca del barril.
+El registro anterior indicaba que no se llegó a pulsar Comprar y la prueba
+terminó al perder Roblox el foco. No se ha probado la compra real en esta versión.
+El último recorte del menú no muestra los puntos; ese detector conserva su
+validación sintética. No se garantiza evitar desconexiones ni guardar objetos.
 
-Microsoft Defender completó el análisis del ejecutable con "found no threats".
+Microsoft Defender completó el análisis del ejecutable: "found no threats".
 Es un resultado local, no una garantía absoluta ni una certificación externa.
-El ejecutable no tiene firma comercial. Las imágenes privadas, los ajustes y
-los informes personales no se incluyen. Los PNG son renders de interfaz y
-ejemplos sintéticos. Se mantiene NOTICE.md, sin licencia concedida por ahora.
+No se descargaron dependencias. Sin firma comercial. Sin licencia concedida.
 
 SHA256 DEL EJECUTABLE
-8D3F28FD03D9A8E0A9913285074C7AE9D05F9175A25FEC9AC19F37E9465A1D66  SomeFishingGPO.exe
+112A49201699F397B5B1B8A1005D013ED4025C744664F168BE3AE3F3C821EE57  SomeFishingGPO.exe
 
 PRUEBAS INTEGRADAS
 OK: Windows INPUT structure matches the platform ABI
@@ -314,10 +310,49 @@ OK: Quantity verification timeout states that Buy was not clicked
 OK: Missing ellipsis reports the last incomplete step after one Buy click
 OK: Focus loss in a diagnostic releases held E without further clicks
 OK: Stopping during the test jump releases Space
+OK: Existing settings without an E duration default to a one-second hold and preserve old options
+OK: Interaction hold survives saving and diagnostic settings cloning
+OK: E stays held until its deadline: 100 ms
+OK: E releases at its configured deadline: 100 ms
+OK: No dialog means no second E or Buy: 100 ms
+OK: E stays held until its deadline: 1000 ms
+OK: E releases at its configured deadline: 1000 ms
+OK: No dialog means no second E or Buy: 1000 ms
+OK: E stays held until its deadline: 1800 ms
+OK: E releases at its configured deadline: 1800 ms
+OK: No dialog means no second E or Buy: 1800 ms
+OK: E stays held until its deadline: 3000 ms
+OK: E releases at its configured deadline: 3000 ms
+OK: No dialog means no second E or Buy: 3000 ms
+OK: Invalid E duration is rejected before input: 0
+OK: Invalid E duration is rejected before input: 99
+OK: Invalid E duration is rejected before input: 3001
+OK: Invalid E duration is rejected before input: 2147483647
+OK: Losing focus releases a long E hold before its configured duration
+OK: F10 interrupts a sustained E hold without waiting for its deadline
+OK: A sustained E lease can remain held while the controller is responsive
+OK: An unresponsive controller still releases sustained E after a 500 ms heartbeat gap
+OK: The x2 visual reference rejects unrelated lettering: x0
+OK: The x2 visual reference rejects unrelated lettering: x1
+OK: The x2 visual reference rejects unrelated lettering: x3
+OK: The x2 visual reference rejects unrelated lettering: x4
+OK: The x2 visual reference rejects unrelated lettering: x5
+OK: The x2 visual reference rejects unrelated lettering: x6
+OK: The x2 visual reference rejects unrelated lettering: x7
+OK: The x2 visual reference rejects unrelated lettering: x8
+OK: The x2 visual reference rejects unrelated lettering: x9
+OK: The x2 visual reference rejects unrelated lettering: x12
+OK: The x2 visual reference rejects unrelated lettering: x20
+OK: The x2 visual reference rejects unrelated lettering: x22
+OK: The x2 visual reference rejects unrelated lettering: x42
+OK: The x2 visual reference rejects unrelated lettering: xO
+OK: The x2 visual reference rejects unrelated lettering: xZ
+OK: The x2 visual reference rejects unrelated lettering: 2
+OK: A solid yellow region is not a two-bait counter
 UI: rendered off-screen non-activating form; no hotkeys registered and no clicks sent.
-PASS: 238 checks.
+PASS: 277 checks.
 
-VALIDACIÓN ADICIONAL CON CAPTURAS NO DISTRIBUIDAS
+VALIDACIÓN CON CAPTURAS NO DISTRIBUIDAS
 OK: Windows INPUT structure matches the platform ABI
 OK: Detect cyan bar, interior gap and thin white marker
 OK: Target center agrees with synthetic image
@@ -657,5 +692,57 @@ OK: Quantity verification timeout states that Buy was not clicked
 OK: Missing ellipsis reports the last incomplete step after one Buy click
 OK: Focus loss in a diagnostic releases held E without further clicks
 OK: Stopping during the test jump releases Space
+OK: Existing settings without an E duration default to a one-second hold and preserve old options
+OK: Interaction hold survives saving and diagnostic settings cloning
+OK: E stays held until its deadline: 100 ms
+OK: E releases at its configured deadline: 100 ms
+OK: No dialog means no second E or Buy: 100 ms
+OK: E stays held until its deadline: 1000 ms
+OK: E releases at its configured deadline: 1000 ms
+OK: No dialog means no second E or Buy: 1000 ms
+OK: E stays held until its deadline: 1800 ms
+OK: E releases at its configured deadline: 1800 ms
+OK: No dialog means no second E or Buy: 1800 ms
+OK: E stays held until its deadline: 3000 ms
+OK: E releases at its configured deadline: 3000 ms
+OK: No dialog means no second E or Buy: 3000 ms
+OK: Invalid E duration is rejected before input: 0
+OK: Invalid E duration is rejected before input: 99
+OK: Invalid E duration is rejected before input: 3001
+OK: Invalid E duration is rejected before input: 2147483647
+OK: Losing focus releases a long E hold before its configured duration
+OK: F10 interrupts a sustained E hold without waiting for its deadline
+OK: A sustained E lease can remain held while the controller is responsive
+OK: An unresponsive controller still releases sustained E after a 500 ms heartbeat gap
+OK: The x2 visual reference rejects unrelated lettering: x0
+OK: The x2 visual reference rejects unrelated lettering: x1
+OK: The x2 visual reference rejects unrelated lettering: x3
+OK: The x2 visual reference rejects unrelated lettering: x4
+OK: The x2 visual reference rejects unrelated lettering: x5
+OK: The x2 visual reference rejects unrelated lettering: x6
+OK: The x2 visual reference rejects unrelated lettering: x7
+OK: The x2 visual reference rejects unrelated lettering: x8
+OK: The x2 visual reference rejects unrelated lettering: x9
+OK: The x2 visual reference rejects unrelated lettering: x12
+OK: The x2 visual reference rejects unrelated lettering: x20
+OK: The x2 visual reference rejects unrelated lettering: x22
+OK: The x2 visual reference rejects unrelated lettering: x42
+OK: The x2 visual reference rejects unrelated lettering: xO
+OK: The x2 visual reference rejects unrelated lettering: xZ
+OK: The x2 visual reference rejects unrelated lettering: 2
+OK: A solid yellow region is not a two-bait counter
+OK: Real x300 lettering and partial selections cannot match x2: width 15
+OK: Real x300 lettering and partial selections cannot match x2: width 16
+OK: Real x300 lettering and partial selections cannot match x2: width 17
+OK: Real x300 lettering and partial selections cannot match x2: width 20
+OK: Real x300 lettering and partial selections cannot match x2: width 25
+OK: Real x300 lettering and partial selections cannot match x2: width 30
+OK: The supplied x2 preview is recognized as two bait
+OK: The x2 preview survives reconstructed size {Width=38, Height=33}
+OK: The x2 preview survives reconstructed size {Width=52, Height=45}
+OK: The x2 preview survives reconstructed size {Width=104, Height=91}
+OK: The positive visual fallback requires the x, not just a partial digit
+OK: A substantially obscured x2 counter remains unmatched
+TINY COUNTER LIMIT: fallback matches only the full supplied x2 glyph shape. It cannot supply zero; other digits still use OCR. The 38x33 case is reconstructed from the enlarged preview, not a native game capture.
 UI: rendered off-screen non-activating form; no hotkeys registered and no clicks sent.
-PASS: 296 checks.
+PASS: 347 checks.

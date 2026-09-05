@@ -2,7 +2,7 @@
 
 Macro visual para el minijuego de pesca de GPO en Windows. Su objetivo es ofrecer un programa sencillo, transparente y revisable, con el código completo y una forma de compilarlo localmente.
 
-**Compilación local 0.3.2: pruebas de falta de cebo y compra de una unidad, con un registro de pasos.** Incluye reposición de cebo y detección de su desaparición. Todavía necesita validación en partidas reales. No promete una tasa de capturas, evitar todas las desconexiones ni una garantía absoluta de ausencia de virus.
+**Compilación local 0.3.3: reconocimiento visual de x2 y tiempo ajustable al mantener E.** Incluye reposición de cebo y detección de su desaparición. Todavía necesita validación en partidas reales. No promete una tasa de capturas, evitar todas las desconexiones ni una garantía absoluta de ausencia de virus.
 
 ![Vista del detector de SomeFishing GPO; imagen sintética](docs/Vista-previa.png)
 
@@ -14,7 +14,7 @@ El ciclo es **lanzar → esperar → seguir al pez → comprobar el cierre del m
 
 ## Descargar y empezar
 
-Esta compilación se entrega como `SomeFishing-GPO-v0.3.2-win-x64.zip`: extrae toda la carpeta y abre `SomeFishingGPO.exe`. La 0.3.2 todavía no se ha publicado en GitHub; la última publicación es la [versión preliminar 0.3.1](https://github.com/Someflo/SomeFishing-GPO/releases/tag/v0.3.1). Para conservar las zonas y opciones de una versión anterior, cierra la macro y copia su `ajustes.xml` a la nueva carpeta. Requiere Windows 10 u 11 de 64 bits, .NET Framework 4.8 y el cliente de escritorio de Roblox. La lectura de cebo y de los menús utiliza el reconocimiento de texto de Windows y necesita al menos un idioma OCR disponible para tu perfil. La aplicación no descarga ni instala idiomas. El SDK solo es necesario para recompilar, no para ejecutar el binario entregado.
+Esta compilación se entrega como `SomeFishing-GPO-v0.3.3-win-x64.zip`: extrae toda la carpeta y abre `SomeFishingGPO.exe`. La 0.3.3 todavía no se ha publicado en GitHub; la última publicación es la [versión preliminar 0.3.1](https://github.com/Someflo/SomeFishing-GPO/releases/tag/v0.3.1). Para conservar las zonas y opciones de una versión anterior, cierra la macro y copia su `ajustes.xml` a la nueva carpeta. Requiere Windows 10 u 11 de 64 bits, .NET Framework 4.8 y el cliente de escritorio de Roblox. La lectura de cebo y de los menús utiliza el reconocimiento de texto de Windows y necesita al menos un idioma OCR disponible para tu perfil. La aplicación no descarga ni instala idiomas. El SDK solo es necesario para recompilar, no para ejecutar el binario entregado.
 
 1. Abre Roblox en ventana o sin bordes, equipa la caña y lanza una vez manualmente.
 2. Con el minijuego visible, pulsa **F6**. Dibuja **una sola zona** con toda la altura de la barra azul y sus dos bordes oscuros. Deja margen lateral para su pequeño balanceo. La barra verde puede quedar dentro.
@@ -104,6 +104,16 @@ El informe conserva estados y lecturas resumidas del detector, sin capturas ni t
 
 ![Botones de prueba y registro de pasos](docs/Pruebas.png)
 
+## Contador x2 y apertura con E
+
+La 0.3.3 añade un respaldo visual para el **x2 completo** de la captura aportada. Windows OCR no pudo leerlo con fiabilidad. El respaldo compara dos referencias binarias diminutas de la misma forma, exige un margen alrededor del texto y rechaza proporciones distintas. Solo devuelve **2**, nunca cero, y no sustituye una cantidad contradictoria que haya leído el OCR. Sigue necesitando confirmación en capturas nuevas. Otras cantidades siguen usando el lector de texto; no se ha creado un reconocedor visual general de todos los dígitos.
+
+La captura ampliada y sus reconstrucciones a 38 × 33 y 52 × 45 píxeles se reconocen. Esas reconstrucciones no sustituyen una captura original de la zona del juego. Pulsa **Probar lectura · sin teclas** para comprobar la selección real; cuando el botón dice Probar lectura, la vista está detenida y la imagen anterior puede seguir visible.
+
+En **Comprar cebo**, el ajuste **Mantener E para abrir (ms)** vale **1000 ms** por defecto y permite de 100 a 3000 ms. Antes la pulsación duraba 150 ms. Si E no abre el diálogo, comprueba que estás junto al barril y prueba 1500 ms con **PROBAR COMPRA · 1 cebo**. La prueba puede gastar Peli si el diálogo abre y se reconocen todos los pasos. No se repite E ni Comprar automáticamente cuando falla un paso.
+
+La tecla E se mantiene sin bloquear la interfaz. F10, pérdida de foco y la protección por falta de respuesta siguen soltándola. Los archivos de ajustes antiguos conservan sus opciones y adoptan 1000 ms cuando no tienen ese campo. El registro indica cuánto tiempo se mantuvo E; perder el foco de Roblox cancela la prueba antes de continuar.
+
 ## Ajustes iniciales
 
 | Ajuste | Valor | Función |
@@ -129,7 +139,7 @@ SomeFishingGPO.exe --self-test pruebas
 
 `compilar.cmd` utiliza `%WINDIR%\Microsoft.NET\Framework64\v4.0.30319\csc.exe`, busca los metadatos `Windows.winmd` del SDK y las bibliotecas locales de interoperabilidad. El modo `--self-test` no registra atajos globales ni envía clics o teclas reales; los botones de la pestaña Pruebas sí ejecutan acciones reales cuando los utilizas. Guarda el informe en `pruebas/resultados.txt`; el código de salida 0 indica éxito.
 
-Las **238 comprobaciones incluidas** cubren seguimiento, balanceo, exclusión del verde, contador, desaparición, espera, compra simulada, límite de compras, regreso a la pesca y liberación de entradas. La validación local alcanzó **296 comprobaciones** al añadir nueve capturas del desarrollo; esas capturas no se distribuyen. Incluye 33 comprobaciones nuevas de los modos de prueba, conservación de ajustes, un solo salto o compra, cancelaciones y mensajes de fallo. También incluye reconocimiento nativo del contador y de los menús de compra, así como la regresión de `x300` con una franja blanca. Los resultados de esta compilación y el análisis de Defender están en [VERIFICACION.txt](docs/VERIFICACION.txt).
+Las **277 comprobaciones incluidas** cubren seguimiento, balanceo, exclusión del verde, contador, desaparición, espera, compra simulada, límite de compras, regreso a la pesca y liberación de entradas. La validación local alcanzó **347 comprobaciones** al añadir diez capturas del desarrollo; esas capturas no se distribuyen. Incluye los modos de prueba, conservación de ajustes, salto o compra únicos, cancelaciones, duración configurable de E, compatibilidad de ajustes anteriores y rechazo de otras formas por el respaldo x2. También incluye reconocimiento nativo del contador y de los menús de compra, así como la regresión de `x300` con una franja blanca. Los resultados de esta compilación y el análisis de Defender están en [VERIFICACION.txt](docs/VERIFICACION.txt).
 
 Puedes comparar la huella del ejecutable descargado con [SHA256.txt](docs/SHA256.txt):
 
@@ -148,6 +158,7 @@ La huella corresponde al binario entregado. Una recompilación local puede produ
 | `src/App.cs` | Interfaz, zona, vista previa y teclas |
 | `src/Bait.cs` | Interpretación estricta del número y confirmación de lecturas |
 | `src/WindowsBaitReader.cs` | OCR local de Windows en segundo plano |
+| `src/CounterGlyphs.cs` | Referencias binarias del x2 completo; respaldo positivo, nunca cero |
 | `src/Shop.cs` | Flujo de compra, límites y comprobación de pasos |
 | `src/WindowsShopReader.cs` | Lectura local del diálogo y el botón final |
 | `src/ShopLabels.cs` | Formas de las letras Sí/No y lectura de campos numéricos cortos |

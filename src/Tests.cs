@@ -160,6 +160,7 @@ namespace SomeFishingGPO
                 TestPurchases(args);
                 TestCounterIsolation(args);
                 TestDiagnostics(output);
+                TestInteractionAndTinyCounter(output,args);
 
                 using (var form = new MainForm(true)) form.RenderExample(Path.Combine(output, "interfaz.png"));
                 results.Add("UI: rendered off-screen non-activating form; no hotkeys registered and no clicks sent.");
@@ -567,6 +568,9 @@ namespace SomeFishingGPO
         {game.Shop=ShopFrame(menu,seq,now,max,quantity);purchase.Tick(now,bait,confirmedAt);}
         private static PurchaseController ReadyToVerify(FakeGame game,Settings settings)
         {
+            // Existing menu tests use short interaction timing; the configurable
+            // sustained E and its cancellation are covered independently below.
+            settings.ShopOpenMilliseconds=150;
             var p=new PurchaseController(settings,game,game);p.Start(0);p.Tick(150,null,0);
             FeedShop(p,game,ShopMenu.Confirm,1,400,null,null,null,0);
             FeedShop(p,game,ShopMenu.Confirm,2,1400,null,null,null,0);
@@ -628,7 +632,7 @@ namespace SomeFishingGPO
             game=new FakeGame();p=ReadyToVerify(game,new Settings{BuyMaximum=false,BuyQuantity=80});
             Check(p.Quantity==5,"A fixed quantity is capped by the visible maximum");
             game.Active=false;p.Tick(3600,null,0);Check(p.State==PurchasePhase.Failed&&game.KeysDown.Count==0,"Losing game focus stops a purchase and releases keys");
-            game=new FakeGame();p=new PurchaseController(new Settings(),game,game);p.Start(0);p.Tick(150,null,0);
+            game=new FakeGame();p=new PurchaseController(new Settings{ShopOpenMilliseconds=150},game,game);p.Start(0);p.Tick(150,null,0);
             FeedShop(p,game,ShopMenu.Confirm,1,500,null,null,null,0);p.Tick(600,null,0);p.Tick(700,null,0);
             Check(game.ShopClicks==0,"Repeated cached shop frames cannot authorize Yes");
             p.Tick(21000,null,0);Check(p.State==PurchasePhase.Failed&&game.ShopClicks==0&&game.KeysDown.Count==0,"Missing menus time out without any purchase clicks");
@@ -772,7 +776,7 @@ namespace SomeFishingGPO
             }
             Check(!engine.Running&&engine.PurchaseSubmitted&&game.ShopClicks==4&&engine.Status.Contains("no se confirmó cebo"),"Without bait OCR the purchase test reports an unconfirmed outcome and cannot repeat Buy");
 
-            game=new FakeGame();engine=new FishingEngine(new Settings(),game,RunKind.PurchaseTest);engine.Start(0);engine.Tick(1000);engine.Tick(1150);engine.Tick(22000);
+            game=new FakeGame();engine=new FishingEngine(new Settings(),game,RunKind.PurchaseTest);engine.Start(0);engine.Tick(1000);engine.Tick(2000);engine.Tick(22500);
             Check(!engine.Running&&!engine.PurchaseSubmitted&&engine.Status.Contains("E se envió")&&engine.PurchaseDetail.Contains("Comprar enviado: False"),"Diagnostic distinguishes an E/menu failure from a submitted purchase");
             game=new FakeGame();var p=ReadyToVerify(game,new Settings{BuyMaximum=false,BuyQuantity=1});
             game.Active=false;p.Tick(3600,null,0);
@@ -789,6 +793,73 @@ namespace SomeFishingGPO
             game=new FakeGame();engine=new FishingEngine(new Settings{IdleJumpEnabled=true},game,RunKind.EmptyBaitTest);engine.Start(0);
             for(int t=0;t<=3000;t+=50)engine.Tick(t);engine.Stop("F10");engine.Tick(4000);
             Check(game.Jumps==1&&!game.JumpHeld&&!engine.Running,"Stopping during the test jump releases Space");
+        }
+        private static void TestInteractionAndTinyCounter(string output,string[] args)
+        {
+            string legacyPath=Path.Combine(output,"legacy-interaction-settings.xml");
+            File.WriteAllText(legacyPath,"<Settings><MonitorBait>true</MonitorBait><BuyQuantity>5</BuyQuantity></Settings>");
+            var settings=Settings.Load(legacyPath);
+            Check(settings.ShopOpenMilliseconds==1000&&settings.MonitorBait&&settings.BuyQuantity==5,"Existing settings without an E duration default to a one-second hold and preserve old options");
+            settings.ShopOpenMilliseconds=1800;settings.Save(Path.Combine(output,"interaction-settings.xml"));
+            var loaded=Settings.Load(Path.Combine(output,"interaction-settings.xml"));
+            Check(loaded.ShopOpenMilliseconds==1800&&loaded.ForDiagnostic(RunKind.PurchaseTest).ShopOpenMilliseconds==1800,"Interaction hold survives saving and diagnostic settings cloning");
+            foreach(int duration in new[]{100,1000,1800,3000})
+            {
+                var game=new FakeGame();var p=new PurchaseController(new Settings{ShopOpenMilliseconds=duration},game,game);p.Start(0);
+                p.Tick(duration-1,null,0);
+                Check(p.State==PurchasePhase.Opening&&game.KeysDown.Contains(0x45),"E stays held until its deadline: "+duration+" ms");
+                p.Tick(duration,null,0);
+                Check(p.State==PurchasePhase.Confirming&&game.KeysDown.Count==0,"E releases at its configured deadline: "+duration+" ms");
+                p.Tick(duration+20001,null,0);
+                Check(p.State==PurchasePhase.Failed&&!p.Submitted&&game.KeyLog.FindAll(delegate(string value){return value=="+69";}).Count==1,"No dialog means no second E or Buy: "+duration+" ms");
+            }
+            foreach(int duration in new[]{0,99,3001,int.MaxValue})
+            {
+                var game=new FakeGame();var p=new PurchaseController(new Settings{ShopOpenMilliseconds=duration},game,game);p.Start(0);
+                Check(p.State==PurchasePhase.Failed&&game.KeyLog.Count==0,"Invalid E duration is rejected before input: "+duration);
+            }
+            var focus=new FakeGame();var engine=new FishingEngine(new Settings{ShopOpenMilliseconds=3000},focus,RunKind.PurchaseTest);engine.Start(0);engine.Tick(1000);engine.Tick(1500);
+            focus.Active=false;engine.Tick(1550);
+            Check(!engine.Running&&focus.KeysDown.Count==0&&!engine.PurchaseSubmitted,"Losing focus releases a long E hold before its configured duration");
+            focus=new FakeGame();engine=new FishingEngine(new Settings{ShopOpenMilliseconds=3000},focus,RunKind.PurchaseTest);engine.Start(0);engine.Tick(1000);engine.Stop("F10");engine.Tick(4500);
+            Check(focus.KeysDown.Count==0&&focus.ShopClicks==0,"F10 interrupts a sustained E hold without waiting for its deadline");
+            double now=0;bool held=false;var lease=new MouseLease(delegate(bool down){held=down;},delegate{return true;},delegate{return now;},null,"E");
+            lease.SetHeld(true);for(int t=100;t<=1000;t+=100){now=t;lease.Beat();}
+            Check(held,"A sustained E lease can remain held while the controller is responsive");
+            now=1501;lease.Watchdog();Check(!held&&lease.Fault!=null,"An unresponsive controller still releases sustained E after a 500 ms heartbeat gap");
+            foreach(string text in new[]{"x0","x1","x3","x4","x5","x6","x7","x8","x9","x12","x20","x22","x42","xO","xZ","2"})
+            using(var bitmap=new Bitmap(120,45))using(var font=new Font("Segoe UI",18,FontStyle.Bold))
+            {
+                using(var g=Graphics.FromImage(bitmap)){g.Clear(Color.FromArgb(35,35,35));g.DrawString(text,font,Brushes.Orange,8,4);}
+                Check(!CounterGlyphs.MatchTwo(bitmap),"The x2 visual reference rejects unrelated lettering: "+text);
+            }
+            using(var blank=new Bitmap(38,33))
+            {
+                using(var g=Graphics.FromImage(blank))g.Clear(Color.Orange);
+                Check(!CounterGlyphs.MatchTwo(blank),"A solid yellow region is not a two-bait counter");
+            }
+            if(args.Length>5)using(var source=new Bitmap(args[5]))
+            {
+                foreach(int width in new[]{15,16,17,20,25,30})using(var crop=source.Clone(new Rectangle(208,119,width,17),PixelFormat.Format32bppArgb))
+                    Check(!CounterGlyphs.MatchTwo(crop),"Real x300 lettering and partial selections cannot match x2: width "+width);
+            }
+            if(args.Length>11)using(var source=new Bitmap(args[11]))using(var crop=source.Clone(new Rectangle(660,84,104,91),PixelFormat.Format32bppArgb))
+            {
+                Check(WindowsBaitReader.ReadImage(crop).Count==2,"The supplied x2 preview is recognized as two bait");
+                foreach(Size size in new[]{new Size(38,33),new Size(52,45),new Size(104,91)})using(var resized=new Bitmap(size.Width,size.Height))
+                {
+                    using(var g=Graphics.FromImage(resized)){g.InterpolationMode=System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;g.DrawImage(crop,0,0,size.Width,size.Height);}
+                    Check(WindowsBaitReader.ReadImage(resized).Count==2,"The x2 preview survives reconstructed size "+size);
+                }
+                using(var digitOnly=crop.Clone(new Rectangle(64,0,40,91),PixelFormat.Format32bppArgb))
+                    Check(!CounterGlyphs.MatchTwo(digitOnly),"The positive visual fallback requires the x, not just a partial digit");
+                using(var damaged=(Bitmap)crop.Clone())
+                {
+                    using(var g=Graphics.FromImage(damaged))g.FillRectangle(Brushes.Black,25,45,60,18);
+                    Check(!CounterGlyphs.MatchTwo(damaged),"A substantially obscured x2 counter remains unmatched");
+                }
+                results.Add("TINY COUNTER LIMIT: fallback matches only the full supplied x2 glyph shape. It cannot supply zero; other digits still use OCR. The 38x33 case is reconstructed from the enlarged preview, not a native game capture.");
+            }
         }
         private sealed class FakeGame : IGameRuntime, IShopRuntime
         {
