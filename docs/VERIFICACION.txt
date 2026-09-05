@@ -1,34 +1,33 @@
-SomeFishing GPO 0.5.2 - verificación local, 2026-09-05
+SomeFishing GPO 0.5.3 - verificación local, 2026-09-05
 
-371 comprobaciones integradas; 447 al añadir once capturas privadas del usuario.
+378 comprobaciones integradas; 454 al añadir once capturas privadas del usuario.
 La cuenta incluye los tres idiomas OCR instalados en el equipo de desarrollo.
-Regresión: el usuario observó que el puntero llegaba al número pero el clic
-activaba Sí. El registro solo prueba los destinos solicitados, no la recepción
-de cada evento por Roblox.
 
-La pulsación ahora incorpora movimiento absoluto, coordenada y botón presionado
-en el mismo evento. Mantiene escritorio virtual y movimiento sin agrupar.
-La liberación normal y de protección no incluye movimiento de ratón.
-Sí se pulsa una sola vez, incluso si persiste la misma oferta. Se elimina su
-reintento anterior. El doble clic conserva un destino propio del número central.
-La prueba reproduce los puntos de la incidencia: un Sí en 1102,928 y dos
-pulsaciones en el número 1251,931. Se prueban escritorios múltiples, negativos
-y de mayor resolución sin enviar entradas a aplicaciones.
-Un destino de cantidad superpuesto a Comprar bloquea el doble clic y escritura.
-Un diálogo final inesperado antes de verificar la cantidad detiene el proceso
-sin solicitar otra compra. El registro incluye ambas posiciones detectadas.
+Regresión comunicada: E abre el diálogo en la 0.5.2, el lector reconoce Sí y
+Windows acepta su pulsación, pero no se confirma el menú de cantidad. La última
+prueba del usuario permanece en ese paso. La 0.5.1 sí llegó al menú de cantidad.
 
-Regresiones conservadas: contador, umbral y rearme, cronómetro, MAX y cantidad
-independiente de prueba, pausa de 700 ms, doble clic de 250 ms, idioma OCR,
-cancelación entre pulsaciones y liberación de entradas. Interfaz renderizada
-sin activación ni atajos. La detección de Sí, cantidad y tres puntos se verifica
-con las imágenes privadas del desarrollo; no se distribuyen esas imágenes.
+Se restaura para Sí, Comprar y los tres puntos el movimiento y clic separados
+de la 0.5.1: movimiento absoluto 0xC001 y pulsación simple 0x0002.
+El evento combinado con coordenadas se limita al número central: ambas
+pulsaciones reciben un destino propio y el tipo Quantity explícito.
+Las pruebas verifican toda la secuencia Button, Quantity, Quantity, Button,
+Button, el formato de los eventos y la posición sobre escritorios múltiples.
+La liberación del botón conserva el formato 0x0004 sin movimiento en ambos casos.
+Tipos de clic inválidos se rechazan antes de enviar entradas.
+
+Se conserva un solo Sí, las pausas y las comprobaciones del campo y MAX.
+El registro distingue clic clásico de pulsación con posición. Se mantienen
+umbral, cronómetro, idiomas, cantidad de prueba, cierre final y protecciones.
+También se conservan las regresiones de OCR y los once ejemplos privados.
+Los renders de la interfaz se producen sin activación ni atajos.
 
 No se enviaron teclas/clics a Roblox ni se gastó Peli en estas pruebas.
-El cambio necesita una prueba dentro del juego para comprobar que recibe
-los clics en el número. No se afirma que las comprobaciones simuladas demuestren
-una compra real. Cronómetro no confirma un aumento del inventario.
-El OCR sigue pudiendo dejar cantidades y tamaños desconocidos, incluido x42.
+No se afirma que restaurar el método anterior demuestre una compra real.
+El usuario debe comprobar de nuevo Sí y el doble clic dentro del juego.
+La recepción de la pulsación por Roblox no se comprueba con un registro de
+SendInput ni con entradas simuladas. Cronómetro no verifica un aumento exacto
+del inventario. El OCR sigue dejando algunos tamaños y cantidades desconocidos.
 
 Microsoft Defender completó el análisis del ejecutable: found no threats.
 Esto no es una garantía absoluta ni una certificación. Sin firma comercial.
@@ -37,7 +36,7 @@ No se incluyen capturas privadas, preferencias, registros personales ni credenci
 Los PNG de documentación son renders y ejemplos sintéticos.
 
 SHA256 DEL EJECUTABLE
-64E86DE3C601FBF46D56393B0D7CB1CD8724EF059C44F2443431B97E019DB7FA  SomeFishingGPO.exe
+AC53184740C78A1216E38F2294E4712C94194470CEEEF89EC569F296E7AE39C7  SomeFishingGPO.exe
 
 PRUEBAS INTEGRADAS
 OK: Windows INPUT structure matches the platform ABI
@@ -261,6 +260,7 @@ OK: The final ellipsis can close while the dialogue obscures the bait counter
 OK: Old positive bait readings cannot confirm a new purchase
 OK: A closed dialogue with fresh bait completes replenishment
 OK: Completed purchase cannot repeat any click
+OK: Full purchase routes Yes, Buy and closing through classic clicks; only the number uses coordinate presses
 OK: A fixed quantity is capped by the visible maximum
 OK: Losing game focus stops a purchase and releases keys
 OK: Repeated cached shop frames cannot authorize Yes
@@ -430,14 +430,20 @@ OK: Typing waits for the field after the second click
 OK: Ctrl+A follows the double-click and configured pause
 OK: Cancellation between the number clicks prevents the second click and all typing
 OK: Replaying the reported coordinates keeps Yes separate from both central clicks
+OK: The initial Yes regression uses the classic event while preserving both numeric targets
 OK: A numeric target overlapping the purchase button blocks the double-click and typing
 OK: An unexpected final dialogue before quantity verification stops without another purchase
 OK: The click event itself carries the exact central target across the virtual desktop: {X=0,Y=0,Width=1920,Height=1080}
 OK: Aiming carries the same position without pressing or releasing a button
+OK: Yes uses the same separate movement and plain down flags as working version 0.5.1
 OK: The click event itself carries the exact central target across the virtual desktop: {X=-1920,Y=-200,Width=4480,Height=1640}
 OK: Aiming carries the same position without pressing or releasing a button
+OK: Yes uses the same separate movement and plain down flags as working version 0.5.1
 OK: The click event itself carries the exact central target across the virtual desktop: {X=0,Y=0,Width=3840,Height=2160}
 OK: Aiming carries the same position without pressing or releasing a button
+OK: Yes uses the same separate movement and plain down flags as working version 0.5.1
+OK: Both purchase click modes release without moving the cursor after a safety stop
+OK: An invalid purchase click kind is rejected before sending input
 OK: Pointer input rejects a destination outside the desktop before sending an event
 OK: OCR language and step pause survive saving and diagnostic cloning
 OK: Unknown OCR language never silently changes to a different engine
@@ -446,7 +452,7 @@ OK: An enumerated installed OCR language is selectable: es-ES
 OK: An enumerated installed OCR language is selectable: es-MX
 OK: Unavailable OCR language is a read error, not a closed dialogue
 UI: rendered off-screen non-activating form; no hotkeys registered and no clicks sent.
-PASS: 371 checks.
+PASS: 378 checks.
 
 VALIDACIÓN CON CAPTURAS NO DISTRIBUIDAS
 OK: Windows INPUT structure matches the platform ABI
@@ -728,6 +734,7 @@ OK: The final ellipsis can close while the dialogue obscures the bait counter
 OK: Old positive bait readings cannot confirm a new purchase
 OK: A closed dialogue with fresh bait completes replenishment
 OK: Completed purchase cannot repeat any click
+OK: Full purchase routes Yes, Buy and closing through classic clicks; only the number uses coordinate presses
 OK: A fixed quantity is capped by the visible maximum
 OK: Losing game focus stops a purchase and releases keys
 OK: Repeated cached shop frames cannot authorize Yes
@@ -921,14 +928,20 @@ OK: Typing waits for the field after the second click
 OK: Ctrl+A follows the double-click and configured pause
 OK: Cancellation between the number clicks prevents the second click and all typing
 OK: Replaying the reported coordinates keeps Yes separate from both central clicks
+OK: The initial Yes regression uses the classic event while preserving both numeric targets
 OK: A numeric target overlapping the purchase button blocks the double-click and typing
 OK: An unexpected final dialogue before quantity verification stops without another purchase
 OK: The click event itself carries the exact central target across the virtual desktop: {X=0,Y=0,Width=1920,Height=1080}
 OK: Aiming carries the same position without pressing or releasing a button
+OK: Yes uses the same separate movement and plain down flags as working version 0.5.1
 OK: The click event itself carries the exact central target across the virtual desktop: {X=-1920,Y=-200,Width=4480,Height=1640}
 OK: Aiming carries the same position without pressing or releasing a button
+OK: Yes uses the same separate movement and plain down flags as working version 0.5.1
 OK: The click event itself carries the exact central target across the virtual desktop: {X=0,Y=0,Width=3840,Height=2160}
 OK: Aiming carries the same position without pressing or releasing a button
+OK: Yes uses the same separate movement and plain down flags as working version 0.5.1
+OK: Both purchase click modes release without moving the cursor after a safety stop
+OK: An invalid purchase click kind is rejected before sending input
 OK: Pointer input rejects a destination outside the desktop before sending an event
 OK: OCR language and step pause survive saving and diagnostic cloning
 OK: Unknown OCR language never silently changes to a different engine
@@ -941,4 +954,4 @@ OK: Double-click target lands on the displayed numeric field in the supplied ima
 OK: The actual ellipsis is recognized among HUD labels and targeted at its visible position
 OK: The same HUD without its three dots cannot authorize a closing click
 UI: rendered off-screen non-activating form; no hotkeys registered and no clicks sent.
-PASS: 447 checks.
+PASS: 454 checks.

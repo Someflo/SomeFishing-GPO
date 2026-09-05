@@ -43,11 +43,12 @@ namespace SomeFishingGPO
         public static bool QuantityConfirmation(string text) { return Buy(text)||Yes(text); }
         public static bool Dots(string text) { return Regex.IsMatch(Clean(text),@"\A(?:\.[\s]*){3}\z") || Clean(text)=="…"; }
     }
+    public enum ShopClickKind { Button, Quantity }
     public interface IShopRuntime
     {
         ShopReading ReadShop(double now);
         void ShopAim(Point point);
-        void ShopClick(Point point);
+        void ShopClick(Point point,ShopClickKind kind);
         void ShopKey(int key, bool held);
     }
     public enum PurchasePhase { Opening, Confirming, Editing, Selecting, Clearing, Typing, Verifying, Finishing, Closing, Complete, Failed }
@@ -85,10 +86,10 @@ namespace SomeFishingGPO
         public void Fail(string reason) { game.Release();State=PurchasePhase.Failed;Status="Compra detenida: "+reason; }
         private void Wait(PurchasePhase state,double now,string message)
         { State=state;after=now+settings.ShopSettleMilliseconds;deadline=now+20000;candidate=null;stable=0;aimedAction=null;Status=message; }
-        private void Click(string name,Point target)
+        private void Click(string name,Point target,ShopClickKind kind=ShopClickKind.Button)
         {
             if(Math.Abs((long)target.X-aimedPoint.X)>3||Math.Abs((long)target.Y-aimedPoint.Y)>3)throw new InvalidOperationException("El destino del clic cambió después de apuntar.");
-            shop.ShopClick(target);lastClick=name+" pulsado en "+target.X+", "+target.Y;
+            shop.ShopClick(target,kind);lastClick=name+" pulsado en "+target.X+", "+target.Y+" · "+(kind==ShopClickKind.Quantity?"posición en la pulsación":"clic clásico");
         }
         private bool FreshStable(ShopReading reading,double now)
         {
@@ -132,7 +133,7 @@ namespace SomeFishingGPO
             if(State==PurchasePhase.Selecting)
             {
                 if(now<next)return;
-                if(numberClicks==1){Click("Cantidad · segundo clic",quantityPoint);numberClicks=2;next=now+Math.Max(300,settings.ShopSettleMilliseconds);return;}
+                if(numberClicks==1){Click("Cantidad · segundo clic",quantityPoint,ShopClickKind.Quantity);numberClicks=2;next=now+Math.Max(300,settings.ShopSettleMilliseconds);return;}
                 if(!keyHeld){shop.ShopKey(0x11,true);Press(0x41,now);return;}
                 shop.ShopKey(0x41,false);shop.ShopKey(0x11,false);keyHeld=false;Press(0x08,now);State=PurchasePhase.Clearing;return;
             }
@@ -156,7 +157,7 @@ namespace SomeFishingGPO
             {
                 Quantity=settings.BuyMaximum&&!settings.PurchaseByTimer?reading.Maximum.Value:Math.Min(settings.BuyQuantity,reading.Maximum.Value);
                 if(Quantity<1){Fail("el máximo disponible es 0");return;}
-                digits=Quantity.ToString(CultureInfo.InvariantCulture);quantityPoint=reading.Middle;Click("Cantidad · primer clic",quantityPoint);numberClicks=1;
+                digits=Quantity.ToString(CultureInfo.InvariantCulture);quantityPoint=reading.Middle;Click("Cantidad · primer clic",quantityPoint,ShopClickKind.Quantity);numberClicks=1;
                 State=PurchasePhase.Selecting;deadline=now+20000;next=now+250;Status="Doble clic en cantidad · luego escribir "+digits+"…";return;
             }
             if(State==PurchasePhase.Verifying&&reading.Menu==ShopMenu.Quantity&&reading.Quantity==Quantity&&reading.Maximum>=Quantity)

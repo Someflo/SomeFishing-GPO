@@ -3,7 +3,7 @@ using System.Reflection;
 [assembly: AssemblyTitle("SomeFishing GPO")]
 [assembly: AssemblyProduct("SomeFishing GPO")]
 [assembly: AssemblyDescription("Macro visual de pesca para Windows con código disponible para revisión.")]
-[assembly: AssemblyVersion("0.5.2.0")]
-[assembly: AssemblyFileVersion("0.5.2.0")]
-[assembly: AssemblyInformationalVersion("0.5.2")]
+[assembly: AssemblyVersion("0.5.3.0")]
+[assembly: AssemblyFileVersion("0.5.3.0")]
+[assembly: AssemblyInformationalVersion("0.5.3")]
 

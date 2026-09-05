@@ -634,6 +634,7 @@ namespace SomeFishingGPO
             FeedShop(p,game,ShopMenu.Unknown,14,10000,null,null,5,9950);
             Check(p.State==PurchasePhase.Complete&&game.KeysDown.Count==0,"A closed dialogue with fresh bait completes replenishment");
             p.Tick(11000,5,10900);Check(game.ShopClicks==5,"Completed purchase cannot repeat any click");
+            Check(game.ClickKinds.Count==5&&game.ClickKinds[0]==ShopClickKind.Button&&game.ClickKinds[1]==ShopClickKind.Quantity&&game.ClickKinds[2]==ShopClickKind.Quantity&&game.ClickKinds[3]==ShopClickKind.Button&&game.ClickKinds[4]==ShopClickKind.Button,"Full purchase routes Yes, Buy and closing through classic clicks; only the number uses coordinate presses");
             game=new FakeGame();p=ReadyToVerify(game,new Settings{BuyMaximum=false,BuyQuantity=80});
             Check(p.Quantity==5,"A fixed quantity is capped by the visible maximum");
             game.Active=false;p.Tick(3600,null,0);Check(p.State==PurchasePhase.Failed&&game.KeysDown.Count==0,"Losing game focus stops a purchase and releases keys");
@@ -1054,7 +1055,8 @@ namespace SomeFishingGPO
                 double t=1000+i*300;game.Shop=ShopFrame(ShopMenu.Quantity,i+3,t,295,1);game.Shop.Left=new Point(1102,931);game.Shop.Middle=new Point(1251,931);p.Tick(t,null,0);
             }
             p.Tick(1550,null,0);
-            Check(game.ClickPoints.Count==3&&game.ClickPoints[0]==new Point(1102,928)&&game.ClickPoints[1]==new Point(1251,931)&&game.ClickPoints[2]==new Point(1251,931),"Replaying the reported coordinates keeps Yes separate from both central clicks");p.Fail("test");
+            Check(game.ClickPoints.Count==3&&game.ClickPoints[0]==new Point(1102,928)&&game.ClickPoints[1]==new Point(1251,931)&&game.ClickPoints[2]==new Point(1251,931),"Replaying the reported coordinates keeps Yes separate from both central clicks");
+            Check(game.ClickKinds[0]==ShopClickKind.Button&&game.ClickKinds[1]==ShopClickKind.Quantity&&game.ClickKinds[2]==ShopClickKind.Quantity,"The initial Yes regression uses the classic event while preserving both numeric targets");p.Fail("test");
 
             game=new FakeGame();p=new PurchaseController(new Settings{ShopOpenMilliseconds=150,ShopSettleMilliseconds=200},game,game);p.Start(0);p.Tick(150,null,0);
             FeedShop(p,game,ShopMenu.Confirm,1,400,null,null,null,0);FeedShop(p,game,ShopMenu.Confirm,2,600,null,null,null,0);
@@ -1065,11 +1067,17 @@ namespace SomeFishingGPO
             Check(p.State==PurchasePhase.Failed&&!p.Submitted&&game.ShopClicks==3,"An unexpected final dialogue before quantity verification stops without another purchase");
 
             foreach(var desktop in new[]{new Rectangle(0,0,1920,1080),new Rectangle(-1920,-200,4480,1640),new Rectangle(0,0,3840,2160)}){
-                var target=new Point(1251,931);var down=Native.PointerInput(target,desktop,true);var move=Native.PointerInput(target,desktop,false);
+                var target=new Point(1251,931);var down=Native.ShopClickInput(target,desktop,ShopClickKind.Quantity);var move=Native.PointerInput(target,desktop,false);
                 var received=new Point(desktop.Left+(int)((long)down.Data.Mouse.X*desktop.Width/65536),desktop.Top+(int)((long)down.Data.Mouse.Y*desktop.Height/65536));
                 Check(received==target&&(down.Data.Mouse.Flags&0xE003u)==0xE003u&&(down.Data.Mouse.Flags&4u)==0,"The click event itself carries the exact central target across the virtual desktop: "+desktop);
                 Check(move.Data.Mouse.X==down.Data.Mouse.X&&move.Data.Mouse.Y==down.Data.Mouse.Y&&(move.Data.Mouse.Flags&6u)==0,"Aiming carries the same position without pressing or releasing a button");
+                var button=Native.ShopClickInput(new Point(1102,928),desktop,ShopClickKind.Button);
+                Check(button.Type==0&&button.Data.Mouse.Flags==2&&button.Data.Mouse.X==0&&button.Data.Mouse.Y==0&&move.Data.Mouse.Flags==0xC001u,"Yes uses the same separate movement and plain down flags as working version 0.5.1");
             }
+            var release=Native.MouseButtonInput(false);
+            Check(release.Type==0&&release.Data.Mouse.Flags==4&&release.Data.Mouse.X==0&&release.Data.Mouse.Y==0,"Both purchase click modes release without moving the cursor after a safety stop");
+            bool invalidClickKind=false;try{Native.ShopClickInput(new Point(250,180),new Rectangle(0,0,1920,1080),(ShopClickKind)9);}catch(ArgumentOutOfRangeException){invalidClickKind=true;}
+            Check(invalidClickKind,"An invalid purchase click kind is rejected before sending input");
             bool badPointer=false;try{Native.PointerInput(new Point(-1,20),new Rectangle(0,0,1920,1080),true);}catch(InvalidOperationException){badPointer=true;}
             Check(badPointer,"Pointer input rejects a destination outside the desktop before sending an event");
 
@@ -1110,6 +1118,7 @@ namespace SomeFishingGPO
             public ShopReading Shop=new ShopReading();
             public int ShopClicks;
             public readonly System.Collections.Generic.List<Point> ClickPoints=new System.Collections.Generic.List<Point>();
+            public readonly System.Collections.Generic.List<ShopClickKind> ClickKinds=new System.Collections.Generic.List<ShopClickKind>();
             public readonly System.Collections.Generic.HashSet<int> KeysDown=new System.Collections.Generic.HashSet<int>();
             public readonly System.Collections.Generic.List<string> KeyLog=new System.Collections.Generic.List<string>();
             public Observation Current = new Observation();
@@ -1121,7 +1130,7 @@ namespace SomeFishingGPO
             public int Aims;
             private Point cursor;
             public void ShopAim(Point point){if(!Active)throw new Exception("Inactive shop aim");Aims++;cursor=point;}
-            public void ShopClick(Point point){if(!Active)throw new Exception("Inactive shop click");if(Math.Abs(point.X-cursor.X)>3||Math.Abs(point.Y-cursor.Y)>3)throw new Exception("Click target was not aimed at");ShopClicks++;ClickPoints.Add(point);}
+            public void ShopClick(Point point,ShopClickKind kind){if(!Active)throw new Exception("Inactive shop click");if(Math.Abs(point.X-cursor.X)>3||Math.Abs(point.Y-cursor.Y)>3)throw new Exception("Click target was not aimed at");ShopClicks++;ClickPoints.Add(point);ClickKinds.Add(kind);}
             public void ShopKey(int key,bool held){if(held&&!Active)throw new Exception("Inactive shop key");KeyLog.Add((held?"+":"-")+key);if(held)KeysDown.Add(key);else KeysDown.Remove(key);}
             public Observation Observe() { return Current; }
             public int BaitReads;

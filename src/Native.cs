@@ -32,7 +32,7 @@ namespace SomeFishingGPO
 
         internal static void MouseButton(bool down)
         {
-            var input = new Input { Type = 0, Data = new InputUnion { Mouse = new MouseInput { Flags = down ? 0x0002u : 0x0004u } } };
+            var input = MouseButtonInput(down);
             if (SendInput(1, new[] { input }, Marshal.SizeOf(typeof(Input))) != 1)
                 throw new Win32Exception(Marshal.GetLastWin32Error(), "Windows no aceptó el clic. Ejecuta ambos programas como usuario normal.");
         }
@@ -49,6 +49,8 @@ namespace SomeFishingGPO
             var input=PurchaseInput(key,down);
             if(SendInput(1,new[]{input},Marshal.SizeOf(typeof(Input)))!=1)throw new Win32Exception(Marshal.GetLastWin32Error(),"Windows no aceptó la tecla de compra "+key+". Ejecuta ambos programas como usuario normal.");
         }
+        internal static Input MouseButtonInput(bool down)
+        { return new Input { Type=0,Data=new InputUnion { Mouse=new MouseInput { Flags=down?0x0002u:0x0004u } } }; }
         // Pure construction is testable without sending input to any application.
         internal static Input PurchaseInput(int key,bool down)
         {
@@ -63,12 +65,19 @@ namespace SomeFishingGPO
         {
             SendPointerInput(PointerInput(point,SystemInformation.VirtualScreen,false));
         }
-        internal static void ShopMouseDown(Point point)
+        internal static void ShopMouseDown(Point point,ShopClickKind kind)
         {
-            // Carry the target in the down event itself, not only in an earlier
-            // cursor movement. Button-up stays position-free so a safety release
-            // never moves the pointer after focus loss.
-            SendPointerInput(PointerInput(point,SystemInformation.VirtualScreen,true));
+            SendPointerInput(ShopClickInput(point,SystemInformation.VirtualScreen,kind));
+        }
+        internal static Input ShopClickInput(Point point,Rectangle desktop,ShopClickKind kind)
+        {
+            if(!Settings.ContainsSafely(desktop,new Rectangle(point,new Size(1,1))))throw new InvalidOperationException("El botón está fuera del escritorio.");
+            // The original plain press opened Yes in the user's 0.5.1 run.
+            // Restrict the combined-coordinate event to the numeric field.
+            // Safety button-up remains position-free for every click kind.
+            if(kind==ShopClickKind.Button)return MouseButtonInput(true);
+            if(kind==ShopClickKind.Quantity)return PointerInput(point,desktop,true);
+            throw new ArgumentOutOfRangeException("kind");
         }
         private static void SendPointerInput(Input input)
         {
@@ -79,7 +88,7 @@ namespace SomeFishingGPO
             if(!Settings.ContainsSafely(desktop,new Rectangle(point,new Size(1,1))))throw new InvalidOperationException("El botón está fuera del escritorio.");
             return new Input {Type=0,Data=new InputUnion {Mouse=new MouseInput {
                 X=(int)(((long)point.X-desktop.Left)*65536/desktop.Width+32768/desktop.Width),
-                Y=(int)(((long)point.Y-desktop.Top)*65536/desktop.Height+32768/desktop.Height),Flags=down?0xE003u:0xE001u}}};
+                Y=(int)(((long)point.Y-desktop.Top)*65536/desktop.Height+32768/desktop.Height),Flags=down?0xE003u:0xC001u}}};
         }
         internal static Rectangle ClientBounds(IntPtr window)
         {
@@ -125,6 +134,7 @@ namespace SomeFishingGPO
         private readonly bool requireFishingArea;
         private readonly MouseLease mouse;
         private Point? shopMouseDownPoint;
+        private ShopClickKind shopMouseDownKind;
         private readonly MouseLease jump;
         private readonly MouseLease shopKey, controlKey;
         private volatile int currentShopKey;
@@ -143,7 +153,7 @@ namespace SomeFishingGPO
             shopReader=new WindowsShopReader(settings.OcrLanguage);baitReader=new WindowsBaitReader(settings.OcrLanguage);
             this.requireFishingArea=requireFishingArea;
             mouse = new MouseLease(delegate(bool down) { if (sendClicks) {
-                if(down&&shopMouseDownPoint.HasValue)Native.ShopMouseDown(shopMouseDownPoint.Value);else Native.MouseButton(down);
+                if(down&&shopMouseDownPoint.HasValue)Native.ShopMouseDown(shopMouseDownPoint.Value,shopMouseDownKind);else Native.MouseButton(down);
             } },
                 delegate { return ForegroundAllowed; }, delegate { return clock.Elapsed.TotalMilliseconds; }, delegate { return safetyReason; });
             jump = new MouseLease(delegate(bool down) { if (sendClicks) Native.JumpKey(down); },
@@ -229,13 +239,13 @@ namespace SomeFishingGPO
             Release();if(PendingRelease)throw new InvalidOperationException("Hay una entrada pendiente de liberación.");
             if(sendClicks)Native.MovePointer(point);
         }
-        public void ShopClick(Point point)
+        public void ShopClick(Point point,ShopClickKind kind)
         {
             Guard();if(!settings.AutoBuyBait||!Settings.ContainsSafely(settings.ShopArea,new Rectangle(point,new Size(1,1))))throw new InvalidOperationException("Clic de compra fuera de la zona autorizada.");
             Point actual=Cursor.Position;
             if(sendClicks&&(Math.Abs(actual.X-point.X)>3||Math.Abs(actual.Y-point.Y)>3))throw new InvalidOperationException("El puntero no llegó al botón o se movió. Clic cancelado; suelta el ratón durante la prueba.");
             Release();if(PendingRelease)throw new InvalidOperationException("Hay una entrada pendiente de liberación.");
-            shopMouseDownPoint=point;
+            shopMouseDownPoint=point;shopMouseDownKind=kind;
             try{mouse.Pulse(180);}finally{shopMouseDownPoint=null;}
         }
         public void ShopKey(int key,bool held)

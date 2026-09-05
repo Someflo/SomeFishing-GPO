@@ -1,5 +1,12 @@
 # Cambios
 
+## 0.5.3 — restaurar el clic inicial de Sí (compilación local)
+
+- Restaura el movimiento separado y la pulsación clásica de la 0.5.1 para Sí, Comprar y «…», tras el fallo del clic inicial comunicado con la 0.5.2.
+- Limita el evento con coordenadas a las dos pulsaciones del número central. El controlador indica explícitamente el tipo de clic; el registro muestra cuál se envió.
+- Mantiene un único Sí, las pausas, el doble clic solo en la cantidad, la comprobación de MAX y las paradas de protección. Conserva todos los ajustes existentes.
+- 378 comprobaciones integradas y 454 con once capturas privadas. Se verifica la secuencia completa de tipos de clic y el formato clásico de Sí. El resultado dentro de Roblox sigue pendiente de comprobar.
+
 ## 0.5.2 — destino del doble clic (compilación local)
 
 - Cada pulsación de compra incluye la coordenada de destino en el propio evento del ratón, además del movimiento previo. La liberación de protección conserva su comportamiento sin mover el puntero.
