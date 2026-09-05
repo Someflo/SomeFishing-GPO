@@ -1,0 +1,370 @@
+SOMEFISHING GPO 0.1.0 - PRIMERA PUBLICACIÓN
+
+Compilación local x64 con .NET Framework, sin advertencias.
+Nombre del producto: SomeFishing GPO. Versión del archivo: 0.1.0.0.
+El modo --self-test pasó 111 comprobaciones con los archivos incluidos en el repositorio.
+La validación local pasó 159 comprobaciones al añadir tres capturas del desarrollo no publicadas.
+No se enviaron clics al juego durante estas pruebas.
+Se inspeccionó el render de la interfaz con el nombre y versión nuevos.
+
+Microsoft Defender completó el análisis del ejecutable con el resultado "found no threats".
+Ese resultado describe el análisis local de este binario, no una garantía absoluta de seguridad.
+El ejecutable no está firmado con un certificado comercial. Se publica el código completo.
+El proyecto se publica sin conceder una licencia por ahora, según NOTICE.md.
+
+Las capturas originales, los ajustes personales y los informes locales de uso no forman parte del repositorio.
+Las imágenes incluidas en docs/ son renders con ejemplos sintéticos.
+La detección y el controlador requieren validación adicional en partidas reales.
+El historial previo del prototipo no se presenta como una auditoría independiente de esta publicación.
+
+SHA256 DEL EJECUTABLE
+616BA22B9ED36992B568BDDED1A60587A41A19C6A7A90F355BCACC55FDDE07D3  SomeFishingGPO.exe
+
+PRUEBAS INCLUIDAS EN EL REPOSITORIO
+OK: Windows INPUT structure matches the platform ABI
+OK: Detect cyan bar, interior gap and thin white marker
+OK: Target center agrees with synthetic image
+OK: Marker center agrees with synthetic image
+OK: Empty images do not start tracking
+OK: Missing white marker is rejected
+OK: Hold raises the gray gap toward a fish above it
+OK: Release lowers the gray gap toward a fish below it
+OK: Losing detection releases the controller
+OK: Reverse direction is supported
+SIMULATION: slow, inside the gap 100,0 % (synthetic physics, not a live-game guarantee)
+OK: Controller follows slow simulated fish movement
+SIMULATION: fast with direction jumps, inside the gap 98,2 % (synthetic physics, not a live-game guarantee)
+OK: Controller follows fast and abrupt simulated fish movement
+OK: New installations start with the user's 220 ms cast and 15 s bite wait
+STABILITY: physics=0, target=0, delay=0 ms; mean error 2,95 -> 2,14 px; inside 100,0 % -> 100,0 %
+OK: Tracking remains at least comparable with noise: physics 0, target 0, delay 0
+STABILITY: physics=0, target=0, delay=50 ms; mean error 11,19 -> 6,02 px; inside 98,0 % -> 99,2 %
+OK: Tracking remains at least comparable with noise: physics 0, target 0, delay 1
+STABILITY: physics=0, target=1, delay=0 ms; mean error 3,46 -> 2,55 px; inside 100,0 % -> 100,0 %
+OK: Tracking remains at least comparable with noise: physics 0, target 1, delay 0
+STABILITY: physics=0, target=1, delay=50 ms; mean error 9,48 -> 6,27 px; inside 93,5 % -> 100,0 %
+OK: Tracking remains at least comparable with noise: physics 0, target 1, delay 1
+STABILITY: physics=0, target=2, delay=0 ms; mean error 6,65 -> 6,13 px; inside 92,3 % -> 92,6 %
+OK: Tracking remains at least comparable with noise: physics 0, target 2, delay 0
+STABILITY: physics=0, target=2, delay=50 ms; mean error 11,39 -> 9,19 px; inside 85,0 % -> 88,6 %
+OK: Tracking remains at least comparable with noise: physics 0, target 2, delay 1
+STABILITY: physics=1, target=0, delay=0 ms; mean error 4,54 -> 3,39 px; inside 100,0 % -> 100,0 %
+OK: Tracking remains at least comparable with noise: physics 1, target 0, delay 0
+STABILITY: physics=1, target=0, delay=50 ms; mean error 16,26 -> 11,22 px; inside 57,1 % -> 86,5 %
+OK: Tracking remains at least comparable with noise: physics 1, target 0, delay 1
+STABILITY: physics=1, target=1, delay=0 ms; mean error 4,65 -> 3,72 px; inside 100,0 % -> 100,0 %
+OK: Tracking remains at least comparable with noise: physics 1, target 1, delay 0
+STABILITY: physics=1, target=1, delay=50 ms; mean error 15,58 -> 12,42 px; inside 67,2 % -> 81,2 %
+OK: Tracking remains at least comparable with noise: physics 1, target 1, delay 1
+STABILITY: physics=1, target=2, delay=0 ms; mean error 7,14 -> 5,17 px; inside 95,5 % -> 97,0 %
+OK: Tracking remains at least comparable with noise: physics 1, target 2, delay 0
+STABILITY: physics=1, target=2, delay=50 ms; mean error 14,95 -> 12,75 px; inside 74,7 % -> 84,7 %
+OK: Tracking remains at least comparable with noise: physics 1, target 2, delay 1
+STABILITY: physics=2, target=0, delay=0 ms; mean error 4,14 -> 3,31 px; inside 99,3 % -> 100,0 %
+OK: Tracking remains at least comparable with noise: physics 2, target 0, delay 0
+STABILITY: physics=2, target=0, delay=50 ms; mean error 29,56 -> 9,45 px; inside 35,0 % -> 87,4 %
+OK: Tracking remains at least comparable with noise: physics 2, target 0, delay 1
+STABILITY: physics=2, target=1, delay=0 ms; mean error 4,75 -> 3,42 px; inside 99,2 % -> 100,0 %
+OK: Tracking remains at least comparable with noise: physics 2, target 1, delay 0
+STABILITY: physics=2, target=1, delay=50 ms; mean error 25,72 -> 11,43 px; inside 43,4 % -> 80,7 %
+OK: Tracking remains at least comparable with noise: physics 2, target 1, delay 1
+STABILITY: physics=2, target=2, delay=0 ms; mean error 9,42 -> 7,76 px; inside 90,1 % -> 90,1 %
+OK: Tracking remains at least comparable with noise: physics 2, target 2, delay 0
+STABILITY: physics=2, target=2, delay=50 ms; mean error 24,47 -> 18,84 px; inside 49,1 % -> 63,4 %
+OK: Tracking remains at least comparable with noise: physics 2, target 2, delay 1
+STABILITY: physics=3, target=0, delay=0 ms; mean error 5,21 -> 3,91 px; inside 100,0 % -> 100,0 %
+OK: Tracking remains at least comparable with noise: physics 3, target 0, delay 0
+STABILITY: physics=3, target=0, delay=50 ms; mean error 27,23 -> 9,67 px; inside 40,2 % -> 96,9 %
+OK: Tracking remains at least comparable with noise: physics 3, target 0, delay 1
+STABILITY: physics=3, target=1, delay=0 ms; mean error 4,63 -> 3,37 px; inside 99,1 % -> 100,0 %
+OK: Tracking remains at least comparable with noise: physics 3, target 1, delay 0
+STABILITY: physics=3, target=1, delay=50 ms; mean error 25,16 -> 12,45 px; inside 45,2 % -> 79,8 %
+OK: Tracking remains at least comparable with noise: physics 3, target 1, delay 1
+STABILITY: physics=3, target=2, delay=0 ms; mean error 9,33 -> 7,78 px; inside 85,9 % -> 89,8 %
+OK: Tracking remains at least comparable with noise: physics 3, target 2, delay 0
+STABILITY: physics=3, target=2, delay=50 ms; mean error 23,26 -> 19,11 px; inside 49,9 % -> 62,1 %
+OK: Tracking remains at least comparable with noise: physics 3, target 2, delay 1
+STABILITY: physics=4, target=0, delay=0 ms; mean error 5,83 -> 3,77 px; inside 99,3 % -> 100,0 %
+OK: Tracking remains at least comparable with noise: physics 4, target 0, delay 0
+STABILITY: physics=4, target=0, delay=50 ms; mean error 24,18 -> 14,27 px; inside 36,4 % -> 73,9 %
+OK: Tracking remains at least comparable with noise: physics 4, target 0, delay 1
+STABILITY: physics=4, target=1, delay=0 ms; mean error 5,97 -> 4,34 px; inside 99,3 % -> 100,0 %
+OK: Tracking remains at least comparable with noise: physics 4, target 1, delay 0
+STABILITY: physics=4, target=1, delay=50 ms; mean error 23,19 -> 18,00 px; inside 41,8 % -> 59,9 %
+OK: Tracking remains at least comparable with noise: physics 4, target 1, delay 1
+STABILITY: physics=4, target=2, delay=0 ms; mean error 7,04 -> 5,90 px; inside 96,0 % -> 97,1 %
+OK: Tracking remains at least comparable with noise: physics 4, target 2, delay 0
+STABILITY: physics=4, target=2, delay=50 ms; mean error 23,27 -> 18,89 px; inside 45,2 % -> 58,8 %
+OK: Tracking remains at least comparable with noise: physics 4, target 2, delay 1
+OK: Stationary-fish mean error falls by at least 25 percent across ten synthetic cases
+STATIONARY: aggregate mean error reduced by 48,8 %; synthetic physics only.
+OK: Casting holds only after the preparation delay
+OK: Changing focus during a cast stops and releases
+OK: A stopped engine cannot send a delayed press
+OK: An already visible minigame skips casting
+OK: A single missing frame releases without counting a round
+OK: Sustained disappearance completes one round
+OK: A closed menu triggers the next cast after the rest
+OK: Explicit stop releases the mouse
+OK: Missing fish with a visible menu does not count as a round
+OK: Persistent tracking loss stops without casting into an open menu
+OK: A visible but unrecognized minigame is never treated as a casting screen
+OK: Three failed attempts stop further casting
+OK: Manual launching never moves or clicks while waiting
+OK: Valid screen coordinates accepted
+OK: Off-screen capture is rejected
+OK: Settings round trip preserves coordinates
+OK: Overflowing coordinates are rejected
+OK: Valid negative monitor coordinates are supported
+OK: Null XML configuration is rejected without returning a null Settings object
+OK: DTD and entity declarations in settings are rejected
+OK: A solid blue background is not treated as the fishing menu
+OK: Tracking timeout still stops when valid and invalid frames alternate
+OK: Independent watchdog releases a click when UI heartbeats stop
+OK: Expired leases cannot send a new mouse-down
+OK: Regular UI heartbeats renew the lease while casting or tracking
+OK: A focus or F10 safety signal releases a click without a UI tick
+OK: Rejected button-up remains pending instead of discarding its state
+OK: A pending release is retried successfully without another mouse-down
+OK: Normal release does not prevent the next tracking press
+OK: The stop report preserves the specific safety reason
+OK: Follow lateral sway in a wide area, frame 1
+OK: Follow lateral sway in a wide area, frame 2
+OK: Follow lateral sway in a wide area, frame 3
+OK: Follow lateral sway in a wide area, frame 4
+OK: Follow lateral sway in a wide area, frame 5
+OK: Follow lateral sway in a wide area, frame 6
+OK: Follow lateral sway in a wide area, frame 7
+OK: Follow lateral sway in a wide area, frame 8
+OK: Follow lateral sway in a wide area, frame 9
+OK: Follow lateral sway in a wide area, frame 10
+OK: Follow lateral sway in a wide area, frame 11
+OK: Follow lateral sway in a wide area, frame 12
+OK: Follow lateral sway in a wide area, frame 13
+OK: Follow lateral sway in a wide area, frame 14
+OK: Follow lateral sway in a wide area, frame 15
+OK: Follow lateral sway in a wide area, frame 16
+OK: Follow lateral sway in a wide area, frame 17
+OK: Follow lateral sway in a wide area, frame 18
+OK: Follow lateral sway in a wide area, frame 19
+OK: Follow lateral sway in a wide area, frame 20
+OK: Follow lateral sway in a wide area, frame 21
+OK: Follow lateral sway in a wide area, frame 22
+OK: Follow lateral sway in a wide area, frame 23
+OK: Follow lateral sway in a wide area, frame 24
+OK: Follow lateral sway in a wide area, frame 25
+OK: Follow lateral sway in a wide area, frame 26
+OK: Follow lateral sway in a wide area, frame 27
+OK: Follow lateral sway in a wide area, frame 28
+OK: Follow lateral sway in a wide area, frame 29
+OK: Follow lateral sway in a wide area, frame 30
+OK: Lateral sway with a green progress bar does not trigger a recast or end the round
+OK: Green is excluded even with maximum tolerance and an incorrectly calibrated blue color
+OK: Two plausible blue bars are treated as ambiguous, with no tracking click
+OK: Opening the selector does not commit the previous zone automatically
+OK: Confirming the visible rectangle preserves negative monitor coordinates
+OK: Canceling selection returns no replacement for the saved zone
+OK: An undersized rectangle stays open for correction instead of being saved
+UI: rendered off-screen non-activating form; no hotkeys registered and no clicks sent.
+PASS: 111 checks.
+
+VALIDACIÓN LOCAL ADICIONAL CON CAPTURAS NO PUBLICADAS
+OK: Windows INPUT structure matches the platform ABI
+OK: Detect cyan bar, interior gap and thin white marker
+OK: Target center agrees with synthetic image
+OK: Marker center agrees with synthetic image
+OK: Empty images do not start tracking
+OK: Missing white marker is rejected
+OK: Detect the bar in the screenshot supplied by the user
+OK: Screenshot: marker near y=225
+OK: Screenshot: target in the dark gap above the marker
+IMAGE: marker y=224,5; target y=165,0; target bounds 137..193
+OK: New screenshot 1: detect the gray gap at the bottom endpoint
+OK: New screenshot 1: white fish line near y=365
+OK: New screenshot 1: controlled gap near the bottom
+OK: New screenshot 1: hold to raise the gap toward the fish
+IMAGE 2: fish y=364,5; controlled gap y=500,5
+OK: New screenshot 2: detect the interior gap and fish
+OK: New screenshot 2: white fish line near y=342
+OK: New screenshot 2: gap above the fish
+OK: New screenshot 2: release to lower the gap toward the fish
+IMAGE 3: fish y=342,5; controlled gap y=291,0
+OK: Hold raises the gray gap toward a fish above it
+OK: Release lowers the gray gap toward a fish below it
+OK: Losing detection releases the controller
+OK: Reverse direction is supported
+SIMULATION: slow, inside the gap 100,0 % (synthetic physics, not a live-game guarantee)
+OK: Controller follows slow simulated fish movement
+SIMULATION: fast with direction jumps, inside the gap 98,2 % (synthetic physics, not a live-game guarantee)
+OK: Controller follows fast and abrupt simulated fish movement
+OK: New installations start with the user's 220 ms cast and 15 s bite wait
+STABILITY: physics=0, target=0, delay=0 ms; mean error 2,95 -> 2,14 px; inside 100,0 % -> 100,0 %
+OK: Tracking remains at least comparable with noise: physics 0, target 0, delay 0
+STABILITY: physics=0, target=0, delay=50 ms; mean error 11,19 -> 6,02 px; inside 98,0 % -> 99,2 %
+OK: Tracking remains at least comparable with noise: physics 0, target 0, delay 1
+STABILITY: physics=0, target=1, delay=0 ms; mean error 3,46 -> 2,55 px; inside 100,0 % -> 100,0 %
+OK: Tracking remains at least comparable with noise: physics 0, target 1, delay 0
+STABILITY: physics=0, target=1, delay=50 ms; mean error 9,48 -> 6,27 px; inside 93,5 % -> 100,0 %
+OK: Tracking remains at least comparable with noise: physics 0, target 1, delay 1
+STABILITY: physics=0, target=2, delay=0 ms; mean error 6,65 -> 6,13 px; inside 92,3 % -> 92,6 %
+OK: Tracking remains at least comparable with noise: physics 0, target 2, delay 0
+STABILITY: physics=0, target=2, delay=50 ms; mean error 11,39 -> 9,19 px; inside 85,0 % -> 88,6 %
+OK: Tracking remains at least comparable with noise: physics 0, target 2, delay 1
+STABILITY: physics=1, target=0, delay=0 ms; mean error 4,54 -> 3,39 px; inside 100,0 % -> 100,0 %
+OK: Tracking remains at least comparable with noise: physics 1, target 0, delay 0
+STABILITY: physics=1, target=0, delay=50 ms; mean error 16,26 -> 11,22 px; inside 57,1 % -> 86,5 %
+OK: Tracking remains at least comparable with noise: physics 1, target 0, delay 1
+STABILITY: physics=1, target=1, delay=0 ms; mean error 4,65 -> 3,72 px; inside 100,0 % -> 100,0 %
+OK: Tracking remains at least comparable with noise: physics 1, target 1, delay 0
+STABILITY: physics=1, target=1, delay=50 ms; mean error 15,58 -> 12,42 px; inside 67,2 % -> 81,2 %
+OK: Tracking remains at least comparable with noise: physics 1, target 1, delay 1
+STABILITY: physics=1, target=2, delay=0 ms; mean error 7,14 -> 5,17 px; inside 95,5 % -> 97,0 %
+OK: Tracking remains at least comparable with noise: physics 1, target 2, delay 0
+STABILITY: physics=1, target=2, delay=50 ms; mean error 14,95 -> 12,75 px; inside 74,7 % -> 84,7 %
+OK: Tracking remains at least comparable with noise: physics 1, target 2, delay 1
+STABILITY: physics=2, target=0, delay=0 ms; mean error 4,14 -> 3,31 px; inside 99,3 % -> 100,0 %
+OK: Tracking remains at least comparable with noise: physics 2, target 0, delay 0
+STABILITY: physics=2, target=0, delay=50 ms; mean error 29,56 -> 9,45 px; inside 35,0 % -> 87,4 %
+OK: Tracking remains at least comparable with noise: physics 2, target 0, delay 1
+STABILITY: physics=2, target=1, delay=0 ms; mean error 4,75 -> 3,42 px; inside 99,2 % -> 100,0 %
+OK: Tracking remains at least comparable with noise: physics 2, target 1, delay 0
+STABILITY: physics=2, target=1, delay=50 ms; mean error 25,72 -> 11,43 px; inside 43,4 % -> 80,7 %
+OK: Tracking remains at least comparable with noise: physics 2, target 1, delay 1
+STABILITY: physics=2, target=2, delay=0 ms; mean error 9,42 -> 7,76 px; inside 90,1 % -> 90,1 %
+OK: Tracking remains at least comparable with noise: physics 2, target 2, delay 0
+STABILITY: physics=2, target=2, delay=50 ms; mean error 24,47 -> 18,84 px; inside 49,1 % -> 63,4 %
+OK: Tracking remains at least comparable with noise: physics 2, target 2, delay 1
+STABILITY: physics=3, target=0, delay=0 ms; mean error 5,21 -> 3,91 px; inside 100,0 % -> 100,0 %
+OK: Tracking remains at least comparable with noise: physics 3, target 0, delay 0
+STABILITY: physics=3, target=0, delay=50 ms; mean error 27,23 -> 9,67 px; inside 40,2 % -> 96,9 %
+OK: Tracking remains at least comparable with noise: physics 3, target 0, delay 1
+STABILITY: physics=3, target=1, delay=0 ms; mean error 4,63 -> 3,37 px; inside 99,1 % -> 100,0 %
+OK: Tracking remains at least comparable with noise: physics 3, target 1, delay 0
+STABILITY: physics=3, target=1, delay=50 ms; mean error 25,16 -> 12,45 px; inside 45,2 % -> 79,8 %
+OK: Tracking remains at least comparable with noise: physics 3, target 1, delay 1
+STABILITY: physics=3, target=2, delay=0 ms; mean error 9,33 -> 7,78 px; inside 85,9 % -> 89,8 %
+OK: Tracking remains at least comparable with noise: physics 3, target 2, delay 0
+STABILITY: physics=3, target=2, delay=50 ms; mean error 23,26 -> 19,11 px; inside 49,9 % -> 62,1 %
+OK: Tracking remains at least comparable with noise: physics 3, target 2, delay 1
+STABILITY: physics=4, target=0, delay=0 ms; mean error 5,83 -> 3,77 px; inside 99,3 % -> 100,0 %
+OK: Tracking remains at least comparable with noise: physics 4, target 0, delay 0
+STABILITY: physics=4, target=0, delay=50 ms; mean error 24,18 -> 14,27 px; inside 36,4 % -> 73,9 %
+OK: Tracking remains at least comparable with noise: physics 4, target 0, delay 1
+STABILITY: physics=4, target=1, delay=0 ms; mean error 5,97 -> 4,34 px; inside 99,3 % -> 100,0 %
+OK: Tracking remains at least comparable with noise: physics 4, target 1, delay 0
+STABILITY: physics=4, target=1, delay=50 ms; mean error 23,19 -> 18,00 px; inside 41,8 % -> 59,9 %
+OK: Tracking remains at least comparable with noise: physics 4, target 1, delay 1
+STABILITY: physics=4, target=2, delay=0 ms; mean error 7,04 -> 5,90 px; inside 96,0 % -> 97,1 %
+OK: Tracking remains at least comparable with noise: physics 4, target 2, delay 0
+STABILITY: physics=4, target=2, delay=50 ms; mean error 23,27 -> 18,89 px; inside 45,2 % -> 58,8 %
+OK: Tracking remains at least comparable with noise: physics 4, target 2, delay 1
+OK: Stationary-fish mean error falls by at least 25 percent across ten synthetic cases
+STATIONARY: aggregate mean error reduced by 48,8 %; synthetic physics only.
+OK: Casting holds only after the preparation delay
+OK: Changing focus during a cast stops and releases
+OK: A stopped engine cannot send a delayed press
+OK: An already visible minigame skips casting
+OK: A single missing frame releases without counting a round
+OK: Sustained disappearance completes one round
+OK: A closed menu triggers the next cast after the rest
+OK: Explicit stop releases the mouse
+OK: Missing fish with a visible menu does not count as a round
+OK: Persistent tracking loss stops without casting into an open menu
+OK: A visible but unrecognized minigame is never treated as a casting screen
+OK: Three failed attempts stop further casting
+OK: Manual launching never moves or clicks while waiting
+OK: Valid screen coordinates accepted
+OK: Off-screen capture is rejected
+OK: Settings round trip preserves coordinates
+OK: Overflowing coordinates are rejected
+OK: Valid negative monitor coordinates are supported
+OK: Null XML configuration is rejected without returning a null Settings object
+OK: DTD and entity declarations in settings are rejected
+OK: A solid blue background is not treated as the fishing menu
+OK: Reject all 90 tested landscape crops away from the minigame
+NEGATIVE IMAGE: 90 landscape crops; false menus=0; false tracking=0
+OK: Tracking timeout still stops when valid and invalid frames alternate
+OK: Independent watchdog releases a click when UI heartbeats stop
+OK: Expired leases cannot send a new mouse-down
+OK: Regular UI heartbeats renew the lease while casting or tracking
+OK: A focus or F10 safety signal releases a click without a UI tick
+OK: Rejected button-up remains pending instead of discarding its state
+OK: A pending release is retried successfully without another mouse-down
+OK: Normal release does not prevent the next tracking press
+OK: The stop report preserves the specific safety reason
+OK: Follow lateral sway in a wide area, frame 1
+OK: Follow lateral sway in a wide area, frame 2
+OK: Follow lateral sway in a wide area, frame 3
+OK: Follow lateral sway in a wide area, frame 4
+OK: Follow lateral sway in a wide area, frame 5
+OK: Follow lateral sway in a wide area, frame 6
+OK: Follow lateral sway in a wide area, frame 7
+OK: Follow lateral sway in a wide area, frame 8
+OK: Follow lateral sway in a wide area, frame 9
+OK: Follow lateral sway in a wide area, frame 10
+OK: Follow lateral sway in a wide area, frame 11
+OK: Follow lateral sway in a wide area, frame 12
+OK: Follow lateral sway in a wide area, frame 13
+OK: Follow lateral sway in a wide area, frame 14
+OK: Follow lateral sway in a wide area, frame 15
+OK: Follow lateral sway in a wide area, frame 16
+OK: Follow lateral sway in a wide area, frame 17
+OK: Follow lateral sway in a wide area, frame 18
+OK: Follow lateral sway in a wide area, frame 19
+OK: Follow lateral sway in a wide area, frame 20
+OK: Follow lateral sway in a wide area, frame 21
+OK: Follow lateral sway in a wide area, frame 22
+OK: Follow lateral sway in a wide area, frame 23
+OK: Follow lateral sway in a wide area, frame 24
+OK: Follow lateral sway in a wide area, frame 25
+OK: Follow lateral sway in a wide area, frame 26
+OK: Follow lateral sway in a wide area, frame 27
+OK: Follow lateral sway in a wide area, frame 28
+OK: Follow lateral sway in a wide area, frame 29
+OK: Follow lateral sway in a wide area, frame 30
+OK: Lateral sway with a green progress bar does not trigger a recast or end the round
+OK: Green is excluded even with maximum tolerance and an incorrectly calibrated blue color
+OK: Two plausible blue bars are treated as ambiguous, with no tracking click
+OK: Real screenshot 0 tolerates 50 pixels of blue-sky padding above and below
+OK: Real screenshot 0 including green progress tracks correctly at horizontal offset 0
+OK: Real screenshot 0 including green progress tracks correctly at horizontal offset 23
+OK: Real screenshot 0 including green progress tracks correctly at horizontal offset 90
+OK: Real screenshot 0 including green progress tracks correctly at horizontal offset 170
+OK: Real screenshot 1 tolerates 50 pixels of blue-sky padding above and below
+OK: Real screenshot 1 including green progress tracks correctly at horizontal offset 0
+OK: Real screenshot 1 including green progress tracks correctly at horizontal offset 23
+OK: Real screenshot 1 including green progress tracks correctly at horizontal offset 90
+OK: Real screenshot 1 including green progress tracks correctly at horizontal offset 170
+OK: Real screenshot 2 tolerates 50 pixels of blue-sky padding above and below
+OK: Real screenshot 2 including green progress tracks correctly at horizontal offset 0
+OK: Real screenshot 2 including green progress tracks correctly at horizontal offset 23
+OK: Real screenshot 2 including green progress tracks correctly at horizontal offset 90
+OK: Real screenshot 2 including green progress tracks correctly at horizontal offset 170
+OK: Real green progress bar alone does not count as a fishing track
+OK: Wide landscape region rejected: {X=0,Y=10,Width=180,Height=300}
+OK: Wide landscape region rejected: {X=50,Y=10,Width=180,Height=300}
+OK: Wide landscape region rejected: {X=100,Y=10,Width=180,Height=300}
+OK: Wide landscape region rejected: {X=150,Y=10,Width=180,Height=300}
+OK: Wide landscape region rejected: {X=0,Y=100,Width=180,Height=300}
+OK: Wide landscape region rejected: {X=50,Y=100,Width=180,Height=300}
+OK: Wide landscape region rejected: {X=100,Y=100,Width=180,Height=300}
+OK: Wide landscape region rejected: {X=150,Y=100,Width=180,Height=300}
+OK: Wide landscape region rejected: {X=0,Y=190,Width=180,Height=300}
+OK: Wide landscape region rejected: {X=50,Y=190,Width=180,Height=300}
+OK: Wide landscape region rejected: {X=100,Y=190,Width=180,Height=300}
+OK: Wide landscape region rejected: {X=150,Y=190,Width=180,Height=300}
+OK: Wide landscape region rejected: {X=0,Y=280,Width=180,Height=300}
+OK: Wide landscape region rejected: {X=50,Y=280,Width=180,Height=300}
+OK: Wide landscape region rejected: {X=100,Y=280,Width=180,Height=300}
+OK: Wide landscape region rejected: {X=150,Y=280,Width=180,Height=300}
+OK: Wide landscape region rejected: {X=0,Y=370,Width=180,Height=300}
+OK: Wide landscape region rejected: {X=50,Y=370,Width=180,Height=300}
+OK: Wide landscape region rejected: {X=100,Y=370,Width=180,Height=300}
+OK: Wide landscape region rejected: {X=150,Y=370,Width=180,Height=300}
+WIDE NEGATIVE: 20 wide landscape crops rejected.
+OK: Opening the selector does not commit the previous zone automatically
+OK: Confirming the visible rectangle preserves negative monitor coordinates
+OK: Canceling selection returns no replacement for the saved zone
+OK: An undersized rectangle stays open for correction instead of being saved
+UI: rendered off-screen non-activating form; no hotkeys registered and no clicks sent.
+PASS: 159 checks.

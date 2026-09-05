@@ -1,0 +1,15 @@
+# Local settings, diagnostics and captured test output
+ajustes.xml
+ajustes.xml.tmp
+ultima-parada.txt
+pruebas/
+artifacts/
+*.exe
+*.zip
+*.pdb
+*.user
+*.suo
+.vs/
+bin/
+obj/
+
