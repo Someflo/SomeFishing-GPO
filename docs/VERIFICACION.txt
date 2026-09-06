@@ -1,31 +1,30 @@
-SomeFishing GPO 0.7.0 - verificacion local, 2026-09-05
+SomeFishing GPO 0.7.1 - verificacion local, 2026-09-05
 
-770 comprobaciones integradas; 893 con quince capturas privadas del usuario.
+802 comprobaciones integradas; 925 con quince capturas privadas del usuario.
 Todas las entradas de prueba son simuladas: no se enviaron clics o teclas a
-Roblox. El usuario confirmo que la compra de la version 0.6.1 funciono.
-Esta version conserva esa secuencia, sus puntos y sus verificaciones.
-El regreso nuevo al agua aun necesita comprobacion dentro del juego.
+Roblox. La logica de pesca y compra sigue siendo la de 0.7.0.
 
-Antes de lanzar, tambien despues de comprar, el puntero vuelve gradualmente
-al punto marcado usando el controlador relativo con feedback de Windows.
-Espera llegada, estabilidad y 200 ms adicionales antes de mantener el clic.
-La duracion configurada del lanzamiento empieza con la pulsacion efectiva.
-Comprueba posicion y ventana bajo el puntero antes de pulsar. Si aparece el
-minijuego durante el recorrido, cancela el lanzamiento pendiente y lo sigue.
+Selector Idioma / Language siempre visible en la barra lateral. Espanol y
+English se aplican inmediatamente y se guardan en ajustes.xml. Los ajustes
+antiguos sin InterfaceLanguage siguen en espanol. El selector es independiente
+del idioma OCR; cambiarlo conserva zonas, coordenadas, cantidades, tiempos,
+permisos de entrada y vistas activas, sin reconstruir la ventana.
 
-27 comprobaciones nuevas cubren el primer lanzamiento y compra -> regreso
-al agua -> lanzamiento, movimiento pendiente, pausa completa y duracion de
-220 ms contada desde el clic. Incluyen cancelacion por foco y F10 durante
-movimiento o pausa, minijuego aparecido, modo manual y diagnosticos sin
-lanzamiento. Un umbral bajo o cronometro vencido durante el recorrido cancela
-el lanzamiento no enviado y no espera una picada inexistente.
+Traducciones embebidas en el ejecutable para navegacion, controles, ayudas,
+selector de areas, mensajes de estado, errores propios, guia y diagnosticos.
+La traduccion se aplica en presentacion y mantiene los datos del detector y
+la compra intactos. No cambia la cultura de Windows ni el formato numerico.
+Dialogos/errores de Windows pueden seguir el idioma del sistema; registros
+historicos conservan el idioma en que fueron escritos.
 
-La interfaz se organiza en Inicio, Zonas, Pruebas y Avanzado. Inicio permite
-elegir OCR o cronometro, con cantidad e intervalo ajustables. Zonas reune
-barra, agua, contador y los tres botones. Avanzado muestra siempre el aviso
-de dejar los ajustes igual si no se conocen. Pruebas conserva compra de
-cantidad elegida, simulacion sin cebo y lecturas. Se revisaron siete renders
-sin activar ventanas ni registrar atajos. No hay emojis en la interfaz.
+32 comprobaciones nuevas validan migracion de XML, persistencia e independencia
+del OCR, catalogo embebido, mensajes compuestos, cantidades, cuenta atras,
+coordenadas negativas, registros multilinea, conservacion de identificadores,
+datos del detector y parser, cambios en ambos sentidos y preferencia al abrir.
+El cambio de idioma se prueba en todos los apartados y conserva los mismos
+controles, valores y permisos. Se revisaron los renders en ingles y el selector
+visible en espanol, y se corrigio un texto cortado en la compra de prueba.
+Se agrega README.en.md con inicio, configuracion y limites en ingles.
 
 Las regresiones de compra por puntos, comprobacion visual del menu,
 movimiento relativo, umbral 2/capacidad 300, cronometro 50/40 minutos,
@@ -40,7 +39,7 @@ capturas privadas, ajustes, registros personales, credenciales ni rutas locales.
 La documentacion visual contiene renders y ejemplos sinteticos.
 
 SHA256 DEL EJECUTABLE
-0B6A03FBDE03F2140DFB508CE436D3F3DC360A2AE5CB96361BD47C8839114281  SomeFishingGPO.exe
+306E44CA74EB4058A25CBB7EA5A673449D970F32F689FBF1DF2242A1DD4B69DC  SomeFishingGPO.exe
 
 PRUEBAS INTEGRADAS
 OK: Windows INPUT structure matches the platform ABI
@@ -847,8 +846,40 @@ OK: A newly confirmed low counter interrupts and cancels water aiming before it 
 OK: A low-bait interruption still requires the 1600 ms clear-menu pause
 OK: An interrupted aim is not treated as an in-flight cast requiring a bite window before buying
 OK: Timer expiration during water aiming also cancels the unsent cast and buys after only the clear-menu pause
+OK: Existing installations default to Spanish when no interface language is saved
+OK: Old XML loads with Spanish without losing the OCR language or purchase quantity
+OK: Interface language persists independently of the Windows OCR language
+OK: Unknown interface languages have a defined Spanish fallback
+OK: Every embedded English translation resolves exactly
+OK: Dynamic OCR threshold and capacity summary translates without changing amounts
+OK: Dynamic session counts translate correctly
+OK: Timer display keeps the exact countdown
+OK: Purchase color diagnostics translate with their measured counts intact
+OK: Nested purchase failure and reason translate together
+OK: Translation preserves signed screen coordinates
+OK: Multiline logs preserve Windows line endings
+OK: Identifiers, OCR tags, filenames and keys are not translated
+OK: Translation phrases do not replace parts of unrelated words
+OK: Selecting an interface language never changes number formatting or the system culture
+OK: Detector data remains in its canonical language when English is displayed
+OK: OCR parsing is independent of interface language
+OK: Spanish display keeps original text unchanged
+OK: Switching to English preserves every existing setting, area, button and OCR tag
+OK: Language switching keeps controls and previews alive without changing input permission
+OK: Navigation and existing area labels switch to English immediately
+OK: Purchase mode choices display in English without changing their indexes
+OK: OCR automatic option translates while the selected OCR language stays intact
+OK: Tooltips follow the interface language
+OK: Live counter readings and their mirror use English
+OK: Live status text retains its canonical source separately from its translation
+OK: Diagnostic output translates before copying or saving
+OK: Switching back restores original static and live Spanish text
+OK: Switching back restores the canonical diagnostic log without reverse translation
+OK: Round-trip language changes preserve every setting and preview state
+OK: The always-visible selector works across every page without rebuilding forms
+OK: A saved English preference applies on startup
 UI: rendered off-screen non-activating form; no hotkeys registered and no clicks sent.
-PASS: 770 checks.
+PASS: 802 checks.
 
 VALIDACION CON CAPTURAS NO DISTRIBUIDAS
 OK: Windows INPUT structure matches the platform ABI
@@ -1752,6 +1783,38 @@ OK: A newly confirmed low counter interrupts and cancels water aiming before it 
 OK: A low-bait interruption still requires the 1600 ms clear-menu pause
 OK: An interrupted aim is not treated as an in-flight cast requiring a bite window before buying
 OK: Timer expiration during water aiming also cancels the unsent cast and buys after only the clear-menu pause
+OK: Existing installations default to Spanish when no interface language is saved
+OK: Old XML loads with Spanish without losing the OCR language or purchase quantity
+OK: Interface language persists independently of the Windows OCR language
+OK: Unknown interface languages have a defined Spanish fallback
+OK: Every embedded English translation resolves exactly
+OK: Dynamic OCR threshold and capacity summary translates without changing amounts
+OK: Dynamic session counts translate correctly
+OK: Timer display keeps the exact countdown
+OK: Purchase color diagnostics translate with their measured counts intact
+OK: Nested purchase failure and reason translate together
+OK: Translation preserves signed screen coordinates
+OK: Multiline logs preserve Windows line endings
+OK: Identifiers, OCR tags, filenames and keys are not translated
+OK: Translation phrases do not replace parts of unrelated words
+OK: Selecting an interface language never changes number formatting or the system culture
+OK: Detector data remains in its canonical language when English is displayed
+OK: OCR parsing is independent of interface language
+OK: Spanish display keeps original text unchanged
+OK: Switching to English preserves every existing setting, area, button and OCR tag
+OK: Language switching keeps controls and previews alive without changing input permission
+OK: Navigation and existing area labels switch to English immediately
+OK: Purchase mode choices display in English without changing their indexes
+OK: OCR automatic option translates while the selected OCR language stays intact
+OK: Tooltips follow the interface language
+OK: Live counter readings and their mirror use English
+OK: Live status text retains its canonical source separately from its translation
+OK: Diagnostic output translates before copying or saving
+OK: Switching back restores original static and live Spanish text
+OK: Switching back restores the canonical diagnostic log without reverse translation
+OK: Round-trip language changes preserve every setting and preview state
+OK: The always-visible selector works across every page without rebuilding forms
+OK: A saved English preference applies on startup
 OK: The supplied complete x3 image matches its own low-count shape
 OK: The supplied x3 image is readable with automatic OCR language
 OK: The supplied x3 image is readable with en-US
@@ -1789,4 +1852,4 @@ OK: Initial Yes No screenshot: Esperando botones de cantidad · verde izquierdo:
 OK: Final screenshot contains all three marked-point patches
 OK: Final screenshot: Esperando botones de cantidad · verde izquierdo: 0 · blanco central: 29 · rojo derecho: 0
 UI: rendered off-screen non-activating form; no hotkeys registered and no clicks sent.
-PASS: 893 checks.
+PASS: 925 checks.

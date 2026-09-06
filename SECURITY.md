@@ -4,6 +4,8 @@ SomeFishing GPO funciona localmente: captura las zonas elegidas, analiza píxele
 
 ## Entradas y datos
 
+El selector Español/English solo traduce la presentación y guarda `InterfaceLanguage` en `ajustes.xml`. Las traducciones están embebidas en el ejecutable. No cambia el idioma OCR, la cultura de Windows, las coordenadas, las teclas ni los datos usados por la lógica de pesca y compra.
+
 El seguimiento usa clic sostenido y un punto de lanzamiento elegido por el usuario. Desde 0.7.0, antes de lanzar se mueve gradualmente hasta ese punto con el mismo controlador relativo de la compra. Espera llegada, estabilidad y 200 ms adicionales antes de mantener el clic; la duración del lanzamiento se cuenta desde la pulsación efectiva. El primer clic comprueba de nuevo la posición y la ventana bajo el cursor. Si aparece un minijuego durante el recorrido, cancela el lanzamiento pendiente. Los saltos opcionales usan Espacio, sin direcciones. Las compras usan E, cinco clics en los puntos marcados, Ctrl+A, Retroceso y dígitos. Pueden gastar Peli del juego. No leen el portapapeles ni escriben textos libres.
 
 F6/F8/F10 controlan la selección, inicio y parada. No se registra lo escrito en otras aplicaciones. Antes de cada entrada se comprueba el foco de Roblox y que los puntos estén dentro de su ventana. La ventana bajo el cursor también debe corresponder a Roblox. Se cancela un clic si el cursor se apartó del destino.

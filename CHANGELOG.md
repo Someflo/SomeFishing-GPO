@@ -1,5 +1,13 @@
 # Historial de cambios
 
+## 0.7.1 · Español e inglés
+
+- Selector **Idioma / Language** visible en la barra lateral de todos los apartados: Español y English. Cambia la interfaz al instante y guarda la preferencia.
+- Traduce navegación, controles, ayudas, selección de zonas, mensajes de estado, errores propios, guía y diagnósticos. El idioma OCR continúa siendo una configuración independiente.
+- Conserva áreas, coordenadas, cantidades, temporizador, idioma OCR y permisos al cambiar de idioma, sin reconstruir la ventana ni alterar la lógica de pesca o compra.
+- Traducciones incluidas en el ejecutable, sin descargas. Los ajustes anteriores comienzan en español si todavía no incluyen un idioma de interfaz.
+- Añade una guía de inicio en inglés y comprobaciones de persistencia, textos dinámicos, cambio de idioma y conservación de configuraciones. Los diálogos y errores de Windows pueden mantener el idioma del sistema; los registros históricos conservan el idioma en que se guardaron.
+
 ## 0.7.0 · Regreso gradual al agua e interfaz sencilla
 
 - Todos los lanzamientos, incluido el regreso de una compra, mueven el puntero gradualmente al agua y esperan llegada, estabilidad y 200 ms antes de pulsar. La duración del clic empieza al presionar.

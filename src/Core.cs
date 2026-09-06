@@ -44,6 +44,7 @@ namespace SomeFishingGPO
         public int ShopSettleMilliseconds = 700;
         public int BuyBaitAt = 2;
         public string OcrLanguage = "";
+        public string InterfaceLanguage = "es";
 
         public Settings ForDiagnostic(RunKind kind)
         {

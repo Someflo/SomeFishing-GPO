@@ -1,0 +1,483 @@
+# Spanish source<TAB>English display. Literal \n means a line break.
+Inicio	Home
+Zonas	Areas
+Pruebas	Tests
+Avanzado	Advanced
+Elige el modo y empieza a pescar.	Choose a mode and start fishing.
+Marca las áreas y los botones una vez.	Set your areas and buttons once.
+Comprueba la compra y las lecturas.	Test purchases and readings.
+Ajustes de detección, tiempos y reposición.	Detection, timing and restocking settings.
+Guía rápida	Quick guide
+Guardar	Save
+Guarda las zonas y los ajustes actuales.	Save your current areas and settings.
+Código incluido	Source included
+Reposición de cebo	Bait restocking
+Comprar cebo · usa Peli	Buy bait · uses Peli
+Activa la reposición por contador o cronómetro. Permanece junto al barril de cebo.	Enable restocking by counter or timer. Stay near the bait barrel.
+Contador OCR	OCR counter
+Cronómetro	Timer
+Compra una cantidad cada cierto tiempo.	Buy a set amount at regular intervals.
+Repone según el contador de cebo.	Restock based on the bait counter.
+Cebos por compra	Bait per purchase
+Cada (minutos)	Every (minutes)
+Cantidad que se escribe en cada compra. El juego puede limitarla según capacidad y Peli.	Amount entered for each purchase. The game may limit it based on capacity and Peli.
+Cuenta desde el inicio. Pausa la pesca para comprar y reinicia el intervalo tras la secuencia.	Counts from the start. Pauses fishing to buy and restarts the timer after the sequence.
+Con 	With 
+ cebos o menos,\ncompletar hasta 	 bait or less,\nrefill to 
+Configurar contador	Set up counter
+Configurar zonas	Set up areas
+Ir a pruebas	Go to tests
+Última parada	Last stop
+Sesión	Session
+Rondas: 	Rounds: 
+Cebos: 	Bait: 
+Configura las zonas para empezar.	Set up your areas to get started.
+El cronómetro empieza al iniciar la pesca.	The timer starts when you start fishing.
+Inicia con Roblox en primer plano.	Start with Roblox in the foreground.
+F8 inicia o detiene. F10 detiene.	F8 starts or stops. F10 stops.
+Áreas y lanzamiento	Areas and casting
+Barra de pesca · F6	Fishing bar · F6
+Sin seleccionar	Not selected
+Rodea toda la barra azul con margen lateral. Enter o F6 confirma; Esc cancela.	Select the entire blue bar with room on both sides. Enter or F6 confirms; Esc cancels.
+Punto en el agua	Water point
+Elige dónde debe apuntar el ratón al volver a lanzar.	Choose where the mouse should aim before casting again.
+Contador de cebo	Bait counter
+Para OCR, rodea solo la x y el número.	For OCR, select only the x and the number.
+Selecciona un solo tipo de cebo, por ejemplo x300, sin el borde amarillo ni otros números.	Select one bait type, such as x300, without the yellow border or other numbers.
+3 botones de compra	3 purchase buttons
+Abre el menú de cantidad y marca el centro\nde cada botón.	Open the quantity menu and mark the center\nof each button.
+1. Izquierda · Sí / Comprar	1. Left · Yes / Buy
+2. Centro · Número / …	2. Middle · Number / …
+3. Derecha · No / Cancelar	3. Right · No / Cancel
+Sin marcar	Not marked
+Solo guarda el punto; el clic de selección no llega al juego.	Only saves the point; the selection click is not sent to the game.
+Conserva la posición y el tamaño del juego.	Keep the game window's size and position.
+Probar una compra	Test a purchase
+Compra	Purchase
+Lecturas	Readings
+Sin cebo	No bait
+Probar sin cebo	Test no bait
+Simula 0 y compra 1 cebo con Peli.	Simulates 0 and buys 1 bait using Peli.
+Simula 0 y da un solo salto en el sitio.	Simulates 0 and jumps once in place.
+Compra y saltos desactivados.\nLa prueba lo indicará sin actuar.	Purchases and jumps are off.\nThe test reports this without sending input.
+Cantidad de prueba	Test quantity
+Usa Peli · un intento.\nSin OCR ni cronómetro.	Uses Peli · one attempt.\nNo OCR or timer wait.
+Probar compra	Test purchase
+Inicio en 3 s. Vuelve al juego con los diálogos cerrados. F10 cancela.	Starts in 3 s. Return to the game with dialogs closed. F10 cancels.
+Resultado	Result
+Copiar resultado	Copy result
+Resultado copiado.	Result copied.
+No se pudo copiar. El registro sigue disponible.	Could not copy. The log is still available.
+También se guarda en ultima-prueba.txt, junto al programa. No se envía automáticamente.	Also saved to ultima-prueba.txt next to the program. Never sent automatically.
+Ejecuta una prueba para ver el resultado.	Run a test to see the result.
+Detector de pesca	Fishing detector
+Selecciona la barra en Zonas	Select the bar in Areas
+Solo lectura. No envía clics.	Read only. No clicks are sent.
+Ver detector	View detector
+Ejemplo	Example
+Celeste: barra. Naranja: hueco. Rosa: pez. El progreso verde se ignora.	Cyan: bar. Orange: gap. Pink: fish. Green progress is ignored.
+Selecciona el contador en Zonas	Select the counter in Areas
+Rodea solo la x y el número.	Select only the x and the number.
+Probar lectura	Test reading
+Solo lee la zona seleccionada. No envía clics, saltos ni compras.	Only reads the selected area. No clicks, jumps or purchases.
+Simula cero: compra una unidad, da un salto o informa que ambas opciones están apagadas, según tus ajustes.	Simulates zero: buys one bait, jumps once or reports that both options are off, based on your settings.
+Una compra de la cantidad indicada, usando los 3 puntos marcados. No requiere OCR ni espera el cronómetro.	One purchase of the chosen quantity using your 3 points. No counter OCR or timer wait required.
+Si no conoces estos ajustes, déjalos como están.	If you are unsure about these settings, leave them as they are.
+Pesca	Fishing
+Volver a lanzar automáticamente	Recast automatically
+Mantener clic sube el hueco	Holding click raises the gap
+Clic al lanzar (ms)	Cast hold (ms)
+Espera de picada (s)	Bite wait (s)
+Pausa entre rondas (ms)	Pause between rounds (ms)
+Tolerancia de color	Color tolerance
+Anticipación (ms)	Anticipation (ms)
+Si el hueco se pasa del pez, aumenta el valor; si responde antes de tiempo, bájalo.	Increase if the gap overshoots the fish; decrease if it responds too early.
+Ajusta primero la zona si el detector no encuentra el hueco o la línea.	Adjust the area first if the detector cannot find the gap or line.
+Color de barra	Bar color
+Color de línea del pez	Fish line color
+Compra y contador	Purchase and counter
+Mantener E (ms)	Hold E (ms)
+Pausa entre pasos (ms)	Pause between steps (ms)
+Tope por sesión	Session purchase limit
+Comprar si quedan ≤	Buy when bait is ≤
+Capacidad de cebo	Bait capacity
+Idioma OCR del contador	Counter OCR language
+Automático (Windows)	Automatic (Windows)
+Idioma cambiado. Vuelve a probar la lectura.	OCR language changed. Test the reading again.
+Idiomas OCR instalados en Windows. Solo se aplica al contador.	OCR languages installed in Windows. Applies only to the counter.
+Duración de la tecla E para abrir la compra.	How long E is held to open the purchase dialog.
+Espera entre las acciones del diálogo. Aumenta si el juego tarda en mostrar los botones.	Wait between dialog actions. Increase if the game takes longer to display buttons.
+Máximo de intentos de compra por sesión.	Maximum purchase attempts per session.
+Umbral que activa la reposición al confirmar el contador.	Threshold that triggers restocking after confirming the counter.
+Total de cebo deseado. Con capacidad 300 y contador 2, solicita 298.	Desired total bait. With a capacity of 300 and a counter of 2, requests 298.
+Espera y lector	Idle wait and reader
+Saltar durante la espera	Jump while waiting
+Leer contador fuera de compras	Read counter outside purchases
+La reposición por OCR activa el lector automáticamente. Cronómetro no necesita leer el contador.	OCR restocking enables the reader automatically. Timer mode does not need it.
+Intervalo de salto (s)	Jump interval (s)
+Salta en el sitio si falta cebo o tras tres lanzamientos sin minijuego. No garantiza evitar una desconexión.	Jumps in place when bait is missing or after three casts without a minigame. Does not guarantee staying connected.
+Detenida · lista para configurar	Stopped · ready to set up
+Permitir clics y teclas	Allow clicks and keys
+Autoriza entradas al iniciar. Se desmarca al abrir el programa de nuevo.	Allow input when starting. Unchecked each time you open the program.
+Iniciar · 3 s	Start · 3 s
+Detener · F10	Stop · F10
+Detener · F8	Stop · F8
+Detenida por ti	Stopped by you
+Vuelve a Roblox durante los 3 segundos. F8 inicia desde el juego; F10 cancela.	Return to Roblox within 3 seconds. F8 starts from the game; F10 cancels.
+1. En Zonas, marca la barra, el agua y los botones de compra.\n2. Elige Contador OCR o Cronómetro en Inicio.\n3. Prueba la compra y las lecturas en Pruebas.\n4. Permite las entradas y vuelve a Roblox para iniciar.\n\nF6 selecciona la barra. F8 inicia o detiene. F10 detiene.\nCambiar de ventana también detiene la macro.	1. In Areas, mark the bar, water point and purchase buttons.\n2. Choose OCR counter or Timer in Home.\n3. Check purchases and readings in Tests.\n4. Allow input and return to Roblox to start.\n\nF6 selects the bar. F8 starts or stops. F10 stops.\nSwitching windows also stops the macro.
+No se pudo leer el informe de la última parada.	Could not read the last stop report.
+No se pudieron cargar los ajustes: 	Could not load settings: 
+No se pudo leer la última prueba.	Could not read the last test.
+No disponible: 	Unavailable: 
+Zona: 	Area: 
+Seleccionar zona · F6	Select area · F6
+Cambiar zona · F6	Change area · F6
+Punto de lanzamiento listo	Casting point ready
+Punto sin seleccionar	Point not selected
+Los 3 botones están listos.	All 3 buttons are ready.
+Marca los 3 botones antes de comprar.	Mark all 3 buttons before buying.
+Punto guardado: 	Saved point: 
+Zona del minijuego: 	Minigame area: 
+Punto en el agua: 	Water point: 
+Equipa la caña y elige un punto sobre el agua.	Equip your rod and choose a point on the water.
+Zona del contador: 	Counter area: 
+F10 está ocupado. Cierra la otra macro y vuelve a abrir esta aplicación.	F10 is in use. Close the other macro and reopen this application.
+F8 está ocupado. Puedes usar el botón de inicio y F10 para parar.	F8 is in use. You can use the Start button and F10 to stop.
+Detenida con F10	Stopped with F10
+Detenida con F8	Stopped with F8
+MARCA IZQUIERDA · SÍ / COMPRAR	MARK LEFT · YES / BUY
+MARCA CENTRO · NÚMERO / …	MARK MIDDLE · NUMBER / …
+MARCA DERECHA · NO / CANCELAR	MARK RIGHT · NO / CANCEL
+Marcando botón de compra…	Marking purchase button…
+Haz clic en el centro de ese botón. Solo guarda el punto; no pulsa en el juego. Esc cancela.	Click the center of the button. Only saves the point; no game click is sent. Esc cancels.
+Tres puntos guardados. Cierra el diálogo y prueba una compra.	Three points saved. Close the dialog and test a purchase.
+Punto guardado. Marca los botones que faltan.	Point saved. Mark the remaining buttons.
+Selección cancelada. Se conserva el punto anterior.	Selection canceled. Previous point kept.
+Seleccionando diálogo de compra…	Selecting purchase dialog…
+Zona guardada. Prueba cada menú antes de habilitar las compras.	Area saved. Test each menu before enabling purchases.
+Prueba de compra detenida	Purchase test stopped
+Detener lectura	Stop reading
+Solo lee los menús · no compra ni envía teclas	Reads menus only · no purchases or key presses
+Seleccionando contador…	Selecting counter…
+Contador guardado. Usa «Probar lectura» antes de iniciar.	Counter saved. Use “Test reading” before starting.
+Lectura del contador detenida	Counter reading stopped
+Solo lectura del contador · sin clics ni saltos	Counter reading only · no clicks or jumps
+Compra próxima · se activa con 	Restocking soon · triggers at 
+ cebos o menos.	 bait or less.
+Esperando lectura…	Waiting for reading…
+Seleccionando zona…	Selecting area…
+Zona guardada. Usa «Ver detector» para comprobarla.	Area saved. Use “View detector” to check it.
+Selección cancelada. Se conserva la zona anterior.	Selection canceled. Previous area kept.
+Seleccionando punto de lanzamiento…	Selecting casting point…
+Ajustando color…	Adjusting color…
+Hay una liberación de clic pendiente. Espera antes de iniciar otra ronda.	A click release is pending. Wait before starting another round.
+F10 no está disponible. Cierra otras macros y vuelve a abrir SomeFishing GPO.	F10 is unavailable. Close other macros and reopen SomeFishing GPO.
+Marca «Permitir clics y teclas» antes de iniciar. Puedes usar las vistas de prueba.	Check “Allow clicks and keys” before starting. You can use the read-only previews.
+Preparando inicio…	Preparing to start…
+Vuelve a Roblox: inicio en 3 segundos. F10 cancela.	Return to Roblox: starting in 3 seconds. F10 cancels.
+SIN CEBO SIMULADO	SIMULATED EMPTY BAIT
+COMPRA REAL	REAL PURCHASE
+Hay una liberación de entrada pendiente. Espera antes de probar.	An input release is pending. Wait before testing.
+No se inició: 	Did not start: 
+Preparando prueba…	Preparing test…
+Render de interfaz: entradas reales desactivadas.	UI render: real input disabled.
+ · saltos: 	 · jumps: 
+ · lector: 	 · reader: 
+ · modo: 	 · mode: 
+Tres puntos manuales · pausa entre pasos: 	Three manual points · pause between steps: 
+Mantener E: 	Hold E: 
+ · cantidad de prueba: 	 · test quantity: 
+Sin zona de pesca: comprueba manualmente que no esté abierto el minijuego.	No fishing area: manually check that the minigame is closed.
+Prueba inmediata, sin OCR de menús. Movimiento relativo y comprobación de botones verde/blanco/rojo. Comprueba la cantidad y el cierre en el juego.	Immediate test without menu OCR. Relative movement and green/white/red button checks. Verify quantity and closing in the game.
+Preparada. Vuelve a Roblox en 3 s. F10/F8 cancela. Como máximo 1 compra de 	Ready. Return to Roblox within 3 s. F10/F8 cancels. At most 1 purchase of 
+ cebos o 1 salto.	 bait or 1 jump.
+Prueba preparada · vuelve a Roblox en 3 s. F10 cancela.	Test ready · return to Roblox within 3 s. F10 cancels.
+No se pudo guardar ultima-prueba.txt; el resultado sigue visible en Pruebas.	Could not save ultima-prueba.txt; the result remains visible in Tests.
+desconocido	unknown
+Entrada: 	Input: 
+Prueba cancelada: Roblox no estaba en primer plano. Pulsa de nuevo el botón de prueba.	Test canceled: Roblox was not in the foreground. Press the test button again.
+Vuelve a la ventana de Roblox y pulsa F8 para iniciar.	Return to Roblox and press F8 to start.
+Iniciando…	Starting…
+ · Revisa el botón del ratón: 	 · Check the mouse button: 
+FIN: 	END: 
+Intentos: 	Attempts: 
+Comprar enviado: 	Buy sent: 
+Espacios solicitados: 	Space presses requested: 
+ · No se enviaron entradas de la prueba.	 · No test input was sent.
+Estado al parar: 	State at stop: 
+Rondas terminadas: 	Completed rounds: 
+Duración: 	Duration: 
+Mayor intervalo entre revisiones: 	Longest tick interval: 
+Lanzamiento: 	Cast: 
+Espera: 	Wait: 
+Anticipación: 	Anticipation: 
+Tolerancia: 	Tolerance: 
+Última detección: 	Last detection: 
+Saltos habilitados: 	Jumps enabled: 
+Intentos de reposición: 	Restock attempts: 
+Última compra enviada: 	Last purchase sent: 
+Sin imagen	No image
+Desconocido	Unknown
+ · No se pudo guardar el informe: 	 · Could not save report: 
+Probar menú	Test menu
+Todavía no hay una sesión detenida registrada.	No stopped session has been recorded yet.
+Vista previa detenida	Preview stopped
+Detener vista	Stop preview
+Vista previa · solo observa, no envía clics	Preview · read only, no clicks sent
+Ejemplo · no envía clics	Example · no clicks sent
+Vuelve a Roblox: inicio en 	Return to Roblox: starting in 
+Prueba: vuelve a Roblox en 	Test: return to Roblox within 
+ s. F10 cancela.	 s. F10 cancels.
+Esperando imagen…	Waiting for image…
+No se guardaron los ajustes: 	Settings not saved: 
+Ajustes guardados junto al programa.	Settings saved next to the program.
+Cerrando	Closing
+ELIGE EL PUNTO DE LANZAMIENTO	CHOOSE THE CASTING POINT
+Haz clic sobre el agua. Esc cancela.	Click on the water. Esc cancels.
+SELECCIONAR DIÁLOGO DE COMPRA	SELECT PURCHASE DIALOG
+SELECCIONAR CONTADOR DE CEBO	SELECT BAIT COUNTER
+SELECCIONAR ZONA DE PESCA	SELECT FISHING AREA
+Rodea la burbuja entera y su fila de botones (Sí/No o Comprar/cantidad/Cancelar), con poco margen.\nEnter o F6: guardar · Esc: cancelar	Select the entire dialog and its button row (Yes/No or Buy/quantity/Cancel), with a small margin.\nEnter or F6: save · Esc: cancel
+Rodea solo x y la cantidad del cebo equipado (por ejemplo, x300), sin nombres ni otros números.\nEnter o F6: guardar · Esc: cancelar	Select only x and the equipped bait quantity (for example, x300), without names or other numbers.\nEnter or F6: save · Esc: cancel
+Incluye toda la altura de la barra azul y margen lateral para el balanceo. La verde se ignora.\nEnter o F6: guardar la selección · Esc: cancelar	Include the full height of the blue bar and room for side-to-side sway. Green is ignored.\nEnter or F6: save selection · Esc: cancel
+Idioma guardado.	Language saved.
+Elige una prueba.	Choose a test.
+Mantener E debe estar entre 100 y 3000 ms.	Hold E must be between 100 and 3000 ms.
+La cantidad de prueba debe estar entre 1 y 9999.	Test quantity must be between 1 and 9999.
+La pausa entre pasos debe estar entre 200 y 3000 ms.	Pause between steps must be between 200 and 3000 ms.
+Selecciona una zona de al menos 8 × 50 px, hasta 1200 × 1400 px y 600 000 píxeles en total.	Select an area from 8 × 50 px up to 1200 × 1400 px, with at most 600,000 pixels.
+La zona queda fuera de la pantalla. Selecciónala de nuevo.	The area is outside the screen. Select it again.
+La tolerancia debe estar entre 5 y 90.	Tolerance must be between 5 and 90.
+Anticipación fuera de rango.	Anticipation is out of range.
+Revisa los tiempos de lanzamiento y espera.	Check the cast and wait times.
+Selecciona un punto sobre el agua para lanzar.	Select a point on the water for casting.
+El intervalo de saltos debe estar entre 15 y 300 segundos.	Jump interval must be between 15 and 300 seconds.
+El umbral de cebo debe estar entre 0 y 9999.	Bait threshold must be between 0 and 9999.
+Configura el contador o elige Cronómetro para comprar.	Set up the counter or choose Timer to buy.
+El intervalo debe estar entre 1 y 1440 minutos.	Interval must be between 1 and 1440 minutes.
+La capacidad debe ser de 1 a 9999 y mayor que el umbral.	Capacity must be from 1 to 9999 and greater than the threshold.
+Revisa la cantidad de compra y el límite de compras por sesión.	Check the purchase quantity and session purchase limit.
+Un botón de compra queda fuera de la ventana. Márcalo de nuevo.	A purchase button is outside the window. Mark it again.
+Selecciona el diálogo completo y sus botones, entre 150 × 80 y 1000 × 600 px.	Select the entire dialog and its buttons, between 150 × 80 and 1000 × 600 px.
+La zona de compra queda fuera de la pantalla.	The purchase area is outside the screen.
+Rodea solo la cantidad de cebo: entre 10 × 6 y 400 × 120 px, hasta 30 000 píxeles.	Select only the bait quantity: from 10 × 6 to 400 × 120 px, at most 30,000 pixels.
+El contador queda fuera de la pantalla.	The counter is outside the screen.
+Archivo de ajustes demasiado grande.	Settings file is too large.
+Los ajustes están vacíos. Se usarán los valores iniciales.	Settings are empty. Defaults will be used.
+Sin barra detectable	No bar detected
+Veo más de una barra azul. Reduce la zona para incluir un solo minijuego.	More than one blue bar detected. Reduce the area to include only one minigame.
+Buscando la barra azul y sus dos bordes. Incluye toda su altura y margen a los lados.	Looking for the blue bar and both edges. Include its full height and room on both sides.
+No veo suficiente azul. Ajusta la zona o el color.	Not enough blue detected. Adjust the area or color.
+No veo los dos bordes oscuros. Incluye la barra completa, sin paisaje.	Both dark edges are missing. Include the full bar without scenery.
+No localizo el hueco entre los tramos azules.	Cannot find the gap between the blue sections.
+El hueco no tiene el fondo gris esperado.	The gap does not have the expected gray background.
+Veo el hueco, pero no la marca blanca.	Gap detected, but the white marker is missing.
+Pez (línea blanca) y hueco gris detectados	Fish (white line) and gray gap detected
+Windows no aceptó soltar 	Windows did not accept releasing 
+el clic	the mouse button
+; reintentando. 	; retrying. 
+Parada de protección: la interfaz dejó de responder durante más de medio segundo.	Safety stop: the interface was unresponsive for over half a second.
+Parada de protección: F10, esquina de parada o cambio de ventana.	Safety stop: F10, stop corner or window switch.
+Macro detenida.	Macro stopped.
+Sin compra iniciada	No purchase started
+SIMULACIÓN: contador en 0 · 	SIMULATION: counter at 0 · 
+Contador desactivado en esta sesión	Counter disabled for this session
+Cronómetro desactivado	Timer disabled
+Cronómetro detenido	Timer stopped
+Compra en curso	Purchase in progress
+Pausando pesca para comprar	Pausing fishing to buy
+Tope de compras alcanzado	Purchase limit reached
+Compra pendiente · esperando fin de ronda	Purchase pending · waiting for round to end
+Próxima compra en 	Next purchase in 
+Detenida	Stopped
+Roblox debe estar en primer plano.	Roblox must be in the foreground.
+Preparando la pesca…	Preparing to fish…
+Prueba: simulando 0 cebos en tres lecturas…	Test: simulating 0 bait across three readings…
+Prueba: preparando una compra real de 	Test: preparing a real purchase of 
+ cebos…	 bait…
+Esperando a que lances manualmente…	Waiting for you to cast manually…
+Moviendo el puntero al agua…	Moving the pointer to the water…
+Lanzando la caña	Casting the rod
+Minijuego visible · lanzamiento cancelado	Minigame visible · pending cast canceled
+Puntero en el agua · preparando lanzamiento	Pointer at the water · preparing cast
+Sin cebo confirmado	No bait confirmed
+Cebo bajo: 	Low bait: 
+ · umbral: 	 · threshold: 
+Contador desaparecido durante 8 s	Counter missing for 8 s
+ · límite de compras alcanzado	 · purchase limit reached
+ · reposición todavía no confirmada por encima del umbral	 · restock above threshold not yet confirmed
+El lector de compra no está disponible	Purchase reader unavailable
+Esperando contador confirmado para comprar	Waiting for confirmed counter before buying
+Revisa la capacidad de cebo antes de comprar.	Check bait capacity before buying.
+Pesca pausada · esperando que cierre el minijuego	Fishing paused · waiting for the minigame to close
+No se pudo preparar la compra en 2 minutos. Revisa el cierre del minijuego y el contador.	Could not prepare the purchase within 2 minutes. Check the minigame is closed and the counter is readable.
+Pesca pausada · esperando cantidad de cebo confirmada	Fishing paused · waiting for confirmed bait quantity
+Prueba terminada: se detectó el 0 simulado; compra y saltos desactivados.	Test finished: simulated 0 detected; purchases and jumps are disabled.
+ · saltos de espera desactivados	 · idle jumps disabled
+ · espera con saltos	 · waiting with jumps
+ · esperando el cronómetro	 · waiting for the timer
+Prueba detenida: el minijuego está visible. Termínalo antes de probar.	Test stopped: the minigame is visible. Finish it before testing.
+Menú visible · saltos suspendidos	Menu visible · jumps suspended
+Cebo disponible · reanudando pesca	Bait available · resuming fishing
+Prueba terminada: se envió una sola pulsación de Espacio. Comprueba el salto en el juego.	Test finished: sent one Space press. Check the jump in the game.
+ · próximo salto en 	 · next jump in 
+ · salto en espera	 · idle jump
+Detenida: cambiaste de ventana o activaste la parada con el ratón.	Stopped: you switched windows or used the mouse stop corner.
+Lectura de prueba	Test reading
+Compra detenida: apareció el minijuego. Reinicia cuando termine el diálogo.	Purchase stopped: the minigame appeared. Restart after the dialog ends.
+Prueba terminada: secuencia enviada. Comprueba la cantidad y el cierre en el juego.	Test finished: sequence sent. Check quantity and closing in the game.
+Prueba terminada: compra enviada y diálogo cerrado. Inventario sin verificar por OCR.	Test finished: purchase sent and dialog closed. Inventory not verified by OCR.
+Prueba terminada: Comprar se envió una vez, se cerró el diálogo y hay cebo visible. No se inicia la pesca.	Test finished: Buy sent once, dialog closed and bait visible. Fishing does not start.
+Secuencia de compra enviada · reanudando pesca	Purchase sequence sent · resuming fishing
+Detenida: la ronda superó 2 minutos. Revisa la detección.	Stopped: the round exceeded 2 minutes. Check detection.
+Esperando la picada…	Waiting for a bite…
+Clic mantenido · subiendo el hueco	Click held · raising the gap
+Clic suelto · bajando el hueco	Click released · lowering the gap
+Clic mantenido · bajando el hueco	Click held · lowering the gap
+Clic suelto · subiendo el hueco	Click released · raising the gap
+Menú visible, detección incompleta · clic liberado	Menu visible, detection incomplete · click released
+Detenida: el menú sigue abierto, pero perdí la detección. Revisa la zona.	Stopped: the menu is still open, but detection was lost. Check the area.
+Comprobando cierre del menú · clic liberado	Checking menu closure · click released
+Ronda terminada · pausa	Round ended · pause
+Detenida: el minijuego está visible, pero no pude seguirlo. Revisa la zona.	Stopped: the minigame is visible, but could not be tracked. Check the area.
+3 intentos sin minijuego	3 casts without a minigame
+Sin picada · preparando otro intento	No bite · preparing another attempt
+Marca los tres botones de compra.	Mark the three purchase buttons.
+Los puntos deben estar en orden: izquierdo, central y derecho.	Points must be ordered: left, middle and right.
+Un punto de compra no tiene coordenadas válidas.	A purchase point has invalid coordinates.
+Sin entradas	No input
+Compra sin OCR de menús · Paso: 	Purchase without menu OCR · Step: 
+ · cantidad solicitada: 	 · requested quantity: 
+ · puntos marcados; resultado sin verificar	 · marked points; result unverified
+Compra con puntos preparada	Purchase by points ready
+Tiempo de inicio no válido.	Invalid start time.
+La compra está desactivada.	Purchases are disabled.
+La cantidad debe estar entre 1 y 9999.	Quantity must be between 1 and 9999.
+Roblox perdió el foco.	Roblox lost focus.
+Compra con puntos detenida: 	Purchase by points stopped: 
+ · No se pudo liberar una entrada: 	 · Could not release an input: 
+El reloj de la secuencia cambió.	The sequence clock changed.
+La secuencia superó 90 segundos.	The sequence exceeded 90 seconds.
+Puntero colocado · esperando antes del clic	Pointer positioned · waiting before click
+La secuencia no pudo finalizar.	The sequence could not finish.
+No confirmé el menú de cantidad. La secuencia se detuvo antes de escribir o seguir comprando. Revisa el clic en Sí y los tres puntos.	Quantity menu not confirmed. Sequence stopped before typing or buying further. Check the Yes click and all three points.
+Menú de cantidad visible · comprobación por colores	Quantity menu visible · color check
+Secuencia enviada; resultado sin verificar	Sequence sent; result unverified
+Manteniendo E · sin OCR de menús	Holding E · no menu OCR
+E liberada · esperando el diálogo	E released · waiting for dialog
+Apuntando a Sí	Aiming at Yes
+Sí enviado una vez · esperando cantidad	Yes sent once · waiting for quantity
+Comprobando que Sí abrió el menú de cantidad	Checking that Yes opened the quantity menu
+Apuntando al número central	Aiming at the middle number
+Comprobando el menú antes del doble clic	Checking menu before double-click
+Cantidad · primer clic	Quantity · first click
+Cantidad · segundo clic	Quantity · second click
+Comprobando el menú antes de escribir	Checking menu before typing
+Seleccionando la cantidad · Ctrl	Selecting quantity · Ctrl
+Seleccionando la cantidad · A	Selecting quantity · A
+Soltando A	Releasing A
+Soltando Ctrl	Releasing Ctrl
+Borrando la cantidad anterior	Clearing previous quantity
+Soltando Retroceso	Releasing Backspace
+Escribiendo cantidad · 	Typing quantity · 
+Soltando dígito · 	Releasing digit · 
+Apuntando a Comprar · sin verificar el número	Aiming at Buy · number not verified
+Comprobando el menú antes de Comprar	Checking menu before Buy
+Comprar enviado una vez · esperando cierre	Buy sent once · waiting for closing
+Apuntando al botón «…»	Aiming at the “…” button
+Cierre «…» enviado una vez	Close “…” sent once
+Esperando los botones de cantidad	Waiting for quantity buttons
+Falta una imagen de los botones marcados.	An image of the marked buttons is missing.
+Cada punto necesita una imagen de 49 × 33 píxeles.	Each point requires a 49 × 33 pixel image.
+Botones de cantidad visibles	Quantity buttons visible
+Esperando botones de cantidad	Waiting for quantity buttons
+ · verde izquierdo: 	 · left green: 
+ · blanco central: 	 · middle white: 
+ · rojo derecho: 	 · right red: 
+Puntero preparado	Pointer ready
+Tiempo del puntero no válido.	Invalid pointer time.
+El juego perdió el foco.	The game lost focus.
+El destino del puntero está fuera del juego.	The pointer destination is outside the game.
+El puntero está fuera del juego.	The pointer is outside the game.
+Actualizando la posición del puntero	Updating pointer position
+Moviendo el puntero al botón	Moving pointer to button
+El reloj del puntero cambió.	The pointer clock changed.
+No se pudo colocar el puntero en 12 segundos.	Could not position the pointer within 12 seconds.
+El puntero salió del juego.	The pointer left the game.
+Volviendo al botón	Returning to button
+Puntero estable sobre el botón	Pointer stable on button
+No hay un movimiento relativo válido dentro del juego.	No valid relative movement within the game.
+Movimiento cancelado	Movement canceled
+Falló el movimiento del puntero: 	Pointer movement failed: 
+No hay espacio para actualizar el puntero junto al botón.	No room to update the pointer next to the button.
+No se pudo usar el lector de Windows. Revisa la zona y el OCR instalado.	Could not use the Windows reader. Check the area and installed OCR.
+Falló la lectura del contador	Counter reading failed
+No se ve el texto amarillo del contador	Yellow counter text is not visible
+Hay varias filas en la zona. Selecciona un solo contador.	Multiple rows in the area. Select only one counter.
+El idioma OCR elegido no está disponible en Windows.	The selected OCR language is unavailable in Windows.
+Lectura: 	Reading: 
+ · texto amarillo aislado	 · isolated yellow text
+ · contraste suave	 · soft contrast
+ · referencia visual x	 · visual reference x
+OCR contradictorio; cantidad desconocida. Ajusta la zona o usa Cronómetro.	Conflicting OCR; quantity unknown. Adjust the area or use Timer.
+OCR sin coincidencia: 	OCR mismatch: 
+. Rodea x y el número o usa Cronómetro.	. Select x and the number or use Timer.
+vacío	empty
+Contador no leído	Counter not read
+Contador sin lectura reciente	No recent counter reading
+Contador desaparecido durante al menos 8 s	Counter missing for at least 8 s
+Comprobando desaparición del contador…	Checking whether the counter is missing…
+Cantidad confirmada	Quantity confirmed
+ cebos	 bait
+Comprobando cantidad…	Confirming quantity…
+Windows no aceptó el clic. Ejecuta ambos programas como usuario normal.	Windows did not accept the click. Run both programs as a normal user.
+Windows no aceptó la tecla Espacio.	Windows did not accept the Space key.
+Windows no aceptó la tecla de compra 	Windows did not accept purchase key 
+. Ejecuta ambos programas como usuario normal.	. Run both programs as a normal user.
+El botón está fuera del escritorio.	The button is outside the desktop.
+Windows no aceptó la posición y entrada del ratón de compra.	Windows did not accept the purchase mouse position and input.
+no disponible	unavailable
+ · ventana 0x	 · window 0x
+Sin pulsaciones de compra	No purchase input
+Parada de protección: no se pudo comprobar la ventana de Roblox.	Safety stop: could not check the Roblox window.
+Windows aceptó presionar	Windows accepted button down
+Presión simulada	Simulated button down
+ · esperando soltar	 · waiting for release
+Windows aceptó soltar	Windows accepted button up
+Liberación simulada	Simulated button up
+ · duración 	 · duration 
+ ms · esto no confirma la respuesta del juego	 ms · this does not confirm the game's response
+Espacio	Space
+la tecla de compra	the purchase key
+La aplicación se está cerrando.	The application is closing.
+Detenida: Roblox dejó de estar en primer plano. Activa: 	Stopped: Roblox is no longer in the foreground. Active: 
+; esperada: 	; expected: 
+Detenida: el ratón llegó a la esquina superior izquierda.	Stopped: the mouse reached the top-left corner.
+Detenida: la zona o el punto de lanzamiento quedó fuera de la ventana de Roblox.	Stopped: the area or casting point is outside the Roblox window.
+Roblox perdió el foco o la zona quedó fuera de su ventana.	Roblox lost focus or the area is outside its window.
+Hay una entrada pendiente de liberación antes de volver al agua.	An input release is pending before returning to the water.
+Moviendo con desplazamientos relativos al punto del agua	Moving to the water point using relative movements
+El movimiento al agua fue cancelado.	Movement to the water was canceled.
+El puntero no quedó sobre el punto del agua. Lanzamiento cancelado.	The pointer is not at the water point. Cast canceled.
+Otra ventana cubre el punto del agua. Lanzamiento cancelado.	Another window covers the water point. Cast canceled.
+Una tecla sigue pendiente de liberación.	A key release is still pending.
+Los saltos de espera están desactivados.	Idle jumps are disabled.
+Una entrada sigue pendiente de liberación.	An input release is still pending.
+Retroceso	Backspace
+Windows aceptó tecla 	Windows accepted key 
+Tecla simulada 	Simulated key 
+ abajo	 down
+ arriba	 up
+ · respuesta del juego sin verificar	 · game response unverified
+Clic de compra fuera de los botones autorizados.	Purchase click outside the authorized buttons.
+Hay una entrada pendiente de liberación.	An input release is pending.
+Moviendo con desplazamientos relativos hacia 	Moving with relative movements towards 
+El movimiento al botón no terminó; clic cancelado.	Movement to the button did not finish; click canceled.
+El puntero no llegó al botón o se movió. Clic cancelado; suelta el ratón durante la prueba.	Pointer did not reach the button or moved. Click canceled; leave the mouse alone during the test.
+El clic quedó sobre otra ventana: 	The click landed over another window: 
+. Despeja el diálogo de Roblox y repite la prueba.	. Uncover the Roblox dialog and run the test again.
+Marca el centro de los botones, con margen dentro de Roblox.	Mark the center of each button, with room inside Roblox.
+La compra automática está desactivada.	Automatic purchases are disabled.
+No se pudo liberar la tecla anterior.	Could not release the previous key.
+Prueba sin zona de pesca configurada	Test without a fishing area set up
+ en 	 at 

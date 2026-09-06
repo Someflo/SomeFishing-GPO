@@ -13,6 +13,8 @@ namespace SomeFishingGPO
         private Panel advancedScroll, testActions, testReadings;
         private Button actionsTabButton, readingsTabButton;
         private readonly ToolTip hints = new ToolTip { InitialDelay = 500, ReshowDelay = 200, AutoPopDelay = 15000 };
+        private readonly System.Collections.Generic.Dictionary<Control,string> hintSources=new System.Collections.Generic.Dictionary<Control,string>();
+        private readonly System.Collections.Generic.HashSet<Label> fullHints=new System.Collections.Generic.HashSet<Label>();
         private readonly string[] pageNames = { "Inicio", "Zonas", "Pruebas", "Avanzado" };
         private readonly string[] pageDescriptions = {
             "Elige el modo y empieza a pescar.", "Marca las áreas y los botones una vez.",
@@ -53,16 +55,21 @@ namespace SomeFishingGPO
         }
         private void Divider(Control parent, int x, int y, int width)
         { parent.Controls.Add(new Panel { Location=new Point(x,y), Size=new Size(width,1), BackColor=Color.FromArgb(231,235,239) }); }
-        private void Hint(Control control, string text) { hints.SetToolTip(control,text); }
+        private void Hint(Control control, string text) { hintSources[control]=text;hints.SetToolTip(control,Localization.T(text)); }
+        private void RefreshHints()
+        {
+            foreach(var pair in hintSources)hints.SetToolTip(pair.Key,Localization.T(pair.Value));
+            foreach(var label in fullHints)hints.SetToolTip(label,Localization.T(translations.Source(label)));
+        }
         private void FullTextHint(Label label)
-        { label.TextChanged+=delegate{Hint(label,label.Text);};Hint(label,label.Text); }
+        { fullHints.Add(label);label.TextChanged+=delegate{hints.SetToolTip(label,Localization.T(label.Text));};hints.SetToolTip(label,Localization.T(label.Text)); }
         private PictureBox PreviewAt(Control parent, int x, int y, int width, int height, string empty)
         {
             var picture=new PictureBox { Location=new Point(x,y), Size=new Size(width,height),
                 BackColor=Color.FromArgb(24,34,44), SizeMode=PictureBoxSizeMode.Zoom };
             picture.Paint+=delegate(object sender,PaintEventArgs e){
                 if(picture.Image==null)using(var font=new Font("Segoe UI",10))
-                    TextRenderer.DrawText(e.Graphics,empty,font,picture.ClientRectangle,Color.FromArgb(162,174,187),
+                    TextRenderer.DrawText(e.Graphics,Localization.T(empty),font,picture.ClientRectangle,Color.FromArgb(162,174,187),
                         TextFormatFlags.HorizontalCenter|TextFormatFlags.VerticalCenter|TextFormatFlags.WordBreak);
             };
             parent.Controls.Add(picture); return picture;
@@ -101,7 +108,7 @@ namespace SomeFishingGPO
         }
         private void ShowQuickGuide()
         {
-            MessageBox.Show(this,"1. En Zonas, marca la barra, el agua y los botones de compra.\n2. Elige Contador OCR o Cronómetro en Inicio.\n3. Prueba la compra y las lecturas en Pruebas.\n4. Permite las entradas y vuelve a Roblox para iniciar.\n\nF6 selecciona la barra. F8 inicia o detiene. F10 detiene.\nCambiar de ventana también detiene la macro.","Guía rápida",MessageBoxButtons.OK,MessageBoxIcon.Information);
+            MessageBox.Show(this,Localization.T("1. En Zonas, marca la barra, el agua y los botones de compra.\n2. Elige Contador OCR o Cronómetro en Inicio.\n3. Prueba la compra y las lecturas en Pruebas.\n4. Permite las entradas y vuelve a Roblox para iniciar.\n\nF6 selecciona la barra. F8 inicia o detiene. F10 detiene.\nCambiar de ventana también detiene la macro."),Localization.T("Guía rápida"),MessageBoxButtons.OK,MessageBoxIcon.Information);
         }
         private void BuildInterface()
         {
@@ -119,10 +126,13 @@ namespace SomeFishingGPO
             }
             var guide=ButtonAt(rail,"Guía rápida",16,358,156,delegate{ShowQuickGuide();},false);
             guide.BackColor=rail.BackColor;guide.ForeColor=Color.FromArgb(181,191,203);((ModernButton)guide).BorderVisible=false;
+            LabelAt(rail,"Idioma / Language",20,465,152,23,9.5f,false).ForeColor=Color.FromArgb(181,191,203);
+            interfaceLanguage=new ComboBox{DropDownStyle=ComboBoxStyle.DropDownList,Location=new Point(20,494),Size=new Size(148,30),Font=new Font("Segoe UI",10),AccessibleName="Idioma / Language"};
+            interfaceLanguage.Items.AddRange(new object[]{"Español","English"});rail.Controls.Add(interfaceLanguage);
             var save=ButtonAt(rail,"Guardar",16,593,156,delegate{SaveSettings();},false);
             Hint(save,"Guarda las zonas y los ajustes actuales.");save.BackColor=Color.FromArgb(34,48,61);save.ForeColor=Color.White;
             ((ModernButton)save).BorderVisible=false;
-            LabelAt(rail,"Local  /  v0.7.0",22,657,145,23,9,false).ForeColor=Color.FromArgb(145,166,177);
+            LabelAt(rail,"Local  /  v0.7.1",22,657,145,23,9,false).ForeColor=Color.FromArgb(145,166,177);
             LabelAt(rail,"Código incluido",22,681,145,23,9,false).ForeColor=Color.FromArgb(145,166,177);
             pageTitle=LabelAt(this,"",212,15,800,49,25,true);
             pageSubtitle=LabelAt(this,"",214,69,820,27,10.5f,false);pageSubtitle.ForeColor=muted;
@@ -131,7 +141,7 @@ namespace SomeFishingGPO
             LabelAt(mode,"Reposición de cebo",20,20,332,29,14,true);
             autoBuy=CheckAt(mode,"Comprar cebo · usa Peli",20,66,332);
             Hint(autoBuy,"Activa la reposición por contador o cronómetro. Permanece junto al barril de cebo.");
-            purchaseMode=new ComboBox {DropDownStyle=ComboBoxStyle.DropDownList,Location=new Point(20,109),Size=new Size(332,30),Font=new Font("Segoe UI",11)};
+            purchaseMode=new LocalizedComboBox {DropDownStyle=ComboBoxStyle.DropDownList,Location=new Point(20,109),Size=new Size(332,30),Font=new Font("Segoe UI",11)};
             purchaseMode.Items.AddRange(new object[]{"Contador OCR","Cronómetro"});mode.Controls.Add(purchaseMode);
             purchaseModeHint=LabelAt(mode,"",20,154,332,39,9.5f,false);purchaseModeHint.ForeColor=muted;
             timerCondition=new Panel{Location=new Point(20,211),Size=new Size(332,102),BackColor=Color.Transparent};mode.Controls.Add(timerCondition);
@@ -249,11 +259,11 @@ namespace SomeFishingGPO
             baitThreshold=NumberAt(buying,"Comprar si quedan ≤",20,145,0,9999,2,236);
             baitCapacity=NumberAt(buying,"Capacidad de cebo",286,145,1,9999,300,236);
             LabelAt(buying,"Idioma OCR del contador",552,145,236,23,9.5f,false).ForeColor=muted;
-            ocrLanguage=new ComboBox{DropDownStyle=ComboBoxStyle.DropDownList,Location=new Point(552,172),Size=new Size(236,30),Font=new Font("Segoe UI",10)};
+            ocrLanguage=new LocalizedComboBox{DropDownStyle=ComboBoxStyle.DropDownList,Location=new Point(552,172),Size=new Size(236,30),Font=new Font("Segoe UI",10)};
             ocrTags.Add("");ocrLanguage.Items.Add("Automático (Windows)");
             foreach(var language in WindowsBaitReader.Languages()){ocrTags.Add(language.Key);ocrLanguage.Items.Add(language.Value);}
             buying.Controls.Add(ocrLanguage);ocrLanguage.SelectedIndex=0;
-            ocrLanguage.SelectedIndexChanged+=delegate{if(previewingBait||previewingShop)StopAll("Idioma cambiado. Vuelve a probar la lectura.");};
+            ocrLanguage.SelectedIndexChanged+=delegate{if(!applyingLanguage&&(previewingBait||previewingShop))StopAll("Idioma cambiado. Vuelve a probar la lectura.");};
             Hint(ocrLanguage,"Idiomas OCR instalados en Windows. Solo se aplica al contador.");
             Hint(shopOpenTime,"Duración de la tecla E para abrir la compra.");
             Hint(shopSettle,"Espera entre las acciones del diálogo. Aumenta si el juego tarda en mostrar los botones.");

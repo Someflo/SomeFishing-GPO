@@ -5,4 +5,5 @@
 *.md text eol=lf
 *.txt text eol=lf
 *.png binary
-
+# Translation fragments use significant trailing spaces when composing messages.
+src/Strings.en.tsv text eol=lf whitespace=-blank-at-eol

@@ -173,6 +173,7 @@ namespace SomeFishingGPO
                 ShopVisualTests.Run(Check);
                 ShopSynchronizationTests.Run(Check,output);
                 CastReturnTests.Run(Check,output);
+                LocalizationTests.Run(Check,output);
                 if(args.Length>15)LowBaitTests.CheckSamples(Check,args[15],args[14]);
                 if(args.Length>16){
                     ShopVisualTests.VerifySample(Check,args[16],new Point(340,393),new Point(490,394),new Point(632,395),true,"Latest quantity screenshot");

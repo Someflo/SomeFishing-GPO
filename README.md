@@ -1,6 +1,8 @@
 # SomeFishing GPO
 
-Macro visual de pesca para GPO en Windows, con código disponible para revisar y compilar. **Versión local 0.7.0.**
+Macro visual de pesca para GPO en Windows, con código disponible para revisar y compilar. **Versión local 0.7.1.**
+
+**Español / English:** el selector **Idioma / Language** está siempre visible en la barra lateral. Cambia al instante y guarda tu elección. Es independiente del idioma OCR del contador. [English quick start](README.en.md).
 
 ![Interfaz con un ejemplo sintético](docs/Vista-previa.png)
 
@@ -91,6 +93,7 @@ Ejecuta `compilar.cmd` con .NET Framework 4.8 y Windows 10/11 SDK instalados. Us
 - `src/Native.cs`: captura e inputs de Windows, comprobaciones de foco y liberación.
 - `src/WindowsBaitReader.cs`, `src/CounterGlyphs.cs`: lectura local de cebo.
 - `src/App.cs`, `src/Interface.cs`: interfaz y selección.
+- `src/Localization.cs`, `src/Strings.en.tsv`: traducciones locales de la interfaz, ayudas y mensajes; incluidas dentro del ejecutable.
 - `docs/VERIFICACION.txt`, `docs/SHA256.txt`: resultados de la versión y huella del ejecutable.
 
 El programa no usa red, descarga actualizaciones ni lee la memoria del juego. Un antivirus sin detecciones no constituye una garantía absoluta. Consulta [SECURITY.md](SECURITY.md). Se publica el código **sin conceder una licencia por ahora**; consulta [NOTICE.md](NOTICE.md).

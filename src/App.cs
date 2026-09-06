@@ -74,8 +74,12 @@ namespace SomeFishingGPO
         private TextBox diagnosticLog;
         private string lastDiagnosticStep;
         private bool diagnosticPending;
+        private ComboBox interfaceLanguage;
+        private readonly UiTranslations translations = new UiTranslations();
+        private string diagnosticSource = "";
+        private bool applyingLanguage;
 
-        public MainForm(bool testMode)
+        public MainForm(bool testMode, Settings testSettings = null)
         {
             this.testMode = testMode;
             settingsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ajustes.xml");
@@ -89,9 +93,10 @@ namespace SomeFishingGPO
                 catch { lastStop = "No se pudo leer el informe de la última parada."; }
             }
             string loadWarning = null;
-            try { settings = testMode ? new Settings() : Settings.Load(settingsPath); }
+            try { settings = testMode ? (testSettings ?? new Settings()) : Settings.Load(settingsPath); }
             catch (Exception error) { settings = new Settings(); loadWarning = "No se pudieron cargar los ajustes: " + error.Message; }
-            Text = "SomeFishing GPO · v0.7.0";
+            Localization.Language = Localization.Normalize(settings.InterfaceLanguage);
+            Text = "SomeFishing GPO · v0.7.1";
             ClientSize = new Size(1080, 730);
             AutoScaleMode = AutoScaleMode.None;
             Font = new Font("Segoe UI", 10);
@@ -107,12 +112,17 @@ namespace SomeFishingGPO
             }
             catch { diagnosticLog.Text="No se pudo leer la última prueba."; }
             if (loadWarning != null) statusLabel.Text = loadWarning;
+            diagnosticSource=diagnosticLog.Text;
+            translations.Attach(this);
+            RefreshHints();
+            interfaceLanguage.SelectedIndexChanged+=delegate{ChangeInterfaceLanguage();};
             timer.Tick += Tick;
             if (!testMode) timer.Start();
         }
 
         private void ApplySettings()
         {
+            interfaceLanguage.SelectedIndex=Localization.Normalize(settings.InterfaceLanguage)=="en"?1:0;
             autoCast.Checked = settings.AutoCast; holdUp.Checked = settings.HoldMovesUp;
             SetNumber(castTime, settings.CastMilliseconds); SetNumber(biteTime, settings.BiteSeconds);
             SetNumber(restTime, settings.RestMilliseconds); SetNumber(tolerance, settings.Tolerance);
@@ -138,6 +148,7 @@ namespace SomeFishingGPO
         {
             return new Settings { Area = settings.Area, CastPoint = settings.CastPoint, CastPointSet = settings.CastPointSet,
                 AutoCast = autoCast.Checked, HoldMovesUp = holdUp.Checked,
+                InterfaceLanguage=interfaceLanguage.SelectedIndex==1?"en":"es",
                 CastMilliseconds = (int)castTime.Value, BiteSeconds = (int)biteTime.Value,
                 RestMilliseconds = (int)restTime.Value, Tolerance = (int)tolerance.Value,
                 AnticipationMilliseconds = (int)anticipation.Value,
@@ -275,8 +286,8 @@ namespace SomeFishingGPO
             baitValueLabel.ForeColor = count.HasValue && count.Value <= 10 ? Color.FromArgb(174,85,15) : ink;
             baitDetailLabel.Text = count.HasValue&&autoBuy.Checked&&purchaseMode.SelectedIndex==0&&count.Value>(int)baitThreshold.Value&&count.Value<=(int)baitThreshold.Value+2?
                 "Compra próxima · se activa con "+baitThreshold.Value+" cebos o menos.":detail ?? "Esperando lectura…";
-            baitReadoutLabel.Text=baitValueLabel.Text;baitReadoutLabel.ForeColor=baitValueLabel.ForeColor;
-            baitReadoutDetail.Text=baitDetailLabel.Text;
+            baitReadoutLabel.Text=translations.Source(baitValueLabel);baitReadoutLabel.ForeColor=baitValueLabel.ForeColor;
+            baitReadoutDetail.Text=translations.Source(baitDetailLabel);
         }
         private void SelectArea()
         {
@@ -353,8 +364,8 @@ namespace SomeFishingGPO
         private void ArmDiagnostic(RunKind kind)
         {
             StopAll("Preparando prueba…");
-            diagnosticLog.Clear();lastDiagnosticStep=null;
-            AppendDiagnostic("SomeFishing GPO 0.7.0 · "+DiagnosticName(kind));
+            diagnosticSource="";diagnosticLog.Clear();lastDiagnosticStep=null;
+            AppendDiagnostic("SomeFishing GPO 0.7.1 · "+DiagnosticName(kind));
             if(testMode){AppendDiagnostic("Render de interfaz: entradas reales desactivadas.");return;}
             if(!CanStartDiagnostic(kind))return;
             Settings selected=ReadSettings().ForDiagnostic(kind);
@@ -370,8 +381,9 @@ namespace SomeFishingGPO
         private void AppendDiagnostic(string message)
         {
             if(diagnosticLog==null)return;
-            diagnosticLog.AppendText(DateTime.Now.ToString("HH:mm:ss")+"  "+message+Environment.NewLine);
-            if(diagnosticLog.TextLength>32000)diagnosticLog.Text=diagnosticLog.Text.Substring(diagnosticLog.TextLength-28000);
+            diagnosticSource+=DateTime.Now.ToString("HH:mm:ss")+"  "+message+Environment.NewLine;
+            if(diagnosticSource.Length>32000)diagnosticSource=diagnosticSource.Substring(diagnosticSource.Length-28000);
+            diagnosticLog.Text=diagnosticSource;
             diagnosticLog.SelectionStart=diagnosticLog.TextLength;diagnosticLog.ScrollToCaret();
             if(!testMode)try{File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"ultima-prueba.txt"),diagnosticLog.Text);}
             catch{statusLabel.Text="No se pudo guardar ultima-prueba.txt; el resultado sigue visible en Pruebas.";}
@@ -388,7 +400,7 @@ namespace SomeFishingGPO
         private void StartNow(RunKind kind=RunKind.Fishing)
         {
             bool diagnostic=kind!=RunKind.Fishing;
-            if (diagnostic?!CanStartDiagnostic(kind):!CanStart()) {StopAll(statusLabel.Text);return;}
+            if (diagnostic?!CanStartDiagnostic(kind):!CanStart()) {StopAll(translations.Source(statusLabel));return;}
             IntPtr target = Native.GetForegroundWindow();
             if (!Native.IsRoblox(target)) { StopAll(diagnostic?"Prueba cancelada: Roblox no estaba en primer plano. Pulsa de nuevo el botón de prueba.":"Vuelve a la ventana de Roblox y pulsa F8 para iniciar."); return; }
             diagnosticPending=false;StopAll("Iniciando…");
@@ -442,7 +454,7 @@ namespace SomeFishingGPO
             }
             if (hadSession && !testMode)
             {
-                lastStop = string.Format("SomeFishing GPO 0.7.0 · {0:yyyy-MM-dd HH:mm:ss}\r\n\r\n{1}\r\n\r\n" +
+                lastStop = string.Format("SomeFishing GPO 0.7.1 · {0:yyyy-MM-dd HH:mm:ss}\r\n\r\n{1}\r\n\r\n" +
                     "Estado al parar: {2}\r\nRondas terminadas: {3}\r\nDuración: {4:F1} s\r\n" +
                     "Mayor intervalo entre revisiones: {5:F0} ms\r\nLanzamiento: {6} ms · Espera: {7} s\r\n" +
                     "Anticipación: {8} ms · Tolerancia: {9}\r\nÚltima detección: {10}\r\n" +
@@ -453,7 +465,7 @@ namespace SomeFishingGPO
                     sessionSettings.CastMilliseconds, sessionSettings.BiteSeconds, sessionSettings.AnticipationMilliseconds, sessionSettings.Tolerance,
                     engine.LastObservation == null ? "Sin imagen" : engine.LastObservation.Detail,
                     engine.BaitCount.HasValue ? engine.BaitCount.Value.ToString() : "Desconocido", sessionSettings.IdleJumpEnabled, engine.JumpRequests,engine.PurchaseAttempts,engine.PurchaseSubmitted);
-                try { File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ultima-parada.txt"), lastStop); }
+                try { File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ultima-parada.txt"), Localization.T(lastStop)); }
                 catch (Exception error) { reason += " · No se pudo guardar el informe: " + error.Message; }
             }
             if (runtime == null || !runtime.PendingRelease) runtime = null;
@@ -468,7 +480,7 @@ namespace SomeFishingGPO
         }
         private void ShowLastStop()
         {
-            MessageBox.Show(this, lastStop ?? "Todavía no hay una sesión detenida registrada.", "Última parada", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show(this, Localization.T(lastStop ?? "Todavía no hay una sesión detenida registrada."), Localization.T("Última parada"), MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
         private void TogglePreview()
         {
@@ -573,6 +585,16 @@ namespace SomeFishingGPO
             try { ReadSettings().Save(settingsPath); }
             catch (Exception error) { statusLabel.Text = "No se guardaron los ajustes: " + error.Message; }
         }
+        private void ChangeInterfaceLanguage()
+        {
+            if(applyingLanguage)return;
+            Localization.Language=interfaceLanguage.SelectedIndex==1?"en":"es";
+            settings.InterfaceLanguage=Localization.Language;
+            applyingLanguage=true;
+            try { translations.Refresh();RefreshHints(); }
+            finally { applyingLanguage=false; }
+            if(!testMode)SaveSettingsQuietly();
+        }
         private void SaveSettings()
         {
             try { settings = ReadSettings(); settings.Save(settingsPath); statusLabel.Text = "Ajustes guardados junto al programa."; }
@@ -593,6 +615,7 @@ namespace SomeFishingGPO
             if (disposing)
             {
                 timer.Dispose();
+                translations.Dispose();
                 hints.Dispose();
                 if (runtime != null) runtime.Dispose();
                 if (previewReader != null) previewReader.Dispose();
@@ -724,11 +747,11 @@ namespace SomeFishingGPO
             {
                 int bannerWidth = Math.Min(1080, monitor.Width - 40);
                 e.Graphics.FillRectangle(background, monitor.Left + 20, monitor.Top + 20, bannerWidth, 106);
-                e.Graphics.DrawString(pointOnly ? PointTitle : shopOnly?"SELECCIONAR DIÁLOGO DE COMPRA":counterOnly ? "SELECCIONAR CONTADOR DE CEBO" : "SELECCIONAR ZONA DE PESCA", font, Brushes.White, monitor.Left + 35, monitor.Top + 32);
+                e.Graphics.DrawString(Localization.T(pointOnly ? PointTitle : shopOnly?"SELECCIONAR DIÁLOGO DE COMPRA":counterOnly ? "SELECCIONAR CONTADOR DE CEBO" : "SELECCIONAR ZONA DE PESCA"), font, Brushes.White, monitor.Left + 35, monitor.Top + 32);
                 string help = selectionHint ?? (pointOnly ? PointHelp :
                     shopOnly?"Rodea la burbuja entera y su fila de botones (Sí/No o Comprar/cantidad/Cancelar), con poco margen.\nEnter o F6: guardar · Esc: cancelar":counterOnly ? "Rodea solo x y la cantidad del cebo equipado (por ejemplo, x300), sin nombres ni otros números.\nEnter o F6: guardar · Esc: cancelar" :
                     "Incluye toda la altura de la barra azul y margen lateral para el balanceo. La verde se ignora.\nEnter o F6: guardar la selección · Esc: cancelar");
-                e.Graphics.DrawString(help, helpFont, selectionHint == null ? Brushes.White : Brushes.Salmon,
+                e.Graphics.DrawString(Localization.T(help), helpFont, selectionHint == null ? Brushes.White : Brushes.Salmon,
                     new RectangleF(monitor.Left + 35, monitor.Top + 66, bannerWidth - 30, 55));
             }
         }
