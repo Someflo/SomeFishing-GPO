@@ -153,6 +153,7 @@ namespace SomeFishingGPO
         private readonly RelativePointer shopPointer;
         private readonly RelativePointer castPointer;
         private readonly BaitSelectionController baitSelection;
+        private readonly BaitPointSelectionController baitPointSelection;
         private Point? permittedBaitPoint;
         private BaitKind? activeBaitKind;
         private BaitMenuReading lastBaitMenu;
@@ -211,6 +212,10 @@ namespace SomeFishingGPO
                 delegate{return ForegroundAllowed;},delegate(Point point){return Settings.ContainsSafely(Native.ClientBounds(target),new Rectangle(point,new Size(1,1)));});
             baitSelection = new BaitSelectionController(delegate { return IsActive; }, ReadBaitMenu, AimBaitRow,
                 TickShopAim, ClickBaitRow, ReleaseBaitInputs, settings.ShopPhaseTimeoutSeconds);
+            baitPointSelection = new BaitPointSelectionController(delegate { return IsActive; }, delegate(BaitKind kind) {
+                Point point; return BaitPointTargets.TryGet(settings, kind, out point) ? (Point?)point : null;
+            }, delegate(BaitKind kind, Point point) { return BaitPointTargets.Authorized(settings, kind, point, Native.ClientBounds(target)); },
+                AimBaitRow, TickShopAim, ClickBaitRow, ReleaseBaitInputs, delegate { return PendingRelease; }, settings.ShopPhaseTimeoutSeconds);
             watchdog = new System.Threading.Timer(delegate
             {
                 mouse.Watchdog(); jump.Watchdog(); shopKey.Watchdog(); controlKey.Watchdog();
@@ -241,7 +246,8 @@ namespace SomeFishingGPO
                 if (Native.InStopCorner())
                 { safetyReason = "Detenida: el ratón llegó a la esquina superior izquierda."; return false; }
                 Rectangle client = Native.ClientBounds(target);
-                bool inside = ((!requireFishingArea&&settings.Area.IsEmpty)||Settings.ContainsSafely(client, settings.Area)) && (settings.UseManualBait ? Settings.ContainsSafely(client, settings.BaitMenuArea) : (!settings.UsesBaitCounter || Settings.ContainsSafely(client, settings.BaitArea))) && (!settings.AutoBuyBait || (settings.UseDirectShopFlow?settings.ValidateShopButtons(client)==null:Settings.ContainsSafely(client,settings.ShopArea))) && (!settings.AutoCast ||
+                bool baitInside = settings.UseManualBait ? (settings.UseBaitPoints ? BaitPointTargets.ConfiguredInside(settings, client) : Settings.ContainsSafely(client, settings.BaitMenuArea)) : (!settings.UsesBaitCounter || Settings.ContainsSafely(client, settings.BaitArea));
+                bool inside = ((!requireFishingArea&&settings.Area.IsEmpty)||Settings.ContainsSafely(client, settings.Area)) && baitInside && (!settings.AutoBuyBait || (settings.UseDirectShopFlow?settings.ValidateShopButtons(client)==null:Settings.ContainsSafely(client,settings.ShopArea))) && (!settings.AutoCast ||
                     (settings.CastPointSet && Settings.ContainsSafely(client, new Rectangle(settings.CastPoint, new Size(1, 1)))));
                 if (!inside) safetyReason = "Detenida: la zona o el punto de lanzamiento quedó fuera de la ventana de Roblox.";
                 return inside;
@@ -293,6 +299,7 @@ namespace SomeFishingGPO
         public void Release()
         {
             if (baitSelection != null) baitSelection.Cancel();
+            if (baitPointSelection != null) baitPointSelection.Cancel();
             if(shopPointer!=null)shopPointer.Cancel();settledShopPoint=null;
             if(castPointer!=null)castPointer.Cancel();castPressPending=false;
             ReleaseInputs();
@@ -406,9 +413,11 @@ namespace SomeFishingGPO
                 publishedBaitReading = new BaitReading { Sequence = ++publishedBaitSequence, SampledAt = now, Detail = "Esperando el contador del nuevo tipo de cebo" };
             }
             // A previous menu snapshot must not authorize a new selection.
-            nextBaitMenu = 0; baitSelection.Begin(kind, now);
+            nextBaitMenu = 0;
+            if (settings.UseBaitPoints) { baitSelection.Cancel(); baitPointSelection.Begin(kind, now); }
+            else { baitPointSelection.Cancel(); baitSelection.Begin(kind, now); }
         }
-        public BaitSelectionResult TickBaitSelection(double now) { return baitSelection.Tick(now); }
+        public BaitSelectionResult TickBaitSelection(double now) { return settings.UseBaitPoints ? baitPointSelection.Tick(now) : baitSelection.Tick(now); }
         private void ReleaseBaitInputs()
         {
             permittedBaitPoint = null;
@@ -418,7 +427,7 @@ namespace SomeFishingGPO
         private void AimBaitRow(Point point)
         {
             Guard();
-            if (!settings.UseManualBait || !Settings.ContainsSafely(settings.BaitMenuArea, new Rectangle(point, new Size(1, 1))))
+            if (!BaitRowPointAllowed(point))
                 throw new InvalidOperationException("La fila de cebo está fuera del menú marcado.");
             ReleaseBaitInputs();
             if (PendingRelease) throw new InvalidOperationException("Hay una entrada pendiente de liberación.");
@@ -429,9 +438,16 @@ namespace SomeFishingGPO
         private void ClickBaitRow(Point point)
         {
             Guard();
-            if (!settings.UseManualBait || permittedBaitPoint != point || !Settings.ContainsSafely(settings.BaitMenuArea, new Rectangle(point, new Size(1, 1))))
+            if (permittedBaitPoint != point || !BaitRowPointAllowed(point))
                 throw new InvalidOperationException("Clic de cebo fuera de la fila autorizada.");
             PressMarkedPoint(point, ShopClickKind.Button, true);
+        }
+        private bool BaitRowPointAllowed(Point point)
+        {
+            if (!settings.UseManualBait) return false;
+            if (settings.UseBaitPoints)
+                return activeBaitKind.HasValue && BaitPointTargets.Authorized(settings, activeBaitKind.Value, point, Native.ClientBounds(target));
+            return Settings.ContainsSafely(settings.BaitMenuArea, new Rectangle(point, new Size(1, 1)));
         }
         private BaitMenuReading ReadBaitMenu(double now)
         {
@@ -457,6 +473,12 @@ namespace SomeFishingGPO
         private BaitReading ReadActiveBaitCounter(double now)
         {
             if (!activeBaitKind.HasValue) return publishedBaitReading;
+            // OCR is optional supporting evidence in point mode. An unset or
+            // outdated OCR crop cannot block explicitly marked bait selection.
+            if (settings.UseBaitPoints && (settings.BaitMenuArea.Width < 60 || settings.BaitMenuArea.Height < 16 ||
+                !Settings.ContainsSafely(Native.ClientBounds(target), settings.BaitMenuArea)))
+                return new BaitReading { Sequence = ++publishedBaitSequence, SampledAt = now,
+                    Detail = "OCR de apoyo sin zona de menú · usando inventario manual" };
             BaitMenuReading menu = ReadBaitMenu(now); BaitMenuRow row;
             if (!menu.TryGetRow(activeBaitKind.Value, out row))
             {
@@ -500,6 +522,7 @@ namespace SomeFishingGPO
         public void Dispose()
         {
             baitSelection.Cancel();
+            baitPointSelection.Cancel();
             shopPointer.Cancel();settledShopPoint=null;
             castPointer.Cancel();castPressPending=false;
             closing = true; mouse.Stop(); jump.Stop(); shopKey.Stop(); controlKey.Stop(); baitReader.Dispose(); shopReader.Dispose();

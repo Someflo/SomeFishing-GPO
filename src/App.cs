@@ -29,6 +29,9 @@ namespace SomeFishingGPO
         private readonly bool testMode;
         private readonly string settingsPath;
         private Settings settings;
+        private readonly AsyncSettingsStore settingsStore;
+        private string reportedSaveError;
+        private bool saveRequested;
         private readonly Timer timer = new Timer { Interval = 50 };
         private readonly Stopwatch clock = Stopwatch.StartNew();
         private FishingEngine engine;
@@ -92,11 +95,12 @@ namespace SomeFishingGPO
                 }
                 catch { lastStop = "No se pudo leer el informe de la última parada."; }
             }
+            if(!testMode)settingsStore=new AsyncSettingsStore(settingsPath);
             string loadWarning = null;
             try { settings = testMode ? (testSettings ?? new Settings()) : Settings.Load(settingsPath); }
             catch (Exception error) { settings = new Settings(); loadWarning = "No se pudieron cargar los ajustes: " + error.Message; }
             Localization.Language = Localization.Normalize(settings.InterfaceLanguage);
-            Text = "SomeFishing GPO · v0.8.0";
+            Text = "SomeFishing GPO · v0.8.1";
             ClientSize = new Size(1080, 730);
             AutoScaleMode = AutoScaleMode.None;
             Font = new Font("Segoe UI", 10);
@@ -159,6 +163,9 @@ namespace SomeFishingGPO
                 AutoBuyBait=autoBuy.Checked,ShopArea=settings.ShopArea,BuyMaximum=false,
                 UseDirectShopFlow=true,ShopButtonsSet=settings.ShopButtonsSet,
                 ShopLeftPoint=settings.ShopLeftPoint,ShopMiddlePoint=settings.ShopMiddlePoint,ShopRightPoint=settings.ShopRightPoint,
+                LongSessionMode=longSession.Checked,LongSessionConfigured=true,RecoveryPauseSeconds=(int)recoveryPause.Value,RecoveryLimit=(int)recoveryLimit.Value,
+                UseBaitPoints=true,KeepOneBait=true,BaitPointsSet=settings.BaitPointsSet,
+                BaitCommonPoint=settings.BaitCommonPoint,BaitRarePoint=settings.BaitRarePoint,BaitLegendaryPoint=settings.BaitLegendaryPoint,
                 UseManualBait=true,ManualInventoryConfirmed=settings.ManualInventoryConfirmed,
                 ManualInventoryUncertain=settings.ManualInventoryUncertain,
                 ManualCommonBait=(int)manualCommon.Value,ManualRareBait=(int)manualRare.Value,ManualLegendaryBait=(int)manualLegendary.Value,
@@ -238,7 +245,7 @@ namespace SomeFishingGPO
                     Point point=picker.Selection.Location;
                     if(index==0)settings.ShopLeftPoint=point;else if(index==1)settings.ShopMiddlePoint=point;else settings.ShopRightPoint=point;
                     selectedShopPoints|=1<<index;settings.ShopButtonsSet=selectedShopPoints==7;
-                    UpdateAreaLabels();ReadSettings().Save(settingsPath);
+                    UpdateAreaLabels();SaveSettingsQuietly();
                     string issue=settings.ShopButtonsSet?settings.ValidateShopButtons(SystemInformation.VirtualScreen):null;
                     statusLabel.Text=issue??(settings.ShopButtonsSet?"Tres puntos guardados. Cierra el diálogo y prueba una compra.":"Punto guardado. Marca los botones que faltan.");
                 }else statusLabel.Text="Selección cancelada. Se conserva el punto anterior.";
@@ -248,7 +255,7 @@ namespace SomeFishingGPO
         {
             if(activePicker!=null)return;StopAll("Seleccionando diálogo de compra…");Hide();
             try{using(var picker=new SelectionOverlay(false,settings.ShopArea,null,SystemInformation.VirtualScreen,false,true)){
-                activePicker=picker;if(picker.ShowDialog()==DialogResult.OK){settings.ShopArea=picker.Selection;UpdateAreaLabels();ReadSettings().Save(settingsPath);statusLabel.Text="Zona guardada. Prueba cada menú antes de habilitar las compras.";}
+                activePicker=picker;if(picker.ShowDialog()==DialogResult.OK){settings.ShopArea=picker.Selection;UpdateAreaLabels();SaveSettingsQuietly();statusLabel.Text="Zona guardada. Prueba cada menú antes de habilitar las compras.";}
             }}catch(Exception error){statusLabel.Text=error.Message;}finally{activePicker=null;Show();Activate();}
         }
         private void ToggleShopPreview()
@@ -269,7 +276,7 @@ namespace SomeFishingGPO
                     if (picker.ShowDialog() == DialogResult.OK)
                     {
                         settings.BaitArea = picker.Selection; monitorBait.Checked = true;
-                        UpdateAreaLabels(); ReadSettings().Save(settingsPath);
+                        UpdateAreaLabels(); SaveSettingsQuietly();
                         statusLabel.Text = "Contador guardado. Usa «Probar lectura» antes de iniciar.";
                     }
                 }
@@ -308,7 +315,7 @@ namespace SomeFishingGPO
                     if (picker.ShowDialog() == DialogResult.OK)
                     {
                         settings.Area = picker.Selection; UpdateAreaLabels();
-                        ReadSettings().Save(settingsPath);
+                        SaveSettingsQuietly();
                         statusLabel.Text = "Zona guardada. Usa «Ver detector» para comprobarla.";
                     }
                     else statusLabel.Text = "Selección cancelada. Se conserva la zona anterior.";
@@ -372,7 +379,7 @@ namespace SomeFishingGPO
         {
             StopAll("Preparando prueba…");
             diagnosticSource="";diagnosticLog.Clear();lastDiagnosticStep=null;
-            AppendDiagnostic("SomeFishing GPO 0.8.0 · "+DiagnosticName(kind));
+            AppendDiagnostic("SomeFishing GPO 0.8.1 · "+DiagnosticName(kind));
             if(testMode){AppendDiagnostic("Render de interfaz: entradas reales desactivadas.");return;}
             if(!CanStartDiagnostic(kind))return;
             Settings selected=ReadSettings().ForDiagnostic(kind);
@@ -437,6 +444,8 @@ namespace SomeFishingGPO
                 autoBuy,buyMaximum,buyQuantity,purchaseLimit,shopOpenTime,shopAreaButton,shopPreviewButton,
                 purchaseMode,purchaseMinutes,testBuyQuantity,baitThreshold,shopSettle,baitCapacity,ocrLanguage,emptyTestButton,purchaseTestButton }) control.Enabled = value;
             foreach(var button in shopPointButtons)button.Enabled=value;
+            foreach(var button in baitPointButtons)button.Enabled=value;
+            longSession.Enabled=value;recoveryLimit.Enabled=value;recoveryPause.Enabled=value;
             foreach(Control item in new Control[]{manualCommon,manualRare,manualLegendary,applyInventory,selectBaitMenu,castRetries,shopRetries,phaseTimeout})item.Enabled=value;
             UpdatePurchaseControls(value);
         }
@@ -464,7 +473,7 @@ namespace SomeFishingGPO
             }
             if (hadSession && !testMode)
             {
-                lastStop = string.Format("SomeFishing GPO 0.8.0 · {0:yyyy-MM-dd HH:mm:ss}\r\n\r\n{1}\r\n\r\n" +
+                lastStop = string.Format("SomeFishing GPO 0.8.1 · {0:yyyy-MM-dd HH:mm:ss}\r\n\r\n{1}\r\n\r\n" +
                     "Estado al parar: {2}\r\nRondas terminadas: {3}\r\nDuración: {4:F1} s\r\n" +
                     "Mayor intervalo entre revisiones: {5:F0} ms\r\nLanzamiento: {6} ms · Espera: {7} s\r\n" +
                     "Anticipación: {8} ms · Tolerancia: {9}\r\nÚltima detección: {10}\r\n" +
@@ -514,6 +523,22 @@ namespace SomeFishingGPO
         {
             if (!IsRunning && runtime != null && !runtime.PendingRelease) { runtime.Dispose(); runtime = null; }
             double now = clock.Elapsed.TotalMilliseconds;
+            sessionHealthLabel.Text=IsRunning?engine.SessionHealth(now):"Tiempo: 00:00";
+            if(settingsStore!=null)
+            {
+                string saveError=settingsStore.LastError;
+                if(saveError!=null)
+                {
+                    sessionHealthLabel.Text="Ajustes sin guardar · revisa permisos de la carpeta";
+                    if(saveError!=reportedSaveError&&!IsRunning)statusLabel.Text="No se guardaron los ajustes: "+saveError;
+                }
+                if(saveRequested&&!settingsStore.Pending)
+                {
+                    saveRequested=false;
+                    if(!IsRunning)statusLabel.Text=saveError==null?"Ajustes guardados":"No se guardaron los ajustes: "+saveError;
+                }
+                reportedSaveError=saveError;
+            }
             purchaseCountdown.Text=IsRunning?engine.TimerStatus(now):"El cronómetro empieza al iniciar la pesca.";
             if (armedUntil > 0)
             {
@@ -600,7 +625,7 @@ namespace SomeFishingGPO
         }
         private void SaveSettingsQuietly()
         {
-            try { ReadSettings().Save(settingsPath); }
+            try { if(settingsStore!=null)settingsStore.Queue(ReadSettings()); }
             catch (Exception error) { statusLabel.Text = "No se guardaron los ajustes: " + error.Message; }
         }
         private void ChangeInterfaceLanguage()
@@ -615,7 +640,7 @@ namespace SomeFishingGPO
         }
         private void SaveSettings()
         {
-            try { settings = ReadSettings(); settings.Save(settingsPath); statusLabel.Text = "Ajustes guardados junto al programa."; }
+            try { settings=ReadSettings();if(settingsStore!=null){settingsStore.Queue(settings);saveRequested=true;}statusLabel.Text="Guardando ajustes…"; }
             catch (Exception error) { statusLabel.Text = "No se guardaron los ajustes: " + error.Message; }
         }
         protected override void OnFormClosing(FormClosingEventArgs e)
@@ -624,6 +649,7 @@ namespace SomeFishingGPO
             if (!testMode)
             {
                 SaveSettingsQuietly();
+                if(settingsStore!=null)settingsStore.Flush(3000);
                 for (int id = 1; id <= 3; id++) Native.UnregisterHotKey(Handle, id);
             }
             base.OnFormClosing(e);
@@ -633,6 +659,7 @@ namespace SomeFishingGPO
             if (disposing)
             {
                 timer.Dispose();
+                if(settingsStore!=null)settingsStore.Dispose();
                 translations.Dispose();
                 hints.Dispose();
                 if (runtime != null) runtime.Dispose();

@@ -108,7 +108,7 @@ namespace SomeFishingGPO
         }
         private void ShowQuickGuide()
         {
-            MessageBox.Show(this,Localization.T("1. En Cebos, escribe tus cantidades y pulsa Aplicar inventario.\n2. Marca el menú completo de cebos, la barra, el agua y los botones de compra.\n3. En Inicio, elige Inventario y rondas o Cronómetro.\n4. Prueba la compra y las lecturas antes de permitir entradas.\n5. Termina cualquier ronda abierta y vuelve a Roblox para iniciar.\n\nF6 selecciona la barra. F8 inicia o detiene. F10 detiene.\nCambiar de ventana también detiene la macro."),Localization.T("Guía rápida"),MessageBoxButtons.OK,MessageBoxIcon.Information);
+            MessageBox.Show(this,Localization.T("1. En Cebos, escribe tus cantidades y pulsa Aplicar inventario.\n2. Marca los botones de cebo, la barra, el agua y los botones de compra.\n3. En Inicio, elige Inventario y rondas o Cronómetro.\n4. Prueba la compra y las lecturas antes de permitir entradas.\n5. Termina cualquier ronda abierta y vuelve a Roblox para iniciar.\n\nF6 selecciona la barra. F8 inicia o detiene. F10 detiene.\nCambiar de ventana también detiene la macro."),Localization.T("Guía rápida"),MessageBoxButtons.OK,MessageBoxIcon.Information);
         }
         private void BuildInterface()
         {
@@ -133,7 +133,7 @@ namespace SomeFishingGPO
             var save=ButtonAt(rail,"Guardar",16,593,156,delegate{SaveSettings();},false);
             Hint(save,"Guarda las zonas y los ajustes actuales.");save.BackColor=Color.FromArgb(34,48,61);save.ForeColor=Color.White;
             ((ModernButton)save).BorderVisible=false;
-            LabelAt(rail,"Local  /  v0.8.0",22,657,145,23,9,false).ForeColor=Color.FromArgb(145,166,177);
+            LabelAt(rail,"Local  /  v0.8.1",22,657,145,23,9,false).ForeColor=Color.FromArgb(145,166,177);
             LabelAt(rail,"Código incluido",22,681,145,23,9,false).ForeColor=Color.FromArgb(145,166,177);
             pageTitle=LabelAt(this,"",212,15,800,49,25,true);
             pageSubtitle=LabelAt(this,"",214,69,820,27,10.5f,false);pageSubtitle.ForeColor=muted;
@@ -163,6 +163,9 @@ namespace SomeFishingGPO
             baitValueLabel=LabelAt(session,"Cebos: —",20,132,416,48,24,true);
             baitDetailLabel=LabelAt(session,"Configura las zonas para empezar.",20,198,416,61,10,false);FullTextHint(baitDetailLabel);
             purchaseCountdown=LabelAt(session,"El cronómetro empieza al iniciar la pesca.",20,292,416,56,12,true);FullTextHint(purchaseCountdown);
+            longSession=CheckAt(session,"Recuperar fallos temporales",20,345,416);
+            Hint(longSession,"Para sesiones largas: espera y reintenta fallos recuperables. Conserva la parada por pérdida de foco o compra dudosa.");
+            sessionHealthLabel=LabelAt(session,"Tiempo: 00:00",20,262,416,28,9,false);
             Divider(session,20,378,416);
             LabelAt(session,"Inicia con Roblox en primer plano.",20,402,416,28,11,true);
             LabelAt(session,"F8 inicia o detiene. F10 detiene.",20,445,416,28,10,false).ForeColor=muted;
@@ -177,9 +180,9 @@ namespace SomeFishingGPO
             castLabel=LabelAt(zones,"Sin seleccionar",20,242,332,26,9.5f,false);
             Hint(pointButton,"Elige dónde debe apuntar el ratón al volver a lanzar.");
             Divider(zones,20,290,332);
-            baitAreaButton=ButtonAt(zones,"Menú de cebos",20,324,332,delegate{SelectBaitMenu();},false);
+            baitAreaButton=ButtonAt(zones,"Menú OCR · opcional",20,324,332,delegate{SelectBaitMenu();},false);
             baitAreaLabel=LabelAt(zones,"Sin seleccionar",20,371,332,26,9.5f,false);
-            LabelAt(zones,"Incluye todas las filas de cebo con margen.",20,425,332,46,10,false).ForeColor=muted;
+            LabelAt(zones,"Solo para el OCR de apoyo, si lo activas.",20,425,332,46,10,false).ForeColor=muted;
             Hint(baitAreaButton,"Selecciona el menú completo. Se busca cada tipo aunque desaparezca otra fila.");
             var buttons=Card(pages[1],388,0,456,516);
             LabelAt(buttons,"3 botones de compra",20,20,416,29,14,true);
@@ -238,7 +241,7 @@ namespace SomeFishingGPO
 
             var warning=Card(pages[3],0,0,844,64);
             LabelAt(warning,"Si no conoces estos ajustes, déjalos como están.",20,19,804,30,12,true);
-            advancedScroll=new Panel{Location=new Point(0,80),Size=new Size(844,436),BackColor=BackColor,AutoScroll=true,AutoScrollMinSize=new Size(0,916)};pages[3].Controls.Add(advancedScroll);
+            advancedScroll=new Panel{Location=new Point(0,80),Size=new Size(844,436),BackColor=BackColor,AutoScroll=true,AutoScrollMinSize=new Size(0,1108)};pages[3].Controls.Add(advancedScroll);
             var fishing=Card(advancedScroll,0,0,808,326);
             LabelAt(fishing,"Pesca",20,17,768,29,14,true);
             autoCast=CheckAt(fishing,"Volver a lanzar automáticamente",20,60,380);
@@ -256,7 +259,7 @@ namespace SomeFishingGPO
             LabelAt(buying,"Compra y contador",20,17,768,29,14,true);
             shopOpenTime=NumberAt(buying,"Mantener E (ms)",20,63,100,3000,1000,236);
             shopSettle=NumberAt(buying,"Pausa entre pasos (ms)",286,63,200,3000,700,236);
-            purchaseLimit=NumberAt(buying,"Tope por sesión",552,63,1,100,10,236);
+            purchaseLimit=NumberAt(buying,"Tope de compras",552,63,1,100,10,236);
             baitThreshold=NumberAt(buying,"Comprar si quedan ≤",20,145,0,9999,2,236);
             baitCapacity=NumberAt(buying,"Capacidad de cebo",286,145,1,9999,300,236);
             LabelAt(buying,"Idioma OCR del contador",552,145,236,23,9.5f,false).ForeColor=muted;
@@ -268,7 +271,7 @@ namespace SomeFishingGPO
             Hint(ocrLanguage,"Idiomas OCR instalados en Windows. Solo se aplica al contador.");
             Hint(shopOpenTime,"Duración de la tecla E para abrir la compra.");
             Hint(shopSettle,"Espera entre las acciones del diálogo. Aumenta si el juego tarda en mostrar los botones.");
-            Hint(purchaseLimit,"Máximo de intentos de compra por sesión.");
+            Hint(purchaseLimit,"Con recuperación activada, cuenta órdenes enviadas. Los fallos previos no consumen este tope. Amplíalo si vas a pescar más horas.");
             Hint(baitThreshold,"Umbral que activa la reposición al confirmar el contador.");
             Hint(baitCapacity,"Total de cebo deseado. Con capacidad 300 y contador 2, solicita 298.");
             var waiting=Card(advancedScroll,0,586,808,144);
@@ -285,6 +288,12 @@ namespace SomeFishingGPO
             phaseTimeout=NumberAt(retry,"Espera por fase (s)",552,65,3,60,10,236);
             Hint(castRetries,"Reintentos después del lanzamiento inicial. Al agotarlos, intenta cerrar el menú una vez antes de volver a pescar.");
             Hint(shopRetries,"Repite solo acciones compatibles con el menú visible. Una compra enviada no se vuelve a pagar.");
+            var endurance=Card(advancedScroll,0,932,808,176);
+            LabelAt(endurance,"Sesiones largas",20,17,768,30,14,true);
+            recoveryLimit=NumberAt(endurance,"Fallos seguidos máximos",20,65,1,10,3,236);
+            recoveryPause=NumberAt(endurance,"Pausa inicial (s)",286,65,5,120,20,236);
+            var recoveryHint=LabelAt(endurance,"Espera más tras cada fallo.",552,72,236,72,9.5f,false);recoveryHint.ForeColor=muted;
+            Hint(recoveryHint,"La pausa aumenta si vuelve a fallar. Una ronda o compra terminada reinicia la cuenta de fallos.");
             BuildInventoryPage();
             purchaseMode.SelectedIndexChanged+=delegate{UpdatePurchaseControls(!IsRunning&&armedUntil==0);};
             baitThreshold.ValueChanged+=delegate{UpdatePurchaseControls(!IsRunning&&armedUntil==0);};

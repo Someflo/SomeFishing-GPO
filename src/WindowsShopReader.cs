@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.Drawing.Drawing2D;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Windows.Media.Ocr;
 
@@ -16,16 +17,19 @@ namespace SomeFishingGPO
         private double next;
         private bool disposed;
         private readonly string language;
-        internal WindowsShopReader(string language="") { this.language=language; }
+        private readonly CancellationTokenSource stop=new CancellationTokenSource();
+        private readonly Func<Bitmap,string,CancellationToken,ShopReading> read;
+        internal WindowsShopReader(string language="",Func<Bitmap,string,CancellationToken,ShopReading> read=null)
+        {this.language=language;this.read=read??ReadImage;}
         internal ShopReading Latest { get { Poll();return latest; } }
-        internal bool Due(double now){Poll();return !disposed&&pending==null&&now>=next;}
+        internal bool Due(double now){Poll();return !disposed&&pending==null&&!WinRtWait.Shared.Busy&&now>=next;}
         internal void Submit(Bitmap frame,Point origin,double now)
         {
-            if(disposed||pending!=null){frame.Dispose();return;}
+            if(disposed||pending!=null||WinRtWait.Shared.Busy){frame.Dispose();return;}
             long seq=++sequence;next=now+1000;
             pending=Task.Run(delegate {
                 using(frame){ShopReading result;
-                    try{result=ReadImage(frame,language);}catch{result=new ShopReading{ReadFailed=true,Detail="No se pudo leer el menú de compra con Windows OCR"};}
+                    try{result=read(frame,language,stop.Token);}catch{result=new ShopReading{ReadFailed=true,Detail="No se pudo leer el menú de compra con Windows OCR"};}
                     result.Left.Offset(origin);result.Middle.Offset(origin);result.SampledAt=now;result.Sequence=seq;return result;
                 }
             });
@@ -33,7 +37,11 @@ namespace SomeFishingGPO
         private void Poll()
         {
             if(pending==null||!pending.IsCompleted)return;
-            if(!disposed)latest=pending.Status==TaskStatus.RanToCompletion?pending.Result:new ShopReading{ReadFailed=true};
+            if(!disposed)
+            {
+                if(pending.Status!=TaskStatus.RanToCompletion)latest=new ShopReading{ReadFailed=true};
+                else if(pending.Result.Sequence==sequence)latest=pending.Result;
+            }
             if(pending.IsFaulted){var ignored=pending.Exception;}pending=null;
         }
         private static string Read(OcrEngine engine,Bitmap source,Rectangle rect,int scale)
@@ -108,7 +116,21 @@ namespace SomeFishingGPO
                 return agreements>=2?candidate:null;
             }
         }
-        internal static ShopReading ReadImage(Bitmap image,string language="")
+        internal static ShopReading ReadImage(Bitmap image,string language="",CancellationToken token=default(CancellationToken))
+        {
+            using(WinRtWait.BeginRead(token))
+            {
+                token.ThrowIfCancellationRequested();
+                try{return ReadImageCore(image,language);}
+                catch(TimeoutException){return new ShopReading{ReadFailed=true,Detail=WinRtWait.TimeoutDetail};}
+                catch(InvalidOperationException error)
+                {
+                    if(error.Message!=WinRtWait.BusyDetail)throw;
+                    return new ShopReading{ReadFailed=true,Detail=WinRtWait.BusyDetail};
+                }
+            }
+        }
+        private static ShopReading ReadImageCore(Bitmap image,string language)
         {
             var result=new ShopReading();
             if(image.Width<150||image.Height<80)return result;
@@ -200,6 +222,17 @@ namespace SomeFishingGPO
             return found;
         }
         private static bool Dot(Rectangle box) { return box.Width>=2&&box.Height>=2&&box.Width<=12&&box.Height<=12&&Math.Abs(box.Width-box.Height)<=4; }
-        public void Dispose(){disposed=true;latest=new ShopReading();}
+        public void Dispose()
+        {
+            if(disposed)return;
+            disposed=true;++sequence;latest=new ShopReading();
+            if(pending==null)stop.Dispose();
+            else
+            {
+                stop.CancelAfter(1);
+                pending.ContinueWith(delegate(Task<ShopReading> completed)
+                {if(completed.IsFaulted){var ignored=completed.Exception;}stop.Dispose();},TaskScheduler.Default);
+            }
+        }
     }
 }

@@ -20,6 +20,13 @@ namespace SomeFishingGPO
         public static string BaitName(BaitKind kind)
         { return kind==BaitKind.Legendary?"Legendario":kind==BaitKind.Rare?"Raro":"Común"; }
 
+        private int BaitReserve { get { return settings.KeepOneBait?1:0; } }
+        private BaitKind? NextUsableBait()
+        {
+            foreach(var kind in new[]{BaitKind.Legendary,BaitKind.Rare,BaitKind.Common})
+                if(!inventory.HasUncertainCount(kind)&&inventory.Count(kind)>BaitReserve)return kind;
+            return null;
+        }
         private void ResetInventorySession()
         {
             lastTrackAt=-10000;RoundsStarted=0;CastAttempts=0;InventoryRevision=0;roundOpen=false;recovery=null;
@@ -28,7 +35,8 @@ namespace SomeFishingGPO
             {
                 inventory=new ManualBaitInventory(settings.ManualCommonBait,settings.ManualRareBait,settings.ManualLegendaryBait,settings.ActiveBaitKind);
                 if(settings.ManualInventoryUncertain)inventory.MarkAllUncertain();
-                else if(inventory.HighestAvailable.HasValue)inventory.Select(inventory.HighestAvailable.Value);
+                else if(NextUsableBait().HasValue)inventory.Select(NextUsableBait().Value);
+                else inventory.Select(BaitKind.Common);
             }
             else inventory=null;
         }
@@ -41,14 +49,14 @@ namespace SomeFishingGPO
         private void FinishObservedRound()
         {
             if(!roundOpen)return;
-            roundOpen=false;Cycles++;
+            roundOpen=false;Cycles++;consecutiveRecoveries=0;
             if(inventory!=null){inventory.FinishRound(RoundsStarted);InventoryRevision++;}
         }
         private bool EnsureBaitSelection(double now)
         {
             if(inventory==null)return false;
             if(inventory.Uncertain){Stop("Cantidad dudosa: actualiza los cebos en Cebos y aplica el inventario.");return true;}
-            BaitKind? next=inventory.HighestAvailable;
+            BaitKind? next=NextUsableBait();
             if(!next.HasValue){inventory.Select(BaitKind.Common);return false;}
             if(baitSelected&&inventory.ActiveKind==next.Value)return false;
             var selector=runtime as IBaitSelectionRuntime;
@@ -62,26 +70,26 @@ namespace SomeFishingGPO
             var result=((IBaitSelectionRuntime)runtime).TickBaitSelection(now);
             Status=result.Status;
             if(!result.Completed)return;
-            if(!result.Succeeded){Stop(result.Status);return;}
+            if(!result.Succeeded){if(IsLongSession)ScheduleResume(now,result.Status,false,false);else Stop(result.Status);return;}
             baitSelected=true;InventoryRevision++;bait.Reset();
-            State=Phase.Preparing;deadline=now+700;Status="Cebo seleccionado: "+BaitName(inventory.ActiveKind);
+            State=Phase.Preparing;deadline=now+700;Status=settings.UseBaitPoints?result.Status:"Cebo seleccionado: "+BaitName(inventory.ActiveKind);
         }
         private bool CanManualBuy(double now)
         {
             return inventory!=null&&!inventory.Uncertain&&settings.AutoBuyBait&&!settings.PurchaseByTimer&&
-                !automaticBuyingBlocked&&PurchaseAttempts<settings.PurchaseLimit&&now>=buyRetryAfter;
+                !automaticBuyingBlocked&&PurchaseBudgetAvailable&&now>=buyRetryAfter;
         }
         private bool HandleManualBait(double now)
         {
             if(inventory.Uncertain){Stop("Compra dudosa: corrige el inventario en Cebos antes de continuar.");return true;}
-            if(inventory.ActiveKind!=BaitKind.Common&&inventory.ActiveCount>0)return false;
-            if(CanManualBuy(now)&&inventory.ActiveCount<=settings.BuyBaitAt){BeginPurchase(now);return true;}
-            if(inventory.ActiveCount>0)return false;
+            if(inventory.ActiveKind!=BaitKind.Common&&inventory.ActiveCount>BaitReserve)return false;
+            if(CanManualBuy(now)&&inventory.ActiveCount<=Math.Max(BaitReserve,settings.BuyBaitAt)){BeginPurchase(now);return true;}
+            if(inventory.ActiveCount>BaitReserve)return false;
             // A depleted manual inventory may replenish immediately in timer mode;
             // this prevents dead waiting for the scheduled interval with zero bait.
-            if(settings.TimedPurchases&&!automaticBuyingBlocked&&PurchaseAttempts<settings.PurchaseLimit&&now>=buyRetryAfter)
+            if(settings.TimedPurchases&&!automaticBuyingBlocked&&PurchaseBudgetAvailable&&now>=buyRetryAfter)
             {BeginPurchase(now);return true;}
-            EnterIdle(now,"Inventario manual agotado",true);return true;
+            EnterIdle(now,"Solo queda el cebo de reserva",true);return true;
         }
         private void CheckSupportingOcr(double now)
         {
@@ -105,6 +113,7 @@ namespace SomeFishingGPO
             runtime.Release();controller.Reset();SuggestedHold=false;
             if(IsDiagnostic){Stop(reason);return;}
             recoveryReason=reason;
+            if(IsLongSession&&!RegisterRecovery(reason))return;
             if(failedOrder)
             {
                 if(purchase!=null&&purchase.Submitted)
@@ -122,9 +131,10 @@ namespace SomeFishingGPO
         private void TickRecovery(double now)
         {
             recovery.Tick(now,null,0);Status=recovery.Status;
-            if(recovery.State==PurchasePhase.Failed){Stop(recoveryReason+" · "+recovery.Status);return;}
+            if(recovery.State==PurchasePhase.Failed){if(IsLongSession)ScheduleResume(now,recoveryReason+" · "+recovery.Status,true,true);else Stop(recoveryReason+" · "+recovery.Status);return;}
             if(recovery.State!=PurchasePhase.Complete)return;
             if(inventory!=null&&inventory.Uncertain){Stop("Diálogo cerrado. Compra dudosa: escribe las cantidades actuales en Cebos.");return;}
+            if(IsLongSession){ScheduleResume(now,recoveryReason,true,false);return;}
             failures=0;baitSelected=false;State=Phase.Preparing;deadline=now+1500;
             Status="Menú cerrado · volviendo a pescar";
         }

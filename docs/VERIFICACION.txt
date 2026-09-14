@@ -1,52 +1,73 @@
-SomeFishing GPO 0.8.0 - verificacion local, 2026-09-13
+SomeFishing GPO 0.8.1 - verificacion local, 2026-09-13
 
-993 comprobaciones integradas; 1000 con la nueva captura privada de referencia.
-Las entradas de las pruebas son simuladas; no se enviaron clics o teclas a Roblox.
-Las capturas anteriores ya no estan disponibles en su ruta temporal. Se conservan
-las regresiones sinteticas anteriores, sin afirmar una nueva validacion con ellas.
+1117 comprobaciones integradas; 1124 con la captura privada de referencia.
+Entradas simuladas: no se enviaron clics ni teclas a Roblox. Las interfaces
+se renderizaron fuera de pantalla, sin activacion ni registro de teclas.
 
-Inventario manual obligatorio en la interfaz, cantidades separadas y prioridad
-legendario -> raro -> comun. Solo se compra comun. Cuenta rondas iniciadas,
-terminadas y lanzamientos separados. Una ronda detectada consume una unidad
-estimada una sola vez; un lanzamiento sin minijuego no consume el inventario.
-La cuenta no afirma cuantos peces se capturaron. Los valores se conservan localmente.
+Seleccion directa: tres puntos independientes, legendario, raro y comun.
+Movimiento gradual, espera de 350 ms, clic unico y espera de liberacion.
+Se valida el punto exacto, tipo permitido y ventana antes de cada entrada.
+No necesita reconocer la fila ni el borde amarillo. El clic completado no
+demuestra que el juego selecciono ese tipo. Pruebas de puntos: 28.
 
-Pruebas de inventario: no decrementos dobles durante perdidas breves, cambios de
-tipo antes de lanzar, reposicion 300 menos el saldo, cronometro, limite de capacidad,
-agotamiento, correccion explicita y persistencia de idioma/contador/modos en interfaz.
-Pruebas de compra: menus nuevos y estables, retrasos de entradas, reintentos por
-fase, cancelacion con el boton derecho marcado, cierre final y vuelta al agua.
-Comprar no se repite si pudo enviarse. Una compra ambigua pide corregir cantidades.
-Un flujo completado acredita la cantidad solicitada como estimacion, no prueba
-el pago ni la entrega real. Las pruebas de compra siguen independientes del inventario.
+Reserva: solo pesca con cantidades estimadas mayores que 1. Deja un
+legendario, un raro y al menos un comun; cambia en ese orden. Reposicion
+de comun antes de consumir el ultimo, tambien anticipando el cronometro
+si hace falta. Sin compra disponible conserva la reserva y espera con
+saltos si estan habilitados, o se detiene. Pruebas de reserva: 17.
+El OCR ya no puede reactivar un inventario reservado y reiniciar una
+y otra vez la espera de salto. La capacidad de compra debe superar la reserva.
 
-La seleccion de cebo busca cada fila en el menu completo y exige borde amarillo
-para confirmar el tipo. Las filas no se seleccionan por un indice fijo. El OCR
-de apoyo recorta el contador del tipo activo y descarta resultados de otro tipo.
-Las regresiones de recorte excluyen bordes amarillos en x1/x2/x4/x14/x300.
-En la captura real, la prueba aislada del OCR leyo 3 y 108. x14 quedo desconocido
-aun con un recorte limpio de 30 x 18 px. No se convirtio en cero ni autorizo compra.
-El inventario manual sigue siendo la base; el OCR informa coincidencias/diferencias.
+Sesiones aceleradas (32 comprobaciones):
+- 24 horas por inventario: 4745 rondas terminadas, 16 compras completadas,
+  19 intentos y 91 lanzamientos fallidos recuperados.
+- 12 horas por cronometro: 1089 rondas, 17 compras completadas,
+  20 intentos y 21 lanzamientos fallidos recuperados.
+Un inventario independiente coincide con las tres cantidades estimadas.
+Incluye menus atrasados, clics ignorados, perdidas breves y de cinco
+segundos, pausas de control y OCR incorrecto. No duplica pedidos ni rondas.
+La cuenta incluye una picada que aparece cuando vence el cronometro.
+La memoria administrada retenida crecio menos de 8 MiB tras la primera hora
+simulada; esto no mide recursos nativos ni una ejecucion real prolongada.
+El tope de compras de estas simulaciones se fijo expresamente en 100.
+La aplicacion conserva el tope configurado, no lo aumenta automaticamente.
 
-El detector usa los bordes reales de la barra, admite margen vertical y lateral,
-separa la linea blanca del texto del aviso E y descarta la barra de progreso verde.
-En la captura privada identifica el pez cerca de y=277 y el hueco cerca de y=374.
-Se probaron pandeo, oclusion, hueco en extremos, escala, dos barras, lineas ambiguas,
-escenas vacias y zonas de hasta 1200 x 1400. Nunca se devuelve geometria vieja como
-deteccion actual. El motor conserva la ultima orden por un maximo de 180 ms ante
-una perdida breve y luego libera. El cierre requiere ausencia sostenida de 1600 ms.
+Recuperacion: pausas crecientes, limite de fallos seguidos y espera de
+barra o cierre sin reutilizar coordenadas antiguas. Foco perdido, F10,
+limites agotados y pedidos inciertos conservan las paradas correspondientes.
+Comprar se cuenta enviado antes de llamar al controlador y no se repite
+si pudo enviarse. Un cierre completo acredita solo una estimacion.
 
-Interfaz revisada mediante renders sin activar ventanas ni registrar teclas.
-Espanol e ingles disponibles. Nuevos campos y paginas conservan los valores al
-cambiar de idioma. Menu Cebos, reintentos en Avanzado y aviso de inventario estimado.
+Guardado: 19 comprobaciones del escritor asincrono, instantaneas aisladas,
+una escritura activa, ultima instantanea pendiente, excepciones, cierre
+acotado y recuperacion en un guardado posterior. No hace E/S de ajustes
+en el hilo de control. Un fallo de guardado aparece en la interfaz.
 
-Microsoft Defender termino el analisis del ejecutable: found no threats.
-Esto no es una garantia absoluta. Se conserva NOTICE.md sin licencia concedida.
-No se distribuyen capturas privadas, ajustes personales, registros de sesion,
-credenciales ni rutas de usuario. Los renders y ejemplos incluidos son sinteticos.
+OCR: 28 comprobaciones simuladas de plazos, cancelacion, fallo y liberacion.
+3 segundos por reconocimiento y 8 por lectura. Una operacion nativa que
+ignora cancelar conserva su plaza y recursos hasta terminar; no se apilan
+nuevas operaciones. Un tiempo agotado produce desconocido, nunca cero.
+Prueba real sobre PNG guardado con los lectores nuevos: reconocio 3 y 108;
+14 siguio desconocido. La lectura total tardo aproximadamente 362 ms y no
+quedo OCR pendiente. No se distribuye la captura del usuario. Las pruebas
+del recorte siguen excluyendo los bordes amarillos.
+
+Interfaz y guias en espanol e ingles revisadas por render. Se conservan
+cantidades, zonas, configuracion e idioma. Al migrar hay que marcar los
+nuevos puntos de cebo. El inventario sigue siendo estimado: consumo manual
+externo, rondas no detectadas o una seleccion no aceptada requieren corregirlo.
+
+Estas sesiones aceleradas NO equivalen a 36 horas reales en Roblox ni
+verifican que el juego reciba las entradas nativas. No garantizan ausencia
+de fallos, evitar desconexiones, conservar filas ni capturar todos los peces.
+
+Microsoft Defender analizo este ejecutable y termino: found no threats.
+Esto no es una garantia absoluta. Se conserva NOTICE.md sin licencia.
+La entrega no incluye ajustes personales, capturas privadas, credenciales
+ni registros de sesiones reales. Los renders son ejemplos sinteticos.
 
 SHA256 DEL EJECUTABLE
-F9E508A28636615C7993C344D52E7BE3DED97E8A344357E68610397B6D14CE57  SomeFishingGPO.exe
+6B22FDFF6B718CABCDCCEA92F486A0DB529EB6CB49118827CF51175DE8D9E13A  SomeFishingGPO.exe
 
 PRUEBAS INTEGRADAS
 OK: Windows INPUT structure matches the platform ABI
@@ -1035,6 +1056,130 @@ OK: Missing marker evidence retains only current visible-menu evidence, never a 
 OK: Current evidence reacquires a panned marker after a partial frame
 OK: A closed menu is not kept visible solely because a previous track box was remembered
 OK: Reset permits clean acquisition at a new track location
+OK: Settings write starts on a background worker
+OK: An unfinished settings write reports pending without waiting
+OK: A settings flush times out while the writer is blocked
+OK: A blocked settings flush has a bounded wait
+OK: Queueing many settings snapshots does not wait for a blocked disk write
+OK: Every queued settings snapshot receives a monotonic revision
+OK: Flushing completes after the latest pending snapshot is saved
+OK: Repeated pending updates coalesce and never run concurrent settings writers
+OK: Queued settings retain their original scalar, language and rectangle values
+OK: The final coalesced settings snapshot is isolated from later caller mutations
+OK: Settings write errors are observable and do not leave work pending
+OK: A failed settings write does not busy-loop or retry during Flush
+OK: A later settings snapshot retries after failure and clears a resolved error
+OK: Background settings writing creates a valid settings XML file
+OK: The background writer preserves atomic replacement on later inventory snapshots
+OK: Dispose timeout test has an active settings write
+OK: Disposing settings storage returns after a bounded wait without aborting an active write
+OK: Disposed settings storage rejects new work
+OK: An in-progress settings write can finish cleanly after Dispose timed out
+OK: Common bait resolves only the explicitly marked common point
+OK: Rare and legendary bait resolve their independent marked points
+OK: Direct bait points accept a negative-coordinate monitor without requiring a menu image area
+OK: Only the exact point marked for the requested bait type is authorized
+OK: A stored coordinate without its marked bit cannot authorize selection
+OK: An unknown bait type never falls back to another marked point
+OK: A bait point on the excluded window edge fails bounds validation
+OK: Disabled point mode grants no point-selection authority
+OK: Disabled manual inventory grants no bait-point authority
+OK: Unsupported point-mask bits are rejected
+OK: Old points belonging only to absent or reserved bait cannot block a usable common point
+OK: A reserved-only inventory can wait without marking points that cannot be selected
+OK: Automatic common replenishment requires its marked point even when only the reserve remains
+OK: Starting a direct selection queues a transaction without sending a click
+OK: Direct selection aims at legendary bait and waits for smooth movement completion
+OK: Direct selection waits at least 350 ms after the pointer settles
+OK: Exactly one bait press is sent and completion waits for button release
+OK: A released direct click completes without OCR and explicitly reports unverified game selection
+OK: Stopping a pending point selection prevents every later move and click
+OK: Focus loss during the settle period cancels before the bait click
+OK: A changed configured target cannot redirect an already pending bait transaction
+OK: An unmarked requested type fails without waiting for OCR or clicking common bait
+OK: A pointer movement that never settles has a bounded failure
+OK: An input rejection releases the attempted press and never retries a second click
+OK: Pending button-up prevents a successful direct bait selection result
+OK: A button-up that remains pending ends with bounded failure and no repeated press
+OK: Focus loss after a bait press releases it and cannot report selection success
+OK: A reversed selection clock cannot move or click a bait point
+OK: An OCR reading of one reserved common bait cannot repeatedly reactivate exhausted manual inventory
+OK: Keeping one common bait without purchasing preserves scheduled idle jumps instead of resetting their deadline
+OK: Reserved-only idle waiting cannot consume bait, invent rounds or send fishing input
+OK: One common bait with buying and idle jumps disabled stops while preserving its reserve
+OK: A reserved-only stopped session sends no selection, fishing or jump input
+OK: An all-zero manual inventory cannot be revived by unrelated positive OCR evidence
+OK: Legendary and rare quantities of one are reserved and selection starts on usable common bait
+OK: Skipping reserved higher-tier bait never changes its quantities or consumes a round
+OK: Two confirmed rounds from three common bait stop at one reserve without starting a third round
+OK: Common depletion to reserve keeps higher-tier rows present and does not select either reserved type
+OK: An absent legendary row and reserved rare row require only the usable common selection
+OK: A reserved legendary quantity does not block usable rare bait from being selected first
+OK: The last usable rare bait switches to common while retaining one rare bait
+OK: Threshold manual buying rejects capacity equal to the preserved reserve
+OK: Threshold manual buying permits capacity above the preserved reserve
+OK: Timed manual buying rejects capacity equal to the preserved reserve
+OK: Timed manual buying permits capacity above the preserved reserve
+OK: Bounded OCR preserves a successful value and disposes its owned resources once
+OK: A completed OCR operation releases its native slot
+OK: OCR failure propagates its original error, frees the slot and disposes resources
+OK: A stopped OCR request never starts native work or retains its image
+OK: A never-completing OCR task returns an unknown result within a bounded wait
+OK: The recognition deadline requests cancellation from the native operation
+OK: Ignored cancellation retains the single OCR slot and resources until native completion
+OK: Forty retries cannot accumulate additional native workers behind one hung OCR request
+OK: Rejected captures are released while the pending native capture remains valid
+OK: A late native completion releases its resources without turning the timeout into a count
+OK: OCR resumes with a fresh request once the previous native operation really exits
+OK: Acknowledged deadline cancellation is reported as a timeout instead of a zero
+OK: Acknowledged cancellation frees the native slot for subsequent readings
+OK: A task that may fault later still obeys the initial deadline
+OK: A late native fault is observed and releases the OCR slot
+OK: Even a stuck native operation factory cannot block the caller past its deadline
+OK: Releasing a stuck factory cleans up its only retained native resource
+OK: Stopping a read interrupts its wait while an unacknowledged native operation keeps the slot
+OK: A stopped native operation can finish without leaving the global OCR slot busy
+OK: Nested OCR work shares the outer total read budget instead of extending it per crop
+OK: Leaving a nested OCR crop restores the existing total read budget
+OK: An exhausted total read budget prevents another OCR recognition from starting
+OK: A bait reader remains busy while its existing worker is pending
+OK: A second bait submission cannot replace a pending read
+OK: Disposal discards late bait quantities and never restarts the stopped reader
+OK: A shop reader remains busy while its existing worker is pending
+OK: A second shop submission cannot create concurrent menu OCR work
+OK: A disposed reader cannot publish a late purchase menu or its MAX quantity
+OK: Threshold 24h accelerated session stays running; ended at 86400000ms in Tracking: Clic mantenido · subiendo el hueco
+OK: Threshold 24h accelerated session counts each observed round exactly once despite dropouts
+OK: Threshold 24h accelerated session keeps all three manual estimates equal to independent game quantities
+OK: Threshold 24h accelerated session completes thousands/hundreds of full simulated rounds (4745)
+OK: Threshold 24h accelerated session replenishes more than ten times within the explicit session limit (16/19)
+OK: Threshold 24h accelerated session selects legendary, rare, then common and only reselects common thereafter
+OK: Threshold 24h accelerated session keeps one legendary, one rare and at least one common bait so configured rows remain visible
+OK: Threshold 24h accelerated session recovers from repeated missed casts without consuming imaginary bait (91 misses)
+OK: Threshold 24h accelerated session includes repeated five-second partial detections and brief complete image losses
+OK: Threshold 24h accelerated session exercises failed pre-submit orders, Yes retries, closing retries and delayed menus
+OK: Threshold 24h accelerated session never resubmits Buy and charges the purchase limit only for submitted orders
+OK: Threshold 24h accelerated session keeps casting, selection, typing and shop actions in their required states
+OK: Threshold 24h accelerated session tolerates missing and conflicting supporting OCR without replacing the manual ledger
+OK: Threshold 24h accelerated session fills capacity from two or fewer remaining common baits
+OK: Threshold 24h accelerated session retains less than 8 MiB additional managed memory after hour one (336792 bytes); native resources are outside this simulation
+OK: Threshold 24h accelerated session releases all held input and cannot send delayed actions after Stop
+OK: Timer 12h accelerated session stays running; ended at 43200000ms in Tracking: Clic mantenido · subiendo el hueco
+OK: Timer 12h accelerated session counts each observed round exactly once despite dropouts
+OK: Timer 12h accelerated session keeps all three manual estimates equal to independent game quantities
+OK: Timer 12h accelerated session completes thousands/hundreds of full simulated rounds (1089)
+OK: Timer 12h accelerated session replenishes more than ten times within the explicit session limit (17/20)
+OK: Timer 12h accelerated session selects legendary, rare, then common and only reselects common thereafter
+OK: Timer 12h accelerated session keeps one legendary, one rare and at least one common bait so configured rows remain visible
+OK: Timer 12h accelerated session recovers from repeated missed casts without consuming imaginary bait (21 misses)
+OK: Timer 12h accelerated session includes repeated five-second partial detections and brief complete image losses
+OK: Timer 12h accelerated session exercises failed pre-submit orders, Yes retries, closing retries and delayed menus
+OK: Timer 12h accelerated session never resubmits Buy and charges the purchase limit only for submitted orders
+OK: Timer 12h accelerated session keeps casting, selection, typing and shop actions in their required states
+OK: Timer 12h accelerated session tolerates missing and conflicting supporting OCR without replacing the manual ledger
+OK: Timer 12h accelerated session uses adjustable fifty-bait requests and repeated forty-minute replenishment intervals
+OK: Timer 12h accelerated session retains less than 8 MiB additional managed memory after hour one (72096 bytes); native resources are outside this simulation
+OK: Timer 12h accelerated session releases all held input and cannot send delayed actions after Stop
 OK: Marked cancel and close points remain available for cleanup with buying disabled
 OK: Cleanup authorization cannot click Buy or an unmarked point
 OK: Typing inventory requires explicit Apply before fishing
@@ -1077,7 +1222,7 @@ OK: Round-trip language changes preserve every setting and preview state
 OK: The always-visible selector works across every page without rebuilding forms
 OK: A saved English preference applies on startup
 UI: rendered off-screen non-activating form; no hotkeys registered and no clicks sent.
-PASS: 993 checks.
+PASS: 1117 checks.
 
 VALIDACION CON CAPTURA NO DISTRIBUIDA
 OK: Windows INPUT structure matches the platform ABI
@@ -2066,6 +2211,130 @@ OK: Missing marker evidence retains only current visible-menu evidence, never a 
 OK: Current evidence reacquires a panned marker after a partial frame
 OK: A closed menu is not kept visible solely because a previous track box was remembered
 OK: Reset permits clean acquisition at a new track location
+OK: Settings write starts on a background worker
+OK: An unfinished settings write reports pending without waiting
+OK: A settings flush times out while the writer is blocked
+OK: A blocked settings flush has a bounded wait
+OK: Queueing many settings snapshots does not wait for a blocked disk write
+OK: Every queued settings snapshot receives a monotonic revision
+OK: Flushing completes after the latest pending snapshot is saved
+OK: Repeated pending updates coalesce and never run concurrent settings writers
+OK: Queued settings retain their original scalar, language and rectangle values
+OK: The final coalesced settings snapshot is isolated from later caller mutations
+OK: Settings write errors are observable and do not leave work pending
+OK: A failed settings write does not busy-loop or retry during Flush
+OK: A later settings snapshot retries after failure and clears a resolved error
+OK: Background settings writing creates a valid settings XML file
+OK: The background writer preserves atomic replacement on later inventory snapshots
+OK: Dispose timeout test has an active settings write
+OK: Disposing settings storage returns after a bounded wait without aborting an active write
+OK: Disposed settings storage rejects new work
+OK: An in-progress settings write can finish cleanly after Dispose timed out
+OK: Common bait resolves only the explicitly marked common point
+OK: Rare and legendary bait resolve their independent marked points
+OK: Direct bait points accept a negative-coordinate monitor without requiring a menu image area
+OK: Only the exact point marked for the requested bait type is authorized
+OK: A stored coordinate without its marked bit cannot authorize selection
+OK: An unknown bait type never falls back to another marked point
+OK: A bait point on the excluded window edge fails bounds validation
+OK: Disabled point mode grants no point-selection authority
+OK: Disabled manual inventory grants no bait-point authority
+OK: Unsupported point-mask bits are rejected
+OK: Old points belonging only to absent or reserved bait cannot block a usable common point
+OK: A reserved-only inventory can wait without marking points that cannot be selected
+OK: Automatic common replenishment requires its marked point even when only the reserve remains
+OK: Starting a direct selection queues a transaction without sending a click
+OK: Direct selection aims at legendary bait and waits for smooth movement completion
+OK: Direct selection waits at least 350 ms after the pointer settles
+OK: Exactly one bait press is sent and completion waits for button release
+OK: A released direct click completes without OCR and explicitly reports unverified game selection
+OK: Stopping a pending point selection prevents every later move and click
+OK: Focus loss during the settle period cancels before the bait click
+OK: A changed configured target cannot redirect an already pending bait transaction
+OK: An unmarked requested type fails without waiting for OCR or clicking common bait
+OK: A pointer movement that never settles has a bounded failure
+OK: An input rejection releases the attempted press and never retries a second click
+OK: Pending button-up prevents a successful direct bait selection result
+OK: A button-up that remains pending ends with bounded failure and no repeated press
+OK: Focus loss after a bait press releases it and cannot report selection success
+OK: A reversed selection clock cannot move or click a bait point
+OK: An OCR reading of one reserved common bait cannot repeatedly reactivate exhausted manual inventory
+OK: Keeping one common bait without purchasing preserves scheduled idle jumps instead of resetting their deadline
+OK: Reserved-only idle waiting cannot consume bait, invent rounds or send fishing input
+OK: One common bait with buying and idle jumps disabled stops while preserving its reserve
+OK: A reserved-only stopped session sends no selection, fishing or jump input
+OK: An all-zero manual inventory cannot be revived by unrelated positive OCR evidence
+OK: Legendary and rare quantities of one are reserved and selection starts on usable common bait
+OK: Skipping reserved higher-tier bait never changes its quantities or consumes a round
+OK: Two confirmed rounds from three common bait stop at one reserve without starting a third round
+OK: Common depletion to reserve keeps higher-tier rows present and does not select either reserved type
+OK: An absent legendary row and reserved rare row require only the usable common selection
+OK: A reserved legendary quantity does not block usable rare bait from being selected first
+OK: The last usable rare bait switches to common while retaining one rare bait
+OK: Threshold manual buying rejects capacity equal to the preserved reserve
+OK: Threshold manual buying permits capacity above the preserved reserve
+OK: Timed manual buying rejects capacity equal to the preserved reserve
+OK: Timed manual buying permits capacity above the preserved reserve
+OK: Bounded OCR preserves a successful value and disposes its owned resources once
+OK: A completed OCR operation releases its native slot
+OK: OCR failure propagates its original error, frees the slot and disposes resources
+OK: A stopped OCR request never starts native work or retains its image
+OK: A never-completing OCR task returns an unknown result within a bounded wait
+OK: The recognition deadline requests cancellation from the native operation
+OK: Ignored cancellation retains the single OCR slot and resources until native completion
+OK: Forty retries cannot accumulate additional native workers behind one hung OCR request
+OK: Rejected captures are released while the pending native capture remains valid
+OK: A late native completion releases its resources without turning the timeout into a count
+OK: OCR resumes with a fresh request once the previous native operation really exits
+OK: Acknowledged deadline cancellation is reported as a timeout instead of a zero
+OK: Acknowledged cancellation frees the native slot for subsequent readings
+OK: A task that may fault later still obeys the initial deadline
+OK: A late native fault is observed and releases the OCR slot
+OK: Even a stuck native operation factory cannot block the caller past its deadline
+OK: Releasing a stuck factory cleans up its only retained native resource
+OK: Stopping a read interrupts its wait while an unacknowledged native operation keeps the slot
+OK: A stopped native operation can finish without leaving the global OCR slot busy
+OK: Nested OCR work shares the outer total read budget instead of extending it per crop
+OK: Leaving a nested OCR crop restores the existing total read budget
+OK: An exhausted total read budget prevents another OCR recognition from starting
+OK: A bait reader remains busy while its existing worker is pending
+OK: A second bait submission cannot replace a pending read
+OK: Disposal discards late bait quantities and never restarts the stopped reader
+OK: A shop reader remains busy while its existing worker is pending
+OK: A second shop submission cannot create concurrent menu OCR work
+OK: A disposed reader cannot publish a late purchase menu or its MAX quantity
+OK: Threshold 24h accelerated session stays running; ended at 86400000ms in Tracking: Clic mantenido · subiendo el hueco
+OK: Threshold 24h accelerated session counts each observed round exactly once despite dropouts
+OK: Threshold 24h accelerated session keeps all three manual estimates equal to independent game quantities
+OK: Threshold 24h accelerated session completes thousands/hundreds of full simulated rounds (4745)
+OK: Threshold 24h accelerated session replenishes more than ten times within the explicit session limit (16/19)
+OK: Threshold 24h accelerated session selects legendary, rare, then common and only reselects common thereafter
+OK: Threshold 24h accelerated session keeps one legendary, one rare and at least one common bait so configured rows remain visible
+OK: Threshold 24h accelerated session recovers from repeated missed casts without consuming imaginary bait (91 misses)
+OK: Threshold 24h accelerated session includes repeated five-second partial detections and brief complete image losses
+OK: Threshold 24h accelerated session exercises failed pre-submit orders, Yes retries, closing retries and delayed menus
+OK: Threshold 24h accelerated session never resubmits Buy and charges the purchase limit only for submitted orders
+OK: Threshold 24h accelerated session keeps casting, selection, typing and shop actions in their required states
+OK: Threshold 24h accelerated session tolerates missing and conflicting supporting OCR without replacing the manual ledger
+OK: Threshold 24h accelerated session fills capacity from two or fewer remaining common baits
+OK: Threshold 24h accelerated session retains less than 8 MiB additional managed memory after hour one (336792 bytes); native resources are outside this simulation
+OK: Threshold 24h accelerated session releases all held input and cannot send delayed actions after Stop
+OK: Timer 12h accelerated session stays running; ended at 43200000ms in Tracking: Clic mantenido · subiendo el hueco
+OK: Timer 12h accelerated session counts each observed round exactly once despite dropouts
+OK: Timer 12h accelerated session keeps all three manual estimates equal to independent game quantities
+OK: Timer 12h accelerated session completes thousands/hundreds of full simulated rounds (1089)
+OK: Timer 12h accelerated session replenishes more than ten times within the explicit session limit (17/20)
+OK: Timer 12h accelerated session selects legendary, rare, then common and only reselects common thereafter
+OK: Timer 12h accelerated session keeps one legendary, one rare and at least one common bait so configured rows remain visible
+OK: Timer 12h accelerated session recovers from repeated missed casts without consuming imaginary bait (21 misses)
+OK: Timer 12h accelerated session includes repeated five-second partial detections and brief complete image losses
+OK: Timer 12h accelerated session exercises failed pre-submit orders, Yes retries, closing retries and delayed menus
+OK: Timer 12h accelerated session never resubmits Buy and charges the purchase limit only for submitted orders
+OK: Timer 12h accelerated session keeps casting, selection, typing and shop actions in their required states
+OK: Timer 12h accelerated session tolerates missing and conflicting supporting OCR without replacing the manual ledger
+OK: Timer 12h accelerated session uses adjustable fifty-bait requests and repeated forty-minute replenishment intervals
+OK: Timer 12h accelerated session retains less than 8 MiB additional managed memory after hour one (72096 bytes); native resources are outside this simulation
+OK: Timer 12h accelerated session releases all held input and cannot send delayed actions after Stop
 OK: The supplied E-prompt screenshot resolves the actual white marker and bottom gray gap from the full frame
 OK: The same supplied prompt screenshot works in a selected fishing rectangle with both bars and sideways margin
 OK: The real supplied green progress meter alone does not become a fishing track
@@ -2115,4 +2384,4 @@ OK: Round-trip language changes preserve every setting and preview state
 OK: The always-visible selector works across every page without rebuilding forms
 OK: A saved English preference applies on startup
 UI: rendered off-screen non-activating form; no hotkeys registered and no clicks sent.
-PASS: 1000 checks.
+PASS: 1124 checks.

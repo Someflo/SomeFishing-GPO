@@ -1,5 +1,17 @@
 # Historial de cambios
 
+## 0.8.1 · Sesiones largas y selección por puntos
+
+- **Cebos** permite marcar los botones legendario, raro y común. Cambia de tipo con movimiento y clic en esos puntos, sin depender del nombre ni del borde amarillo. Los puntos deben ajustarse con el menú estable; enviar el clic no verifica el tipo elegido.
+- Conserva **1 cebo de cada tipo** para mantener sus filas visibles. Usa cantidades mayores que 1 en orden legendario → raro → común; repone común antes de gastar su reserva. Las cantidades manuales siguen siendo la base y el OCR de apoyo es opcional.
+- **Recuperar fallos temporales**, activado al configurar esta versión por primera vez, permite retomar lanzamientos y recuperar menús con pausas crecientes. El máximo de fallos seguidos y la pausa inicial son ajustables; no requiere saltos. Una ronda o compra terminada reinicia el límite de fallos seguidos.
+- Ante una pérdida prolongada de detección, libera el clic y espera imágenes nuevas de la barra o su cierre, hasta 90 segundos. Recuperar la misma ronda no vuelve a descontar cebo. Mantiene las paradas por pérdida de foco, límites agotados y compras dudosas.
+- Con recuperación activada, el tope de compras cuenta órdenes enviadas, no intentos que fallaron antes de Comprar. No repite pedidos enviados ni aumenta el tope por su cuenta. Inicio muestra tiempo, compras y recuperaciones.
+- Corrige el caso en que el cronómetro vencía durante la espera de una picada y la ronda posterior no se descontaba del inventario. La compra espera esa ronda o el fin de la espera; una ronda observada durante la pausa también se contabiliza una sola vez.
+- Guarda los ajustes en segundo plano con una escritura activa y solo la actualización pendiente más reciente. Las esperas del OCR tienen plazo y cancelación; un fallo del lector no inventa una cantidad ni una compra completada.
+- Añade **32 comprobaciones de sesiones aceleradas de 24 y 12 horas**: inventario independiente, reserva, fallos de lanzamiento, pérdidas de detección, OCR contradictorio, menús lentos y compras sin duplicados. Son simulaciones; no equivalen a horas reales en Roblox ni verifican la recepción de entradas nativas.
+- Actualiza las guías y la interfaz en Español/English. Conserva los ajustes existentes y `NOTICE.md`, sin conceder una licencia.
+
 ## 0.8.0 · Inventario, tipos de cebo y recuperación
 
 - Nuevo apartado **Cebos**: cantidades manuales de legendario, raro y común, con confirmación explícita antes de iniciar pesca. Conserva las estimaciones en los ajustes y permite corregirlas.

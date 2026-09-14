@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Windows.Graphics.Imaging;
 using Windows.Media.Ocr;
@@ -19,7 +20,10 @@ namespace SomeFishingGPO
         private double nextSample;
         private bool disposed;
         private readonly string language;
-        internal WindowsBaitReader(string language="") { this.language=language; }
+        private readonly CancellationTokenSource stop = new CancellationTokenSource();
+        private readonly Func<Bitmap,string,CancellationToken,BaitReading> read;
+        internal WindowsBaitReader(string language="", Func<Bitmap,string,CancellationToken,BaitReading> read=null)
+        { this.language=language; this.read=read??ReadImage; }
         internal static System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<string,string>> Languages()
         {
             var result=new System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<string,string>>();
@@ -34,17 +38,17 @@ namespace SomeFishingGPO
             return null;
         }
         internal BaitReading Latest { get { Poll(); return latest; } }
-        internal bool Due(double now) { Poll(); return !disposed && pending == null && now >= nextSample; }
+        internal bool Due(double now) { Poll(); return !disposed && pending == null && !WinRtWait.Shared.Busy && now >= nextSample; }
         internal void Submit(Bitmap frame, double now)
         {
-            if (disposed || pending != null) { frame.Dispose(); return; }
+            if (disposed || pending != null || WinRtWait.Shared.Busy) { frame.Dispose(); return; }
             long currentSequence = ++sequence; nextSample = now + 1500;
             pending = Task.Run(delegate
             {
                 using (frame)
                 {
                     BaitReading reading;
-                    try { reading = ReadImage(frame,language); }
+                    try { reading = read(frame,language,stop.Token); }
                     catch (Exception) { reading = new BaitReading { Detail = "No se pudo usar el lector de Windows. Revisa la zona y el OCR instalado." }; }
                     reading.Sequence = currentSequence; reading.SampledAt = now; return reading;
                 }
@@ -53,12 +57,29 @@ namespace SomeFishingGPO
         private void Poll()
         {
             if (pending == null || !pending.IsCompleted) return;
-            if (!disposed) latest = pending.Status == TaskStatus.RanToCompletion ? pending.Result :
-                new BaitReading { Detail = "Falló la lectura del contador" };
+            if (!disposed)
+            {
+                if (pending.Status != TaskStatus.RanToCompletion) latest = new BaitReading { Detail = "Falló la lectura del contador" };
+                else if (pending.Result.Sequence == sequence) latest = pending.Result;
+            }
             if (pending.IsFaulted) { var ignored = pending.Exception; }
             pending = null;
         }
-        internal static BaitReading ReadImage(Bitmap image,string language="")
+        internal static BaitReading ReadImage(Bitmap image,string language="", CancellationToken token=default(CancellationToken))
+        {
+            using (WinRtWait.BeginRead(token))
+            {
+                token.ThrowIfCancellationRequested();
+                try { return ReadImageCore(image,language); }
+                catch (TimeoutException) { return new BaitReading { Detail = WinRtWait.TimeoutDetail }; }
+                catch (InvalidOperationException error)
+                {
+                    if (error.Message != WinRtWait.BusyDetail) throw;
+                    return new BaitReading { Detail = WinRtWait.BusyDetail };
+                }
+            }
+        }
+        private static BaitReading ReadImageCore(Bitmap image,string language)
         {
             if (!HasCounterInk(image)) return new BaitReading { VisuallyAbsent = true, Detail = "No se ve el texto amarillo del contador" };
             if (MultipleYellowRows(image)) return new BaitReading { Detail = "Hay varias filas en la zona. Selecciona un solo contador." };
@@ -207,6 +228,14 @@ namespace SomeFishingGPO
         { return RecognizeResult(engine,image,scale).Text; }
         internal static OcrResult RecognizeResult(OcrEngine engine, Bitmap image, int scale)
         {
+            // The native task owns its own pixels. A timed-out caller can dispose
+            // its crop while the pending native operation finishes cancellation.
+            Bitmap owned = (Bitmap)image.Clone();
+            return WinRtWait.Recognize(delegate(CancellationToken token)
+                { return RecognizeAsync(engine, owned, scale, token); }, owned);
+        }
+        private static async Task<OcrResult> RecognizeAsync(OcrEngine engine, Bitmap image, int scale, CancellationToken token)
+        {
             using (var enlarged = new Bitmap(image.Width * scale + 40, image.Height * scale + 40, PixelFormat.Format32bppArgb))
             using (var stream = new MemoryStream())
             {
@@ -220,12 +249,28 @@ namespace SomeFishingGPO
                 enlarged.Save(stream, ImageFormat.Png); stream.Position = 0;
                 using (var random = stream.AsRandomAccessStream())
                 {
-                    var decoder = BitmapDecoder.CreateAsync(random).AsTask().GetAwaiter().GetResult();
-                    using (var bitmap = decoder.GetSoftwareBitmapAsync().AsTask().GetAwaiter().GetResult())
-                        return engine.RecognizeAsync(bitmap).AsTask().GetAwaiter().GetResult();
+                    token.ThrowIfCancellationRequested();
+                    var decoder = await WinRtWait.Native(BitmapDecoder.CreateAsync(random),token).ConfigureAwait(false);
+                    token.ThrowIfCancellationRequested();
+                    using (var bitmap = await WinRtWait.Native(decoder.GetSoftwareBitmapAsync(),token).ConfigureAwait(false))
+                    {
+                        token.ThrowIfCancellationRequested();
+                        return await WinRtWait.Native(engine.RecognizeAsync(bitmap),token).ConfigureAwait(false);
+                    }
                 }
             }
         }
-        public void Dispose() { disposed = true; latest = new BaitReading(); }
+        public void Dispose()
+        {
+            if (disposed) return;
+            disposed = true; ++sequence; latest = new BaitReading();
+            if (pending == null) stop.Dispose();
+            else
+            {
+                stop.CancelAfter(1);
+                pending.ContinueWith(delegate(Task<BaitReading> completed)
+                { if (completed.IsFaulted) { var ignored = completed.Exception; } stop.Dispose(); }, TaskScheduler.Default);
+            }
+        }
     }
 }

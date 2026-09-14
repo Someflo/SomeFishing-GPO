@@ -620,4 +620,77 @@ OCR de apoyo	Supporting OCR
 Pérdida breve de imagen · conservando control	Brief image loss · keeping control
 Termina el minijuego antes de iniciar el inventario manual.	Finish the minigame before starting the manual inventory.
 El OCR contrasta la cantidad del tipo seleccionado. La cuenta manual sigue siendo la base.	OCR compares the selected type's amount. The manual count remains the basis.
+# Long sessions, marked bait points and bounded OCR.
+Tiempo: 	Time: 
+ · Compras: 	 · Purchases: 
+ · Recuperaciones: 	 · Recoveries: 
+Recuperación agotada: 	Recovery limit reached: 
+Compra dudosa: corrige el inventario antes de continuar.	Purchase uncertain: correct the inventory before continuing.
+ · sin cebo ni reposición disponible	 · no bait or restocking available
+Pausa de recuperación · 	Recovery pause · 
+Reintento en 	Retry in 
+Minijuego visible durante la recuperación	Minigame visible during recovery
+Reanudando tras la pausa	Resuming after the pause
+Esperando recuperar la barra · 	Waiting to recover the bar · 
+No pude confirmar el tipo de cebo de esta ronda.	Could not confirm the bait type for this round.
+Barra recuperada · misma ronda	Bar recovered · same round
+La ronda terminó durante la recuperación	The round ended during recovery
+Esperando la barra o el cierre del minijuego · clic liberado	Waiting for the bar or minigame closure · mouse button released
+El minijuego no se pudo recuperar en 90 segundos. Revisa la zona.	Could not recover the minigame within 90 seconds. Check the area.
+Preparando clic en el cebo 	Preparing bait click: 
+Marca el punto del cebo 	Mark the point for bait: 
+ dentro de Roblox.	 inside Roblox.
+El punto de cebo dejó de estar autorizado dentro de Roblox.	The bait point is no longer authorized inside Roblox.
+No se pudo terminar el clic de cebo a tiempo.	Could not finish the bait click in time.
+Esperando soltar entradas antes de seleccionar cebo	Waiting to release inputs before selecting bait
+Puntero en el cebo · esperando antes del clic	Pointer on bait · waiting before clicking
+Hay una entrada pendiente de liberación antes del clic de cebo.	An input still needs to be released before the bait click.
+Clic enviado al cebo · esperando soltar	Bait click sent · waiting to release
+Esperando liberar el clic de cebo	Waiting to release the bait click
+Clic enviado al cebo 	Bait click sent: 
+ · selección sin verificar	 · selection not verified
+Windows OCR tardó demasiado. Cantidad desconocida; se conserva el inventario manual.	Windows OCR timed out. Amount unknown; manual inventory is preserved.
+Windows OCR sigue ocupado con una lectura anterior. Se conserva el inventario manual.	Windows OCR is still busy with an earlier read. Manual inventory is preserved.
+Revisa las pausas y el límite de recuperación.	Check the pauses and recovery limit.
+La capacidad debe superar la reserva de cebo y no exceder 9999.	Capacity must exceed the reserved bait amount and cannot be greater than 9999.
+Vuelve a marcar los botones de cebo.	Mark the bait buttons again.
+Marca el botón de cebo 	Mark the button for bait: 
+ en Cebos.	 under Bait.
+Un botón de cebo queda fuera de la pantalla.	A bait button is outside the screen.
+La pesca tardó en dejar paso a la compra	Fishing took too long to make way for the purchase
+La ronda sigue abierta tras dos minutos	The round is still open after two minutes
+Seguimiento temporalmente incompleto	Tracking temporarily incomplete
+Esperando recuperar el minijuego visible	Waiting to recover the visible minigame
+Clic enviado al cebo: 	Bait click sent: 
+Solo queda el cebo de reserva	Only the reserved bait remains
+Guardando ajustes…	Saving settings…
+Ajustes sin guardar · revisa permisos de la carpeta	Settings not saved · check folder permissions
+Ajustes guardados	Settings saved
+Recuperar fallos temporales	Recover from temporary errors
+Para sesiones largas: espera y reintenta fallos recuperables. Conserva la parada por pérdida de foco o compra dudosa.	For long sessions: wait and retry recoverable errors. Still stops on loss of focus or an uncertain purchase.
+Menú OCR · opcional	OCR menu · optional
+Solo para el OCR de apoyo, si lo activas.	Only for supporting OCR, if enabled.
+Tope de compras	Purchase limit
+Con recuperación activada, cuenta órdenes enviadas. Los fallos previos no consumen este tope. Amplíalo si vas a pescar más horas.	With recovery enabled, counts submitted orders. Earlier failures do not use up this limit. Increase it for longer fishing sessions.
+Sesiones largas	Long sessions
+Fallos seguidos máximos	Consecutive failure limit
+Pausa inicial (s)	Initial pause (s)
+La pausa aumenta si vuelve a fallar.\nUna ronda terminada reinicia el límite.	The pause increases after another failure.\nA finished round resets the limit.
+Botones de cebo	Bait buttons
+Marcar 	Mark 
+Deja 1 legendario, 1 raro y 1 común para conservar las filas.\nUsa los puntos marcados; no necesita leer el nombre ni el borde.	Keep 1 legendary, 1 rare and 1 common bait to preserve the rows.\nUses your marked points; no name or outline recognition needed.
+Comunes: compra antes de gastar el último. El inventario sigue siendo estimado.	Common bait: buy before using the last one. Inventory remains an estimate.
+Punto: 	Point: 
+Marcando botón de cebo…	Marking bait button…
+CEBO 	BAIT 
+LEGENDARIO	LEGENDARY
+RARO	RARE
+COMÚN	COMMON
+Marca el centro de su fila. Solo guarda el punto; Esc cancela.	Mark the center of its row. Saves only the point; Esc cancels.
+Botón de cebo guardado	Bait button saved
+No se pudo leer el menú de compra con Windows OCR	Could not read the purchase menu with Windows OCR
+OCR de apoyo sin zona de menú · usando inventario manual	No menu area for supporting OCR · using manual inventory
+1. En Cebos, escribe tus cantidades y pulsa Aplicar inventario.\n2. Marca los botones de cebo, la barra, el agua y los botones de compra.\n3. En Inicio, elige Inventario y rondas o Cronómetro.\n4. Prueba la compra y las lecturas antes de permitir entradas.\n5. Termina cualquier ronda abierta y vuelve a Roblox para iniciar.\n\nF6 selecciona la barra. F8 inicia o detiene. F10 detiene.\nCambiar de ventana también detiene la macro.	1. Under Bait, enter your amounts and click Apply inventory.\n2. Mark the bait buttons, fishing bar, water point and purchase buttons.\n3. Under Home, choose Inventory and rounds or Timer.\n4. Test purchases and readings before enabling input.\n5. Finish any open round and return to Roblox to start.\n\nF6 selects the bar. F8 starts or stops. F10 stops.\nSwitching windows also stops the macro.
 1. En Cebos, escribe tus cantidades y pulsa Aplicar inventario.\n2. Marca el menú completo de cebos, la barra, el agua y los botones de compra.\n3. En Inicio, elige Inventario y rondas o Cronómetro.\n4. Prueba la compra y las lecturas antes de permitir entradas.\n5. Termina cualquier ronda abierta y vuelve a Roblox para iniciar.\n\nF6 selecciona la barra. F8 inicia o detiene. F10 detiene.\nCambiar de ventana también detiene la macro.	1. Under Bait, enter your amounts and click Apply inventory.\n2. Mark the full bait menu, fishing bar, water point and purchase buttons.\n3. Under Home, choose Inventory and rounds or Timer.\n4. Test purchases and readings before enabling input.\n5. Finish any open round and return to Roblox to start.\n\nF6 selects the bar. F8 starts or stops. F10 stops.\nSwitching windows also stops the macro.
+Espera más tras cada fallo.	Wait longer after each failure.
+La pausa aumenta si vuelve a fallar. Una ronda o compra terminada reinicia la cuenta de fallos.	The pause increases after another failure. A completed round or purchase resets the failure count.

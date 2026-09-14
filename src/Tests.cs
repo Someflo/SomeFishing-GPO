@@ -182,6 +182,11 @@ namespace SomeFishingGPO
                 PurchaseRecoveryTests.Run(Check);
                 BaitSelectionTests.Run(Check,output);
                 TrackingDetectorTests.Run(Check);
+                AsyncSettingsStoreTests.Run(Check);
+                BaitPointSelectionTests.Run(Check);
+                BaitReserveTests.Run(Check);
+                OcrTimeoutTests.Run(Check);
+                LongSessionTests.Run(Check);
                 if(overlayPath!=null)
                 {
                     TrackingDetectorTests.CheckSuppliedOverlay(Check,overlayPath);

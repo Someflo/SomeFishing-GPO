@@ -54,6 +54,12 @@ namespace SomeFishingGPO
         public int CastRetryLimit = 2;
         public int ShopRetryLimit = 2;
         public int ShopPhaseTimeoutSeconds = 10;
+        public bool LongSessionMode, LongSessionConfigured;
+        public int RecoveryPauseSeconds = 20;
+        public int RecoveryLimit = 3;
+        public bool UseBaitPoints, KeepOneBait;
+        public int BaitPointsSet;
+        public Point BaitCommonPoint, BaitRarePoint, BaitLegendaryPoint;
 
         public Settings ForDiagnostic(RunKind kind)
         {
@@ -94,14 +100,16 @@ namespace SomeFishingGPO
             {
                 if (ManualCommonBait<0||ManualCommonBait>9999||ManualRareBait<0||ManualRareBait>9999||ManualLegendaryBait<0||ManualLegendaryBait>9999) return "Cada cantidad de cebo debe estar entre 0 y 9999.";
                 if(sending&&(!ManualInventoryConfirmed||ManualInventoryUncertain)) return "En Cebos, escribe las cantidades actuales y pulsa Aplicar inventario.";
-                if(sending){string issue=ValidateBaitMenuArea(BaitMenuArea,desktop);if(issue!=null)return issue;}
+                if(sending){string issue=UseBaitPoints?ValidateBaitPoints(desktop):ValidateBaitMenuArea(BaitMenuArea,desktop);if(issue!=null)return issue;}
             }
             else if (UsesBaitCounter) { string problem = ValidateBaitArea(BaitArea, desktop); if (problem != null) return problem; }
+            if(RecoveryPauseSeconds<5||RecoveryPauseSeconds>120||RecoveryLimit<1||RecoveryLimit>10)return "Revisa las pausas y el límite de recuperación.";
             if(CastRetryLimit<0||CastRetryLimit>20||ShopRetryLimit<0||ShopRetryLimit>5||ShopPhaseTimeoutSeconds<3||ShopPhaseTimeoutSeconds>60) return "Revisa los reintentos y el tiempo máximo de cada fase.";
             if(BuyBaitAt<0||BuyBaitAt>9999)return "El umbral de cebo debe estar entre 0 y 9999.";
             if(ShopSettleMilliseconds<200||ShopSettleMilliseconds>3000)return "La pausa entre pasos debe estar entre 200 y 3000 ms.";
             if (AutoBuyBait)
             {
+                if(UseManualBait&&(BaitCapacity<=(KeepOneBait?1:0)||BaitCapacity>9999))return "La capacidad debe superar la reserva de cebo y no exceder 9999.";
                 if(ShopOpenMilliseconds<100||ShopOpenMilliseconds>3000)return "Mantener E debe estar entre 100 y 3000 ms.";
                 if (!UseManualBait && !MonitorBait && !PurchaseByTimer) return "Configura el contador o elige Cronómetro para comprar.";
                 if(PurchaseByTimer && (PurchaseIntervalMinutes<1||PurchaseIntervalMinutes>1440))return "El intervalo debe estar entre 1 y 1440 minutos.";
@@ -133,6 +141,19 @@ namespace SomeFishingGPO
             if (area.Width < 10 || area.Height < 6 || area.Width > 400 || area.Height > 120 || (long)area.Width * area.Height > 30000)
                 return "Rodea solo la cantidad de cebo: entre 10 × 6 y 400 × 120 px, hasta 30 000 píxeles.";
             return ContainsSafely(desktop, area) ? null : "El contador queda fuera de la pantalla.";
+        }
+        public string ValidateBaitPoints(Rectangle desktop)
+        {
+            if((BaitPointsSet&~7)!=0)return "Vuelve a marcar los botones de cebo.";
+            int reserve=KeepOneBait?1:0;
+            var counts=new[]{ManualCommonBait,ManualRareBait,ManualLegendaryBait};
+            var points=new[]{BaitCommonPoint,BaitRarePoint,BaitLegendaryPoint};
+            for(int i=0;i<3;i++)if(counts[i]>reserve||(i==0&&AutoBuyBait))
+            {
+                if((BaitPointsSet&(1<<i))==0)return "Marca el botón de cebo "+FishingEngine.BaitName((BaitKind)i)+" en Cebos.";
+                if(!ContainsSafely(desktop,new Rectangle(points[i],new Size(1,1))))return "Un botón de cebo queda fuera de la pantalla.";
+            }
+            return null;
         }
         public static string ValidateBaitMenuArea(Rectangle area,Rectangle desktop)
         {
@@ -514,7 +535,7 @@ namespace SomeFishingGPO
         bool TickCastAim(double now);
     }
 
-    public enum Phase { Stopped, Preparing, Casting, Waiting, Tracking, Resting, IdleWaiting, Jumping, Purchasing, PausingPurchase, AimingCast, SelectingBait, RecoveringShop }
+    public enum Phase { Stopped, Preparing, Casting, Waiting, Tracking, Resting, IdleWaiting, Jumping, Purchasing, PausingPurchase, AimingCast, SelectingBait, RecoveringShop, Resuming, RecoveringRound }
 
     // Nonblocking state machine. A GUI timer drives this; no delayed background click
     // can survive Stop(). Every tick checks game focus before any action.
@@ -542,7 +563,7 @@ namespace SomeFishingGPO
         public bool PurchaseSubmitted { get { return purchase != null && purchase.Submitted; } }
         public int? BaitCount { get { return inventory!=null?(inventory.Uncertain?(int?)null:inventory.ActiveCount):bait.Count; } }
         public string BaitStatus { get { return inventory!=null?InventoryStatus:Kind==RunKind.EmptyBaitTest&&purchase==null?"SIMULACIÓN: contador en 0 · "+bait.Detail:settings.UsesBaitCounter ? bait.Detail : "Contador desactivado en esta sesión"; } }
-        private bool TimerAvailable { get { return !IsDiagnostic && settings.TimedPurchases && PurchaseAttempts<settings.PurchaseLimit; } }
+        private bool TimerAvailable { get { return !IsDiagnostic && settings.TimedPurchases && PurchaseBudgetAvailable; } }
         public string TimerStatus(double now)
         {
             if(!settings.TimedPurchases||IsDiagnostic)return "Cronómetro desactivado";
@@ -579,11 +600,13 @@ namespace SomeFishingGPO
             nextPurchase=now+settings.PurchaseIntervalMinutes*60000.0;
             simulatedSequence=0;
             ResetInventorySession();
+            ResetLongSession(now);
             State = Phase.Preparing; deadline = now + 1000; Status = "Preparando la pesca…";
             if(IsDiagnostic)Status=Kind==RunKind.EmptyBaitTest?"Prueba: simulando 0 cebos en tres lecturas…":"Prueba: preparando una compra real de "+settings.BuyQuantity+" cebos…";
         }
         public void Stop(string reason)
         {
+            CountSubmittedOrder();
             if(recovery!=null&&recovery.State!=PurchasePhase.Complete&&recovery.State!=PurchasePhase.Failed)recovery.Fail(reason);
             if(inventory!=null&&purchase!=null&&purchase.Submitted&&purchase.State!=PurchasePhase.Complete)
             {inventory.MarkPurchaseUncertain(PurchaseAttempts);InventoryRevision++;}
@@ -629,13 +652,13 @@ namespace SomeFishingGPO
             bool low=settings.AutoBuyBait&&!settings.PurchaseByTimer&&bait.Count.HasValue&&bait.Count<=settings.BuyBaitAt;
             if((!settings.UsesBaitCounter&&Kind!=RunKind.EmptyBaitTest)||(!bait.Empty&&!bait.Disappeared&&!(low&&baitPurchaseArmed)))return false;
             string reason=bait.Empty?"Sin cebo confirmado":low?"Cebo bajo: "+bait.Count+" · umbral: "+settings.BuyBaitAt:"Contador desaparecido durante 8 s";
-            if(settings.AutoBuyBait && PurchaseAttempts<settings.PurchaseLimit && (baitPurchaseArmed||IsDiagnostic)
+            if(settings.AutoBuyBait && PurchaseBudgetAvailable && (baitPurchaseArmed||IsDiagnostic)
                 && (!settings.UseDirectShopFlow||low||IsDiagnostic))
             {
                 baitPurchaseArmed=false;
                 BeginPurchase(now);return true;
             }
-            EnterIdle(now,settings.AutoBuyBait?reason+(PurchaseAttempts>=settings.PurchaseLimit?" · límite de compras alcanzado":" · reposición todavía no confirmada por encima del umbral"):reason,true);return true;
+            EnterIdle(now,settings.AutoBuyBait?reason+(!PurchaseBudgetAvailable?" · límite de compras alcanzado":" · reposición todavía no confirmada por encima del umbral"):reason,true);return true;
         }
         private void BeginPurchase(double now)
         {
@@ -657,6 +680,7 @@ namespace SomeFishingGPO
                 if(quantity<1||quantity>9999){Stop("Revisa la capacidad de cebo antes de comprar.");return;}
                 order=settings.ForPurchase(quantity);baitPurchaseArmed=false;
             }
+            orderSubmissionCounted=false;
             purchase=settings.UseDirectShopFlow?(IPurchaseFlow)new DirectPurchaseController(order,runtime,shop):new PurchaseController(order,runtime,shop);PurchaseAttempts++;
             // Synthetic frames and the OCR reader have separate sequence counters.
             // Discard the injected zero before accepting real post-purchase frames.
@@ -675,10 +699,14 @@ namespace SomeFishingGPO
         }
         private void TickPurchasePause(double now)
         {
-            if(now-purchasePauseStarted>=120000){Stop("No se pudo preparar la compra en 2 minutos. Revisa el cierre del minijuego y el contador.");return;}
+            if(now-purchasePauseStarted>=120000){if(IsLongSession)BeginRoundRecovery(now,"La pesca tardó en dejar paso a la compra",true);else Stop("No se pudo preparar la compra en 2 minutos. Revisa el cierre del minijuego y el contador.");return;}
             LastObservation=runtime.Observe();
             if(LastObservation.Found||LastObservation.MenuVisible)
-            { purchaseClearSince=-1;purchaseNotBefore=now;return; }
+            {
+                if(LastObservation.Found){if(++stableFrames>=2)StartObservedRound();}else stableFrames=0;
+                purchaseClearSince=-1;purchaseNotBefore=now;return;
+            }
+            stableFrames=0;
             if(purchaseClearSince<0)purchaseClearSince=now;
             if(now<purchaseNotBefore||now-purchaseClearSince<1600)return;
             FinishObservedRound();
@@ -689,6 +717,7 @@ namespace SomeFishingGPO
         private void EnterIdle(double now, string reason, bool noBait)
         {
             runtime.Release(); controller.Reset(); SuggestedHold = false;
+            if(IsLongSession&&CanResumeKnownInventory()){ScheduleResume(now,reason,false,false);return;}
             if (!settings.IdleJumpEnabled && !TimerAvailable) { Stop(IsDiagnostic?"Prueba terminada: se detectó el 0 simulado; compra y saltos desactivados.":reason + " · saltos de espera desactivados"); return; }
             State = Phase.IdleWaiting; idleReason = reason; waitingForBait = noBait;
             stableFrames = 0; idleMenuMissingSince = now; nextJump = now + 2000;
@@ -710,7 +739,8 @@ namespace SomeFishingGPO
             stableFrames = 0;
             if (idleMenuMissingSince < 0) idleMenuMissingSince = now;
             if(now-idleMenuMissingSince>=1600 && TryTimedPurchase(now))return;
-            if (!IsDiagnostic && waitingForBait && bait.Count.HasValue && bait.Count.Value > 0)
+            bool usableBait=inventory!=null?NextUsableBait().HasValue:bait.Count.HasValue&&bait.Count.Value>0;
+            if (!IsDiagnostic && waitingForBait && usableBait)
             {
                 runtime.Release(); failures = 0; State = Phase.Preparing; deadline = now + 1000;
                 Status = "Cebo disponible · reanudando pesca"; return;
@@ -736,6 +766,8 @@ namespace SomeFishingGPO
             try
             {
                 if (!runtime.IsActive) { Stop("Detenida: cambiaste de ventana o activaste la parada con el ratón."); return; }
+                if(State==Phase.Resuming){TickResume(now);return;}
+                if(State==Phase.RecoveringRound){TickRoundRecovery(now);return;}
                 if(State==Phase.RecoveringShop){TickRecovery(now);return;}
                 if(State==Phase.SelectingBait){TickBaitSelection(now);return;}
                 if(Kind==RunKind.EmptyBaitTest&&purchase==null)
@@ -756,12 +788,13 @@ namespace SomeFishingGPO
                 {
                     LastObservation=settings.UseDirectShopFlow&&IsDiagnostic?new Observation():runtime.Observe();
                     if(LastObservation.Found||LastObservation.MenuVisible){Stop("Compra detenida: apareció el minijuego. Reinicia cuando termine el diálogo.");return;}
-                    purchase.Tick(now,bait.Count,bait.ConfirmedAt);Status=purchase.Status;
+                    purchase.Tick(now,bait.Count,bait.ConfirmedAt);CountSubmittedOrder();Status=purchase.Status;
                     if(purchase.State==PurchasePhase.Failed){BeginRecovery(now,purchase.Status,true);return;}
                     if(purchase.State==PurchasePhase.Complete)
                     {
                         if(IsDiagnostic){Stop(settings.UseDirectShopFlow?"Prueba terminada: secuencia enviada. Comprueba la cantidad y el cierre en el juego.":settings.PurchaseByTimer?"Prueba terminada: compra enviada y diálogo cerrado. Inventario sin verificar por OCR.":"Prueba terminada: Comprar se envió una vez, se cerró el diálogo y hay cebo visible. No se inicia la pesca.");return;}
                         CompleteManualPurchase();
+                        if(Running)consecutiveRecoveries=0;
                         if(!Running)return;
                         if(settings.UseDirectShopFlow)bait.Reset();
                         nextPurchase=now+settings.PurchaseIntervalMinutes*60000.0;
@@ -773,15 +806,16 @@ namespace SomeFishingGPO
                 if(settings.UseDirectShopFlow&&!IsDiagnostic)
                 {
                     if(State==Phase.PausingPurchase){TickPurchasePause(now);return;}
-                    bool low=settings.AutoBuyBait&&!settings.PurchaseByTimer&&baitPurchaseArmed&&bait.Count.HasValue&&bait.Count<=settings.BuyBaitAt&&PurchaseAttempts<settings.PurchaseLimit;
-                    if(inventory!=null)low=CanManualBuy(now)&&inventory.ActiveKind==BaitKind.Common&&inventory.ActiveCount<=settings.BuyBaitAt;
+                    bool low=settings.AutoBuyBait&&!settings.PurchaseByTimer&&baitPurchaseArmed&&bait.Count.HasValue&&bait.Count<=settings.BuyBaitAt&&PurchaseBudgetAvailable;
+                    if(inventory!=null)low=CanManualBuy(now)&&inventory.ActiveKind==BaitKind.Common&&inventory.ActiveCount<=Math.Max(BaitReserve,settings.BuyBaitAt);
                     bool timerDue=TimerAvailable&&now>=nextPurchase&&now>=buyRetryAfter&&!automaticBuyingBlocked&&(inventory==null||inventory.ActiveKind==BaitKind.Common);
-                    if((timerDue||low)&&(!roundOpen||inventory==null)){PauseForPurchase(now);return;}
+                    bool pendingCast=inventory!=null&&(State==Phase.Casting||(State==Phase.Waiting&&settings.AutoCast));
+                    if((timerDue||low)&&(!roundOpen||inventory==null)&&!pendingCast){PauseForPurchase(now);return;}
                 }
                 if (State == Phase.IdleWaiting || State == Phase.Jumping) { TickIdle(now); return; }
                 if(State==Phase.AimingCast){TickCastAim(now);return;}
                 if (State == Phase.Tracking && now - trackingStarted > 120000)
-                { Stop("Detenida: la ronda superó 2 minutos. Revisa la detección."); return; }
+                { if(IsLongSession)BeginRoundRecovery(now,"La ronda sigue abierta tras dos minutos",true);else Stop("Detenida: la ronda superó 2 minutos. Revisa la detección."); return; }
                 if (State == Phase.Preparing)
                 {
                     LastObservation = runtime.Observe();
@@ -811,7 +845,7 @@ namespace SomeFishingGPO
                             runtime.SetHeld(SuggestedHold);
                             Status = SuggestedHold ? "Clic mantenido · subiendo el hueco" : "Clic suelto · bajando el hueco";
                             if (!settings.HoldMovesUp) Status = SuggestedHold ? "Clic mantenido · bajando el hueco" : "Clic suelto · subiendo el hueco";
-                            if (now - trackingStarted > 120000) Stop("Detenida: la ronda superó 2 minutos. Revisa la detección.");
+                            if (now - trackingStarted > 120000){if(IsLongSession)BeginRoundRecovery(now,"La ronda sigue abierta tras dos minutos",true);else Stop("Detenida: la ronda superó 2 minutos. Revisa la detección.");}
                         }
                     }
                     else
@@ -827,7 +861,7 @@ namespace SomeFishingGPO
                             if (invalidSince < 0) invalidSince = now;
                             Status = "Menú visible, detección incompleta · clic liberado";
                             if (now - invalidSince >= 3000)
-                            { Stop("Detenida: el menú sigue abierto, pero perdí la detección. Revisa la zona."); return; }
+                            { if(IsLongSession)BeginRoundRecovery(now,"Seguimiento temporalmente incompleto",true);else Stop("Detenida: el menú sigue abierto, pero perdí la detección. Revisa la zona."); return; }
                         }
                         else if (State == Phase.Tracking)
                         {
@@ -843,7 +877,7 @@ namespace SomeFishingGPO
                     {
                         runtime.SetHeld(false);
                         if (LastObservation.MenuVisible || LastObservation.Found)
-                        { Stop("Detenida: el minijuego está visible, pero no pude seguirlo. Revisa la zona."); return; }
+                        { if(IsLongSession)BeginRoundRecovery(now,"Esperando recuperar el minijuego visible",true);else Stop("Detenida: el minijuego está visible, pero no pude seguirlo. Revisa la zona."); return; }
                         if (TryTimedPurchase(now) || HandleNoBait(now)) return;
                         if (++failures > settings.CastRetryLimit)
                         { if(!missRecoveryUsed&&settings.ShopButtonsSet&&runtime is IShopVisualRuntime){missRecoveryUsed=true;BeginRecovery(now,"No apareció el minijuego tras "+failures+" intentos",false);return;} EnterIdle(now, bait.Empty ? "Sin cebo confirmado" : failures+" intentos sin minijuego", bait.Empty); return; }

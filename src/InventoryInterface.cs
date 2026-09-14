@@ -11,6 +11,11 @@ namespace SomeFishingGPO
         private Label inventoryReady,baitMenuLabel;
         private int lastInventoryRevision=-1;
         private bool changingInventory;
+        private Button[] baitPointButtons;
+        private Label[] baitPointLabels;
+        private CheckBox longSession;
+        private NumericUpDown recoveryLimit,recoveryPause;
+        private Label sessionHealthLabel;
         private void BuildInventoryPage()
         {
             var counts=Card(pages[4],0,0,844,256);
@@ -25,11 +30,16 @@ namespace SomeFishingGPO
                 if(changingInventory)return;settings.ManualInventoryConfirmed=false;UpdateInventoryLabels();
             };
             var menu=Card(pages[4],0,272,844,244);
-            LabelAt(menu,"Menú de cebos",20,17,804,30,14,true);
-            selectBaitMenu=ButtonAt(menu,"Seleccionar menú completo",20,68,374,delegate{SelectBaitMenu();},true);
-            baitMenuLabel=LabelAt(menu,"Sin seleccionar",416,76,406,40,10,false);FullTextHint(baitMenuLabel);
-            LabelAt(menu,"Incluye las filas de los tres tipos, con margen. El programa busca la fila\ny comprueba el borde amarillo al cambiar de cebo.",20,124,804,50,10,false).ForeColor=muted;
-            LabelAt(menu,"La cuenta es estimada: 1 cebo por ronda detectada. Solo compra común.\nEl OCR opcional contrasta la cantidad; no reemplaza tu inventario.",20,187,804,47,9.5f,false).ForeColor=muted;
+            LabelAt(menu,"Botones de cebo",20,17,804,30,14,true);
+            baitPointButtons=new Button[3];baitPointLabels=new Label[3];
+            for(int i=0;i<3;i++){
+                int kind=2-i;
+                baitPointButtons[kind]=ButtonAt(menu,"Marcar "+FishingEngine.BaitName((BaitKind)kind),20+i*278,67,246,delegate{SelectBaitButton(kind);},false);
+                baitPointLabels[kind]=LabelAt(menu,"Sin marcar",20+i*278,113,246,27,9,false);
+            }
+            selectBaitMenu=baitPointButtons[0];baitMenuLabel=new Label();
+            LabelAt(menu,"Deja 1 legendario, 1 raro y 1 común para conservar las filas.\nUsa los puntos marcados; no necesita leer el nombre ni el borde.",20,152,804,47,10,false).ForeColor=muted;
+            LabelAt(menu,"Comunes: compra antes de gastar el último. El inventario sigue siendo estimado.",20,207,804,25,9.5f,false).ForeColor=muted;
             Hint(applyInventory,"Confirma las cantidades actuales. Corrígelas si gastaste cebos fuera de la macro o una compra quedó dudosa.");
         }
         private void ApplyInventorySettings()
@@ -37,11 +47,15 @@ namespace SomeFishingGPO
             changingInventory=true;
             try{SetNumber(manualCommon,settings.ManualCommonBait);SetNumber(manualRare,settings.ManualRareBait);SetNumber(manualLegendary,settings.ManualLegendaryBait);}
             finally{changingInventory=false;}
+            longSession.Checked=!settings.LongSessionConfigured||settings.LongSessionMode;
+            SetNumber(recoveryLimit,settings.RecoveryLimit);SetNumber(recoveryPause,settings.RecoveryPauseSeconds);
             SetNumber(castRetries,settings.CastRetryLimit);SetNumber(shopRetries,settings.ShopRetryLimit);SetNumber(phaseTimeout,settings.ShopPhaseTimeoutSeconds);
         }
         private void UpdateInventoryLabels()
         {
             if(inventoryReady==null)return;
+            Point[] points={settings.BaitCommonPoint,settings.BaitRarePoint,settings.BaitLegendaryPoint};
+            for(int i=0;i<3;i++)baitPointLabels[i].Text=(settings.BaitPointsSet&(1<<i))!=0?"Punto: "+points[i].X+", "+points[i].Y:"Sin marcar";
             inventoryReady.Text=settings.ManualInventoryUncertain?"Compra dudosa: corrige y aplica.":settings.ManualInventoryConfirmed?"Inventario listo · seguimiento estimado":"Escribe las cantidades y aplica.";
             inventoryReady.ForeColor=settings.ManualInventoryConfirmed&&!settings.ManualInventoryUncertain?accent:muted;
             baitMenuLabel.Text=settings.BaitMenuArea.IsEmpty?"Sin seleccionar":"Menú: "+settings.BaitMenuArea.Width+" × "+settings.BaitMenuArea.Height+" px";
@@ -51,7 +65,7 @@ namespace SomeFishingGPO
             if(IsRunning||armedUntil>0)return;
             settings.ManualInventoryConfirmed=true;settings.ManualInventoryUncertain=false;
             settings.ManualCommonBait=(int)manualCommon.Value;settings.ManualRareBait=(int)manualRare.Value;settings.ManualLegendaryBait=(int)manualLegendary.Value;
-            settings.ActiveBaitKind=settings.ManualLegendaryBait>0?BaitKind.Legendary:settings.ManualRareBait>0?BaitKind.Rare:BaitKind.Common;
+            settings.ActiveBaitKind=settings.ManualLegendaryBait>1?BaitKind.Legendary:settings.ManualRareBait>1?BaitKind.Rare:BaitKind.Common;
             settings.UseManualBait=true;UpdateInventoryLabels();
             if(!testMode)SaveSettingsQuietly();
             statusLabel.Text="Inventario aplicado · legendario, raro y común";
@@ -67,6 +81,21 @@ namespace SomeFishingGPO
             settings.ActiveBaitKind=inventory.ActiveKind;settings.ManualInventoryUncertain=inventory.Uncertain;
             settings.ManualInventoryConfirmed=!inventory.Uncertain;UpdateInventoryLabels();
             if(!testMode)SaveSettingsQuietly();
+        }
+        private void SelectBaitButton(int kind)
+        {
+            if(activePicker!=null)return;StopAll("Marcando botón de cebo…");Hide();
+            try{using(var picker=new SelectionOverlay(true)){
+                picker.PointTitle="CEBO "+FishingEngine.BaitName((BaitKind)kind).ToUpperInvariant();
+                picker.PointHelp="Marca el centro de su fila. Solo guarda el punto; Esc cancela.";
+                activePicker=picker;
+                if(picker.ShowDialog()==DialogResult.OK){
+                    Point point=picker.Selection.Location;
+                    if(kind==0)settings.BaitCommonPoint=point;else if(kind==1)settings.BaitRarePoint=point;else settings.BaitLegendaryPoint=point;
+                    settings.BaitPointsSet|=1<<kind;UpdateInventoryLabels();if(!testMode)SaveSettingsQuietly();
+                    statusLabel.Text="Botón de cebo guardado";
+                }
+            }}catch(Exception error){statusLabel.Text=error.Message;}finally{activePicker=null;Show();Activate();}
         }
         private void SelectBaitMenu()
         {
