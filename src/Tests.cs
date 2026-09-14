@@ -32,6 +32,8 @@ namespace SomeFishingGPO
         }
         internal static int Run(string[] args)
         {
+            string overlayPath=args.Length>2&&args[0]=="--self-test-overlay"?args[2]:null;
+            if(overlayPath!=null)args=new[]{args[0],args[1]};
             string output = args.Length > 1 ? Path.GetFullPath(args[1]) : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "pruebas");
             Directory.CreateDirectory(output);
             try
@@ -118,7 +120,9 @@ namespace SomeFishingGPO
                 engine.Start(0); engine.Tick(100); engine.Tick(150);
                 Check(engine.State == Phase.Tracking && game.Held && game.Moves == 0, "An already visible minigame skips casting");
                 game.Current = new Observation(); engine.Tick(200);
-                Check(!game.Held && engine.State == Phase.Tracking, "A single missing frame releases without counting a round");
+                Check(game.Held && engine.State == Phase.Tracking && engine.Cycles==0, "A single missing frame preserves the last command during the bounded grace window");
+                engine.Tick(400);
+                Check(!game.Held && engine.State==Phase.Tracking && engine.Cycles==0, "Tracking releases after 180 ms without fresh geometry and does not count a new round");
                 engine.Tick(1900);
                 Check(engine.State == Phase.Resting && engine.Cycles == 1, "Sustained disappearance completes one round");
                 engine.Tick(3800);
@@ -173,6 +177,27 @@ namespace SomeFishingGPO
                 ShopVisualTests.Run(Check);
                 ShopSynchronizationTests.Run(Check,output);
                 CastReturnTests.Run(Check,output);
+                ManualInventoryTests.Run(Check);
+                InventoryEngineTests.Run(Check);
+                PurchaseRecoveryTests.Run(Check);
+                BaitSelectionTests.Run(Check,output);
+                TrackingDetectorTests.Run(Check);
+                if(overlayPath!=null)
+                {
+                    TrackingDetectorTests.CheckSuppliedOverlay(Check,overlayPath);
+                    using(var source=new Bitmap(overlayPath))
+                    using(var crop=source.Clone(new Rectangle(184,433,203,148),PixelFormat.Format32bppArgb))
+                    {
+                        BaitMenuReading menu=BaitMenuVisual.Analyze(crop);BaitMenuRow common,rare,legendary;
+                        Check(menu.Rows.Count==3&&menu.TryGetRow(BaitKind.Common,out common)&&menu.TryGetRow(BaitKind.Rare,out rare)&&menu.TryGetRow(BaitKind.Legendary,out legendary),"Supplied overlay: three bait types remain distinct beside the fishing minigame");
+                        Check(menu.TryGetRow(BaitKind.Common,out common)&&common.Selected,"Supplied overlay: the real yellow border identifies the selected common bait");
+                        Check(common.CounterBounds.Height<=22&&common.CounterBounds.Width<=35,"Supplied overlay: common counter crop excludes the surrounding yellow selection frame");
+                    }
+                }
+                var cleanupSettings=new Settings{UseDirectShopFlow=true,ShopButtonsSet=true,ShopLeftPoint=new Point(100,100),ShopMiddlePoint=new Point(200,100),ShopRightPoint=new Point(300,100)};
+                Check(GameRuntime.MarkedShopPointAllowed(cleanupSettings,cleanupSettings.ShopRightPoint)&&GameRuntime.MarkedShopPointAllowed(cleanupSettings,cleanupSettings.ShopMiddlePoint),"Marked cancel and close points remain available for cleanup with buying disabled");
+                Check(!GameRuntime.MarkedShopPointAllowed(cleanupSettings,cleanupSettings.ShopLeftPoint)&&!GameRuntime.MarkedShopPointAllowed(cleanupSettings,new Point(201,100)),"Cleanup authorization cannot click Buy or an unmarked point");
+                using(var inventoryForm=new MainForm(true))inventoryForm.VerifyInventoryInputs(Check);
                 LocalizationTests.Run(Check,output);
                 if(args.Length>15)LowBaitTests.CheckSamples(Check,args[15],args[14]);
                 if(args.Length>16){

@@ -1,41 +1,76 @@
 # SomeFishing GPO
 
-Visual fishing macro for GPO on Windows. Source code is included for inspection and local compilation. Version **0.7.1**.
+Visual fishing macro for GPO on Windows. Source is included for inspection and local compilation. **Local version 0.8.0.** [Guía en español](README.md).
 
-Choose **English** from **Idioma / Language** in the left sidebar. Switching is immediate and your choice is saved. This setting is separate from the counter's Windows OCR language.
-
-![English interface](docs/en/Vista-previa.png)
+Use **Idioma / Language** in the sidebar to choose English or Español. Switching is immediate and saved. The Windows OCR language is a separate setting.
 
 ## Get started
 
-1. Extract the entire ZIP and open `SomeFishingGPO.exe`. Requires 64-bit Windows 10/11 and .NET Framework 4.8. No administrator permission is required.
-2. Equip your rod and cast once manually. Use **F6** to select the full blue bar with room for its sideways movement. Enter or F6 confirms; Esc cancels.
-3. In **Areas**, choose a casting point on the water. Check the detector in **Tests → Readings**.
-4. Check **Allow clicks and keys**, return to Roblox and press **F8**. **F10** stops. Switching windows or moving the mouse to the top-left corner also stops the macro.
+Extract the entire ZIP and open `SomeFishingGPO.exe`. Requires 64-bit Windows 10/11 and .NET Framework 4.8. No administrator permission is needed. Preserve `ajustes.xml` when updating.
 
-The macro follows the fish's white marker by raising or lowering the gray gap. The green progress bar is ignored. Before casting, including after a purchase, the pointer moves gradually to the water point and waits until it is stable.
+1. Under **Bait**, enter your legendary, rare and common amounts. Enter 0 for unavailable types and click **Apply inventory**. This is required before starting fishing with input enabled.
+2. Choose **Select full menu** and surround every bait row with room around it. Do not mark a fixed position for each row.
+3. Equip the rod and cast manually once. Use **F6** to select the entire blue bar with room for sideways movement. Enter or F6 confirms; Esc cancels.
+4. Under **Areas**, mark the water point and, if buying, all three purchase buttons. Close any dialogs before starting.
+5. Choose restocking under **Home**, check the buttons under **Tests**, finish any open round, enable **Allow clicks and keys**, return to Roblox and press **F8**.
 
-## Restock bait
+**F10 stops.** F8 while running, switching windows or moving the mouse to the top-left corner also stops and releases input. Starting from the app gives you three seconds to return to the game.
 
-Stand within reach of the bait barrel while facing somewhere you can fish. In **Areas**, mark the centers of all three purchase buttons: left **Yes/Buy**, middle **quantity/…**, right **No/Cancel**. Close the dialogs before starting.
+## Inventory and rounds
 
-- **OCR counter:** select only the equipped bait's `x` and quantity. At 2 bait or less, request enough to reach a capacity of 300 (298 when 2 remain). Threshold and capacity are adjustable in **Advanced**. This does not read the dialog's MAX or your Peli balance.
-- **Timer:** request 50 bait every 40 minutes, with both values adjustable. No counter OCR is needed.
+Bait is used in this order: **legendary → rare → common**. When a row disappears, the program searches the full menu again by its appearance. It does not shift a saved row index blindly. Before fishing with another type, it checks the selected row's yellow outline. Unclear rows stop selection.
 
-Enable **Buy bait** in **Home** to use automatic restocking. Purchases spend in-game Peli. Fishing pauses for the purchase sequence and resumes afterwards. **Tests → Purchase** performs one purchase of your chosen quantity without waiting for the counter or timer and stops without casting.
+Inventory is an **estimate** based on the numbers you entered. One bait is deducted when a minigame round is confirmed. A cast without a detected minigame does not consume the estimate, and repeated frames of one round do not cause repeated deductions. Finished rounds include both catches and escapes; **this is not a fish-caught counter**. Cast attempts are displayed separately.
 
-## Settings and language
+Estimated amounts are saved with settings. Correct and apply them if you use bait outside the macro, notice a mismatch or encounter an uncertain purchase. The app cannot know about bait used while it was not observing.
 
-**Home** contains the basic mode settings; **Areas** contains selections; **Tests** contains purchase and reading checks. **Advanced** contains timings, colors, thresholds and the counter OCR language. Leave these values unchanged if you are unsure about them.
+Optional OCR compares the active row's count with the estimate and shows disagreements. It never replaces your entered inventory automatically and never converts an unreadable or missing row into zero. Choose an installed Windows OCR language under **Advanced**. Processing stays local.
 
-Your interface language is saved in `ajustes.xml` alongside the existing settings. Updating preserves saved values and points. Windows system dialogs and system error messages may follow Windows' own language. Previously saved logs remain in the language in which they were written.
+The supporting crop follows the active row's counter and separates its characters from the yellow outline. This improves the image sent to the reader; it does not guarantee that Windows OCR will recognize every number.
 
-## Transparency and limitations
+## Buy common bait
 
-The app captures selected screen areas and sends standard Windows input. It does not use network connections, download updates, inject code or read game memory. F8/F10 and focus checks stay the same in both languages. All translations are embedded locally in the executable.
+Automatic restocking buys **common bait only**. Stand within E range of the barrel in a position where you can also fish. Mark the text centers of the purchase buttons:
 
-The app checks the colors of the quantity-menu buttons before critical purchase steps. It does not verify the entered quantity, payment or final closing inside the game. OCR depends on scale, font and background; check it under **Tests → Readings**. Re-select points if the game window or layout changes.
+| Point | Purpose |
+|---|---|
+| Left | Yes and Buy |
+| Middle | Editable quantity and final … button |
+| Right | No / Cancel, also used during recovery |
 
-Run `compilar.cmd` to compile using the local .NET Framework compiler and Windows SDK. `SomeFishingGPO.exe --self-test output-folder` runs simulated checks without game input. Source and validation details are included in `src` and `docs`.
+These points must remain in the same positions between dialogs. Re-select them after changing the window, resolution or layout. The selection click acts on a screenshot and is not sent to the game.
 
-Source code is provided **without granting a license at this time**. See [NOTICE.md](NOTICE.md). See [SECURITY.md](SECURITY.md) and [CHANGELOG.md](CHANGELOG.md) for the full Spanish documentation.
+Enable **Buy bait** under **Home** and choose:
+
+- **Inventory and rounds:** at 2 common bait or less, request enough to reach 300. With 2 remaining, request 298. Threshold and capacity are adjustable. This does not read the dialog's MAX or your Peli balance.
+- **Timer:** request 50 common bait every 40 minutes, both adjustable and limited to available room in the configured capacity. It waits until common bait is active; an empty inventory may trigger restocking before the interval instead of leaving you waiting without bait.
+
+Restocking waits for the round to close, then performs **E → Yes → double-click quantity → type amount → Buy → …**. Movement is gradual and steps include pauses. Afterwards the pointer returns to the water, waits until it arrives and settles, then fishing resumes.
+
+## Recover from a stuck phase
+
+**Advanced → Recovery** contains missing-minigame retries, purchase-phase retries and the phase timeout. Defaults are 2, 2 and 10 seconds. Leave advanced settings unchanged if you are unsure about them.
+
+Fresh images distinguish Yes/No, quantity, the three-dot closing dialog and absent dialogs. The app retries E only while no dialog is visible, Yes only while the question remains, and closing only while the three dots remain. Delayed actions recheck the menu before sending input. Besides retry limits, purchases have a global 90-second limit and recovery is also bounded. **Buy is never sent again after an attempted submission**, including when an input call returns an error.
+
+After a failed phase, recovery uses No/Cancel in the question or quantity menu, or the three dots in the closing menu. Fishing resumes only after the dialog is observed to be closed. If the menu cannot be identified or closed, the macro stops. Exhausting missing-minigame attempts can also trigger one menu recovery before casting again.
+
+An observed completed dialog permits adding the requested amount to the **estimate**. It does not prove that the entered number was accepted or that all bait was delivered. A submitted purchase with an uncertain result receives no inventory credit and is not resubmitted. The app closes the dialog if possible and asks you to correct the inventory before continuing.
+
+## Tests and limitations
+
+**Test purchase** performs one purchase of your chosen amount without waiting for OCR, the threshold or the timer. **It spends in-game Peli** and does not start fishing afterwards. **Test without bait** simulates depletion to exercise the configured action. Both need input permission and Roblox in the foreground. F10 cancels. The log is saved to `ultima-prueba.txt`.
+
+Fishing finds the blue bar's actual borders rather than requiring it to fill a fixed percentage of the selected area's height. It tracks the white marker and gray gap inside those borders and ignores green progress. Leave room for sideways movement; multiple detected bars require a narrower selection.
+
+A brief image loss keeps the last control decision for up to 180 ms after the last valid detection. Longer loss releases the click and never invents a new fish position. A brief interruption does not start another round or deduct another bait. A visible but incomplete menu eventually stops fishing if detection cannot recover.
+
+Idle jumps are optional. Detection depends on scale, colors, background and area placement. Simulations cannot establish that Roblox received an input. Catch rates, preventing disconnects and retaining items are not guaranteed.
+
+## Build and transparency
+
+Run `compilar.cmd` with .NET Framework 4.8 and the Windows 10/11 SDK installed. Compilation uses local tools and downloads no packages. Running the distributed executable does not require the SDK.
+
+`SomeFishingGPO.exe --self-test output-folder` runs simulated checks without game input. Build-specific results belong in `docs/VERIFICACION.txt`. Source files cover inventory (`ManualInventory.cs`, `EngineInventory.cs`), row selection (`BaitSelection.cs`), purchase recovery (`DirectPurchase.cs`, `ShopVisual.cs`), guarded input (`Native.cs`) and the interface. Translations are embedded in the executable.
+
+The app does not use network connections, download updates, inject code or read game memory. Antivirus results cannot establish an absolute guarantee. See [SECURITY.md](SECURITY.md). Source is provided **without granting a license at this time**; [NOTICE.md](NOTICE.md) is preserved.

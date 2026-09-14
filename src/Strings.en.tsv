@@ -481,3 +481,143 @@ La compra automática está desactivada.	Automatic purchases are disabled.
 No se pudo liberar la tecla anterior.	Could not release the previous key.
 Prueba sin zona de pesca configurada	Test without a fishing area set up
  en 	 at 
+# 0.8.0: manual inventory, bait selection and bounded purchase recovery
+Cebos	Bait
+Tus cebos actuales	Your current bait
+Escribe tu inventario antes de empezar.	Enter your inventory before starting.
+Escribe 0 si no tienes ese tipo. Se usarán en este orden:	Enter 0 for types you do not have. Bait is used in this order:
+1. Legendario	1. Legendary
+2. Raro	2. Rare
+3. Común	3. Common
+Legendario	Legendary
+Raro	Rare
+Común	Common
+legendario	legendary
+raro	rare
+común	common
+Aplicar inventario	Apply inventory
+Escribe las cantidades y aplica.	Enter the amounts, then apply.
+Menú de cebos	Bait menu
+Seleccionar menú completo	Select full menu
+Incluye las filas de los tres tipos, con margen. El programa busca la fila\ny comprueba el borde amarillo al cambiar de cebo.	Include all three bait rows with room around them. The app finds the row\nand checks its yellow border when switching bait.
+La cuenta es estimada: 1 cebo por ronda detectada. Solo compra común.\nEl OCR opcional contrasta la cantidad; no reemplaza tu inventario.	Estimated count: 1 bait per detected round. Only common bait is bought.\nOptional OCR compares the amount; it does not replace your inventory.
+Confirma las cantidades actuales. Corrígelas si gastaste cebos fuera de la macro o una compra quedó dudosa.	Confirm your current amounts. Correct them if you used bait outside the macro or a purchase became uncertain.
+Compra dudosa: corrige y aplica.	Uncertain purchase: correct and apply.
+Inventario listo · seguimiento estimado	Inventory ready · estimated tracking
+Menú: 	Menu: 
+Inventario aplicado · legendario, raro y común	Inventory applied · legendary, rare and common
+Seleccionando menú de cebos…	Selecting bait menu…
+MENÚ COMPLETO DE CEBOS	FULL BAIT MENU
+Incluye todas las filas de cebo con margen. Enter confirma; Esc cancela.	Include every bait row with room around it. Enter confirms; Esc cancels.
+Menú de cebos guardado · las filas se buscan por su color	Bait menu saved · rows are found by their colors
+OCR de apoyo desactivado	Supporting OCR disabled
+Inventario manual desactivado	Manual inventory disabled
+Estimación · 	Estimate · 
+ · cantidad dudosa	 · uncertain amount
+Cantidad dudosa: actualiza los cebos en Cebos y aplica el inventario.	Uncertain amount: update the counts under Bait and apply the inventory.
+No está disponible la selección de tipos de cebo.	Bait type selection is unavailable.
+Seleccionando cebo: 	Selecting bait: 
+Cebo seleccionado: 	Bait selected: 
+Compra dudosa: corrige el inventario en Cebos antes de continuar.	Uncertain purchase: correct the inventory under Bait before continuing.
+Inventario manual agotado	Manual inventory depleted
+OCR sin lectura clara	No clear OCR reading
+OCR coincide	OCR matches
+ · revisa la diferencia	 · check the difference
+Compra enviada sin confirmar cierre: revisa el inventario en Cebos.	Purchase sent without confirming closure: check the inventory under Bait.
+Recuperando menú · 	Recovering menu · 
+Diálogo cerrado. Compra dudosa: escribe las cantidades actuales en Cebos.	Dialog closed. Purchase uncertain: enter the current amounts under Bait.
+Menú cerrado · volviendo a pescar	Menu closed · returning to fishing
+Cada cantidad de cebo debe estar entre 0 y 9999.	Each bait amount must be between 0 and 9999.
+En Cebos, escribe las cantidades actuales y pulsa Aplicar inventario.	Under Bait, enter your current amounts and click Apply inventory.
+Revisa los reintentos y el tiempo máximo de cada fase.	Check the retry limits and maximum time for each phase.
+Selecciona el menú completo de cebos, entre 120 × 30 y 1000 × 700 px.	Select the full bait menu, between 120 × 30 and 1000 × 700 px.
+El menú de cebos queda fuera de la pantalla.	The bait menu is outside the screen.
+No apareció el minijuego tras 	The minigame did not appear after 
+ intentos sin minijuego	 attempts without the minigame
+ intentos	 attempts
+Ronda: 	Round: 
+ · Terminadas: 	 · Finished: 
+ · Lanzamientos: 	 · Casts: 
+Repone según tus cebos y las rondas.	Restock using your bait count and rounds.
+ comunes o menos,\ncompletar hasta 	 common bait or less,\nrestock up to 
+Inventario y rondas	Inventory and rounds
+Configurar cebos	Set up bait
+OCR de apoyo al inventario	Supporting inventory OCR
+Salta en el sitio si falta cebo o se agotan los reintentos. No garantiza evitar una desconexión.	Jump in place when bait runs out or retries are exhausted. This cannot guarantee preventing disconnection.
+Recuperación	Recovery
+Reintentos sin minijuego	Missing minigame retries
+Reintentos por fase	Retries per phase
+Espera por fase (s)	Phase timeout (s)
+Reintentos después del lanzamiento inicial. Al agotarlos, intenta cerrar el menú una vez antes de volver a pescar.	Retries after the initial cast. When exhausted, try one menu recovery before returning to fishing.
+Repite solo acciones compatibles con el menú visible. Una compra enviada no se vuelve a pagar.	Repeat only actions matching the visible menu. A submitted purchase is not paid again.
+Esperando seleccionar el cebo	Waiting to select bait
+No se distinguen las filas de cebo	Bait rows cannot be identified
+Filas de cebo visibles: 	Visible bait rows: 
+Roblox perdió el foco antes de seleccionar el cebo.	Roblox lost focus before selecting bait.
+Buscando el cebo 	Looking for bait: 
+El reloj cambió durante la selección del cebo.	The clock changed during bait selection.
+Roblox perdió el foco durante la selección del cebo.	Roblox lost focus during bait selection.
+No se pudo confirmar el cebo 	Could not confirm bait: 
+. Revisa la zona completa del menú.	. Check the full menu area.
+Esperando una fila clara de cebo 	Waiting for a clear bait row: 
+Cebo 	Bait: 
+ seleccionado	 selected
+Moviendo el puntero al cebo 	Moving the pointer to bait: 
+Roblox perdió el foco antes del clic de cebo.	Roblox lost focus before the bait click.
+Comprobando la selección del cebo 	Checking bait selection: 
+Falló la selección del cebo: 	Bait selection failed: 
+Selección de cebo cancelada	Bait selection canceled
+La selección por tipo de cebo está desactivada.	Bait type selection is disabled.
+Esperando el contador del nuevo tipo de cebo	Waiting for the new bait type's counter
+La fila de cebo está fuera del menú marcado.	The bait row is outside the marked menu.
+Moviendo el puntero a la fila de cebo	Moving the pointer to the bait row
+Clic de cebo fuera de la fila autorizada.	Bait click outside the authorized row.
+Selecciona el menú completo de cebos dentro de Roblox.	Select the full bait menu inside Roblox.
+No se distingue el contador de cebo 	Cannot identify the bait counter: 
+El contador quedó fuera del menú de cebos.	The counter is outside the bait menu.
+Los reintentos de compra deben estar entre 0 y 5.	Purchase retries must be between 0 and 5.
+La espera por fase debe estar entre 3 y 60 segundos.	The phase timeout must be between 3 and 60 seconds.
+Menú confirmado · 	Menu confirmed · 
+Reintentando fase de compra · 	Retrying purchase phase · 
+No confirmé el menú esperado: 	Could not confirm the expected menu: 
+. Menú actual: 	. Current menu: 
+La compra ya fue enviada.	The purchase has already been submitted.
+Comprobando el diálogo Sí / No	Checking the Yes / No dialog
+Comprobando Sí antes del clic	Checking Yes before clicking
+Comprobando el diálogo de cierre	Checking the closing dialog
+Comprobando los tres puntos antes de cerrar	Checking the three dots before closing
+Comprobando que el diálogo se cerró	Checking that the dialog closed
+Recuperación de compra · menú: 	Purchase recovery · menu: 
+ · intentos: 	 · attempts: 
+Recuperación preparada	Recovery ready
+La recuperación necesita ver los tres botones.	Recovery needs to see all three buttons.
+Configuración de reintentos no válida.	Invalid retry settings.
+Identificando el menú para volver a pescar	Identifying the menu to return to fishing
+Recuperación detenida: 	Recovery stopped: 
+La recuperación superó su tiempo límite.	Recovery exceeded its time limit.
+El puntero no llegó al botón de recuperación.	The pointer did not reach the recovery button.
+Identificando el menú · 	Identifying menu · 
+Diálogo cerrado · listo para volver al agua	Dialog closed · ready to return to the water
+El diálogo no se cerró tras los reintentos.	The dialog did not close after the retries.
+Apuntando a cerrar los tres puntos	Aiming to close the three dots
+Apuntando a No / Cancelar	Aiming at No / Cancel
+Cierre de recuperación enviado · esperando	Recovery close sent · waiting
+No se pudo identificar un menú para cerrar.	Could not identify a menu to close.
+Menú detectado: 	Detected menu: 
+Volviendo a confirmar el menú antes de la entrada	Rechecking the menu before sending input
+El menú cambió antes de enviar la entrada.	The menu changed before input was sent.
+Buscando azul entre dos bordes verticales	Looking for blue between two vertical borders
+Barra visible; esperando hueco y línea blanca	Bar visible; waiting for the gap and white marker
+Barra visible; hay varias líneas blancas posibles	Bar visible; multiple possible white markers
+Barra visible; línea blanca tapada o incompleta	Bar visible; white marker obscured or incomplete
+Barra visible; hueco gris tapado o incompleto	Bar visible; gray gap obscured or incomplete
+Pez y hueco detectados entre los bordes de la barra	Fish and gap detected between the bar borders
+Menú de cebos: 	Bait menu: 
+Selecciona un cebo con borde amarillo para probar el OCR.	Select a bait with a yellow outline to test OCR.
+Incluye todas las filas de cebo con margen.	Include every bait row with room around it.
+Selecciona el menú completo. Se busca cada tipo aunque desaparezca otra fila.	Select the full menu. Each type is located even if another row disappears.
+OCR de apoyo	Supporting OCR
+Pérdida breve de imagen · conservando control	Brief image loss · keeping control
+Termina el minijuego antes de iniciar el inventario manual.	Finish the minigame before starting the manual inventory.
+El OCR contrasta la cantidad del tipo seleccionado. La cuenta manual sigue siendo la base.	OCR compares the selected type's amount. The manual count remains the basis.
+1. En Cebos, escribe tus cantidades y pulsa Aplicar inventario.\n2. Marca el menú completo de cebos, la barra, el agua y los botones de compra.\n3. En Inicio, elige Inventario y rondas o Cronómetro.\n4. Prueba la compra y las lecturas antes de permitir entradas.\n5. Termina cualquier ronda abierta y vuelve a Roblox para iniciar.\n\nF6 selecciona la barra. F8 inicia o detiene. F10 detiene.\nCambiar de ventana también detiene la macro.	1. Under Bait, enter your amounts and click Apply inventory.\n2. Mark the full bait menu, fishing bar, water point and purchase buttons.\n3. Under Home, choose Inventory and rounds or Timer.\n4. Test purchases and readings before enabling input.\n5. Finish any open round and return to Roblox to start.\n\nF6 selects the bar. F8 starts or stops. F10 stops.\nSwitching windows also stops the macro.

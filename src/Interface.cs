@@ -15,10 +15,10 @@ namespace SomeFishingGPO
         private readonly ToolTip hints = new ToolTip { InitialDelay = 500, ReshowDelay = 200, AutoPopDelay = 15000 };
         private readonly System.Collections.Generic.Dictionary<Control,string> hintSources=new System.Collections.Generic.Dictionary<Control,string>();
         private readonly System.Collections.Generic.HashSet<Label> fullHints=new System.Collections.Generic.HashSet<Label>();
-        private readonly string[] pageNames = { "Inicio", "Zonas", "Pruebas", "Avanzado" };
+        private readonly string[] pageNames = { "Inicio", "Zonas", "Pruebas", "Avanzado", "Cebos" };
         private readonly string[] pageDescriptions = {
             "Elige el modo y empieza a pescar.", "Marca las áreas y los botones una vez.",
-            "Comprueba la compra y las lecturas.", "Ajustes de detección, tiempos y reposición." };
+            "Comprueba la compra y las lecturas.", "Ajustes de detección, tiempos y reposición.", "Escribe tu inventario antes de empezar." };
 
         private Label LabelAt(Control parent, string text, int x, int y, int width, int height, float size, bool bold)
         {
@@ -97,8 +97,8 @@ namespace SomeFishingGPO
             purchaseMinutes.Enabled=editable&&timed;
             timerCondition.Visible=timed;ocrCondition.Visible=!timed; baitThreshold.Enabled=editable&&!timed;
             purchaseCountdown.Visible=timed;
-            purchaseModeHint.Text=timed?"Compra una cantidad cada cierto tiempo.":"Repone según el contador de cebo.";
-            if(ocrSummary!=null)ocrSummary.Text="Con "+baitThreshold.Value+" cebos o menos,\ncompletar hasta "+baitCapacity.Value+".";
+            purchaseModeHint.Text=timed?"Compra una cantidad cada cierto tiempo.":"Repone según tus cebos y las rondas.";
+            if(ocrSummary!=null)ocrSummary.Text="Con "+baitThreshold.Value+" comunes o menos,\ncompletar hasta "+baitCapacity.Value+".";
         }
         private void SelectTestView(bool readings)
         {
@@ -108,7 +108,7 @@ namespace SomeFishingGPO
         }
         private void ShowQuickGuide()
         {
-            MessageBox.Show(this,Localization.T("1. En Zonas, marca la barra, el agua y los botones de compra.\n2. Elige Contador OCR o Cronómetro en Inicio.\n3. Prueba la compra y las lecturas en Pruebas.\n4. Permite las entradas y vuelve a Roblox para iniciar.\n\nF6 selecciona la barra. F8 inicia o detiene. F10 detiene.\nCambiar de ventana también detiene la macro."),Localization.T("Guía rápida"),MessageBoxButtons.OK,MessageBoxIcon.Information);
+            MessageBox.Show(this,Localization.T("1. En Cebos, escribe tus cantidades y pulsa Aplicar inventario.\n2. Marca el menú completo de cebos, la barra, el agua y los botones de compra.\n3. En Inicio, elige Inventario y rondas o Cronómetro.\n4. Prueba la compra y las lecturas antes de permitir entradas.\n5. Termina cualquier ronda abierta y vuelve a Roblox para iniciar.\n\nF6 selecciona la barra. F8 inicia o detiene. F10 detiene.\nCambiar de ventana también detiene la macro."),Localization.T("Guía rápida"),MessageBoxButtons.OK,MessageBoxIcon.Information);
         }
         private void BuildInterface()
         {
@@ -124,7 +124,8 @@ namespace SomeFishingGPO
                 pages[i]=new Panel { Location=new Point(212,104), Size=new Size(844,516), BackColor=BackColor, Visible=false };
                 Controls.Add(pages[i]);
             }
-            var guide=ButtonAt(rail,"Guía rápida",16,358,156,delegate{ShowQuickGuide();},false);
+            navigation[4].Top=273;navigation[3].Top=322;
+            var guide=ButtonAt(rail,"Guía rápida",16,402,156,delegate{ShowQuickGuide();},false);
             guide.BackColor=rail.BackColor;guide.ForeColor=Color.FromArgb(181,191,203);((ModernButton)guide).BorderVisible=false;
             LabelAt(rail,"Idioma / Language",20,465,152,23,9.5f,false).ForeColor=Color.FromArgb(181,191,203);
             interfaceLanguage=new ComboBox{DropDownStyle=ComboBoxStyle.DropDownList,Location=new Point(20,494),Size=new Size(148,30),Font=new Font("Segoe UI",10),AccessibleName="Idioma / Language"};
@@ -132,7 +133,7 @@ namespace SomeFishingGPO
             var save=ButtonAt(rail,"Guardar",16,593,156,delegate{SaveSettings();},false);
             Hint(save,"Guarda las zonas y los ajustes actuales.");save.BackColor=Color.FromArgb(34,48,61);save.ForeColor=Color.White;
             ((ModernButton)save).BorderVisible=false;
-            LabelAt(rail,"Local  /  v0.7.1",22,657,145,23,9,false).ForeColor=Color.FromArgb(145,166,177);
+            LabelAt(rail,"Local  /  v0.8.0",22,657,145,23,9,false).ForeColor=Color.FromArgb(145,166,177);
             LabelAt(rail,"Código incluido",22,681,145,23,9,false).ForeColor=Color.FromArgb(145,166,177);
             pageTitle=LabelAt(this,"",212,15,800,49,25,true);
             pageSubtitle=LabelAt(this,"",214,69,820,27,10.5f,false);pageSubtitle.ForeColor=muted;
@@ -142,7 +143,7 @@ namespace SomeFishingGPO
             autoBuy=CheckAt(mode,"Comprar cebo · usa Peli",20,66,332);
             Hint(autoBuy,"Activa la reposición por contador o cronómetro. Permanece junto al barril de cebo.");
             purchaseMode=new LocalizedComboBox {DropDownStyle=ComboBoxStyle.DropDownList,Location=new Point(20,109),Size=new Size(332,30),Font=new Font("Segoe UI",11)};
-            purchaseMode.Items.AddRange(new object[]{"Contador OCR","Cronómetro"});mode.Controls.Add(purchaseMode);
+            purchaseMode.Items.AddRange(new object[]{"Inventario y rondas","Cronómetro"});mode.Controls.Add(purchaseMode);
             purchaseModeHint=LabelAt(mode,"",20,154,332,39,9.5f,false);purchaseModeHint.ForeColor=muted;
             timerCondition=new Panel{Location=new Point(20,211),Size=new Size(332,102),BackColor=Color.Transparent};mode.Controls.Add(timerCondition);
             ocrCondition=new Panel{Location=timerCondition.Location,Size=timerCondition.Size,BackColor=Color.White};mode.Controls.Add(ocrCondition);
@@ -151,14 +152,14 @@ namespace SomeFishingGPO
             Hint(buyQuantity,"Cantidad que se escribe en cada compra. El juego puede limitarla según capacidad y Peli.");
             Hint(purchaseMinutes,"Cuenta desde el inicio. Pausa la pesca para comprar y reinicia el intervalo tras la secuencia.");
             ocrSummary=LabelAt(ocrCondition,"",0,0,332,56,11,true);
-            ButtonAt(ocrCondition,"Configurar contador",0,60,332,delegate{SelectPage(1);},false);
+            ButtonAt(ocrCondition,"Configurar cebos",0,60,332,delegate{SelectPage(4);},false);
             Divider(mode,20,326,332);
             ButtonAt(mode,"Configurar zonas",20,348,332,delegate{SelectPage(1);},true);
             ButtonAt(mode,"Ir a pruebas",20,402,332,delegate{SelectPage(2);},false);
             var last=ButtonAt(mode,"Última parada",20,467,332,delegate{ShowLastStop();},false);last.Height=30;last.ForeColor=muted;((ModernButton)last).BorderVisible=false;
             var session=Card(pages[0],388,0,456,516);
             LabelAt(session,"Sesión",20,20,416,29,14,true);
-            cycleLabel=LabelAt(session,"Rondas: 0",20,76,416,28,11,false);cycleLabel.ForeColor=muted;
+            cycleLabel=LabelAt(session,"Ronda: 0 · Terminadas: 0",20,76,416,42,11,false);cycleLabel.ForeColor=muted;
             baitValueLabel=LabelAt(session,"Cebos: —",20,132,416,48,24,true);
             baitDetailLabel=LabelAt(session,"Configura las zonas para empezar.",20,198,416,61,10,false);FullTextHint(baitDetailLabel);
             purchaseCountdown=LabelAt(session,"El cronómetro empieza al iniciar la pesca.",20,292,416,56,12,true);FullTextHint(purchaseCountdown);
@@ -176,10 +177,10 @@ namespace SomeFishingGPO
             castLabel=LabelAt(zones,"Sin seleccionar",20,242,332,26,9.5f,false);
             Hint(pointButton,"Elige dónde debe apuntar el ratón al volver a lanzar.");
             Divider(zones,20,290,332);
-            baitAreaButton=ButtonAt(zones,"Contador de cebo",20,324,332,delegate{SelectBaitArea();},false);
+            baitAreaButton=ButtonAt(zones,"Menú de cebos",20,324,332,delegate{SelectBaitMenu();},false);
             baitAreaLabel=LabelAt(zones,"Sin seleccionar",20,371,332,26,9.5f,false);
-            LabelAt(zones,"Para OCR, rodea solo la x y el número.",20,425,332,46,10,false).ForeColor=muted;
-            Hint(baitAreaButton,"Selecciona un solo tipo de cebo, por ejemplo x300, sin el borde amarillo ni otros números.");
+            LabelAt(zones,"Incluye todas las filas de cebo con margen.",20,425,332,46,10,false).ForeColor=muted;
+            Hint(baitAreaButton,"Selecciona el menú completo. Se busca cada tipo aunque desaparezca otra fila.");
             var buttons=Card(pages[1],388,0,456,516);
             LabelAt(buttons,"3 botones de compra",20,20,416,29,14,true);
             LabelAt(buttons,"Abre el menú de cantidad y marca el centro\nde cada botón.",20,65,416,44,10,false).ForeColor=muted;
@@ -225,7 +226,7 @@ namespace SomeFishingGPO
             ButtonAt(fishRead,"Ejemplo",214,402,180,delegate{ShowExample();},false);
             Hint(previewButton,"Celeste: barra. Naranja: hueco. Rosa: pez. El progreso verde se ignora.");
             var counterRead=Card(testReadings,430,0,414,462);
-            LabelAt(counterRead,"Contador de cebo",20,17,374,29,14,true);
+            LabelAt(counterRead,"OCR de apoyo",20,17,374,29,14,true);
             baitPreview=PreviewAt(counterRead,20,60,374,90,"Selecciona el contador en Zonas");
             baitReadoutLabel=LabelAt(counterRead,"Cebos: —",20,179,374,45,22,true);
             baitReadoutDetail=LabelAt(counterRead,"Rodea solo la x y el número.",20,251,374,91,10,false);FullTextHint(baitReadoutDetail);
@@ -237,7 +238,7 @@ namespace SomeFishingGPO
 
             var warning=Card(pages[3],0,0,844,64);
             LabelAt(warning,"Si no conoces estos ajustes, déjalos como están.",20,19,804,30,12,true);
-            advancedScroll=new Panel{Location=new Point(0,80),Size=new Size(844,436),BackColor=BackColor,AutoScroll=true,AutoScrollMinSize=new Size(0,730)};pages[3].Controls.Add(advancedScroll);
+            advancedScroll=new Panel{Location=new Point(0,80),Size=new Size(844,436),BackColor=BackColor,AutoScroll=true,AutoScrollMinSize=new Size(0,916)};pages[3].Controls.Add(advancedScroll);
             var fishing=Card(advancedScroll,0,0,808,326);
             LabelAt(fishing,"Pesca",20,17,768,29,14,true);
             autoCast=CheckAt(fishing,"Volver a lanzar automáticamente",20,60,380);
@@ -273,10 +274,18 @@ namespace SomeFishingGPO
             var waiting=Card(advancedScroll,0,586,808,144);
             LabelAt(waiting,"Espera y lector",20,17,510,29,14,true);
             idleJump=CheckAt(waiting,"Saltar durante la espera",20,65,510);
-            monitorBait=CheckAt(waiting,"Leer contador fuera de compras",20,105,510);
-            Hint(monitorBait,"La reposición por OCR activa el lector automáticamente. Cronómetro no necesita leer el contador.");
+            monitorBait=CheckAt(waiting,"OCR de apoyo al inventario",20,105,510);
+            Hint(monitorBait,"El OCR contrasta la cantidad del tipo seleccionado. La cuenta manual sigue siendo la base.");
             jumpSeconds=NumberAt(waiting,"Intervalo de salto (s)",552,47,15,300,60,236);
-            Hint(idleJump,"Salta en el sitio si falta cebo o tras tres lanzamientos sin minijuego. No garantiza evitar una desconexión.");
+            Hint(idleJump,"Salta en el sitio si falta cebo o se agotan los reintentos. No garantiza evitar una desconexión.");
+            var retry=Card(advancedScroll,0,746,808,170);
+            LabelAt(retry,"Recuperación",20,17,768,29,14,true);
+            castRetries=NumberAt(retry,"Reintentos sin minijuego",20,65,0,20,2,236);
+            shopRetries=NumberAt(retry,"Reintentos por fase",286,65,0,5,2,236);
+            phaseTimeout=NumberAt(retry,"Espera por fase (s)",552,65,3,60,10,236);
+            Hint(castRetries,"Reintentos después del lanzamiento inicial. Al agotarlos, intenta cerrar el menú una vez antes de volver a pescar.");
+            Hint(shopRetries,"Repite solo acciones compatibles con el menú visible. Una compra enviada no se vuelve a pagar.");
+            BuildInventoryPage();
             purchaseMode.SelectedIndexChanged+=delegate{UpdatePurchaseControls(!IsRunning&&armedUntil==0);};
             baitThreshold.ValueChanged+=delegate{UpdatePurchaseControls(!IsRunning&&armedUntil==0);};
             baitCapacity.ValueChanged+=delegate{UpdatePurchaseControls(!IsRunning&&armedUntil==0);};

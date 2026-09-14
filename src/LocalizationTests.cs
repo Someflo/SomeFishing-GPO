@@ -86,7 +86,7 @@ namespace SomeFishingGPO
             check(LocalizationTests.Snapshot(after)==before,"Switching to English preserves every existing setting, area, button and OCR tag");
             check(ReferenceEquals(areaButton,originalButton)&&allowClicks.Checked&&previewingBait,"Language switching keeps controls and previews alive without changing input permission");
             check(pageTitle.Text=="Home"&&navigation[3].Text=="Advanced"&&areaButton.Text=="Change area · F6","Navigation and existing area labels switch to English immediately");
-            check(purchaseMode.GetItemText(purchaseMode.Items[0])=="OCR counter"&&purchaseMode.GetItemText(purchaseMode.Items[1])=="Timer","Purchase mode choices display in English without changing their indexes");
+            check(purchaseMode.GetItemText(purchaseMode.Items[0])=="Inventory and rounds"&&purchaseMode.GetItemText(purchaseMode.Items[1])=="Timer","Purchase mode choices display in English without changing their indexes");
             check(ocrLanguage.GetItemText(ocrLanguage.Items[0])=="Automatic (Windows)"&&ocrTags[ocrLanguage.SelectedIndex]=="es-MX","OCR automatic option translates while the selected OCR language stays intact");
             check(hints.GetToolTip(areaButton).StartsWith("Select the entire blue bar"),"Tooltips follow the interface language");
             ShowBaitCount(4,"Cantidad confirmada · 4 cebos");
@@ -99,7 +99,7 @@ namespace SomeFishingGPO
             check(pageTitle.Text=="Inicio"&&baitReadoutLabel.Text=="Cebos: 4"&&statusLabel.Text=="Moviendo el puntero al agua…","Switching back restores original static and live Spanish text");
             check(diagnosticLog.Text.Contains("Cebos: 4 · Cantidad confirmada"),"Switching back restores the canonical diagnostic log without reverse translation");
             check(LocalizationTests.Snapshot(ReadSettings())==before&&previewingBait,"Round-trip language changes preserve every setting and preview state");
-            foreach(int page in new[]{1,2,3,0})
+            foreach(int page in new[]{1,2,3,4,0})
             {SelectPage(page);interfaceLanguage.SelectedIndex=1;interfaceLanguage.SelectedIndex=0;}
             check(LocalizationTests.Snapshot(ReadSettings())==before&&pageTitle.Text=="Inicio","The always-visible selector works across every page without rebuilding forms");
             previewingBait=false;

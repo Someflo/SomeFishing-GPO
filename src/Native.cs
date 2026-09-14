@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
@@ -143,7 +143,7 @@ namespace SomeFishingGPO
         }
     }
 
-    internal sealed class GameRuntime : IGameRuntime, IShopRuntime, IShopPointerRuntime, IShopVisualRuntime, ICastPointerRuntime, IDisposable
+    internal sealed class GameRuntime : IGameRuntime, IShopRuntime, IShopPointerRuntime, IShopVisualRuntime, ICastPointerRuntime, IBaitSelectionRuntime, IDisposable
     {
         private readonly Settings settings;
         private readonly IntPtr target;
@@ -152,6 +152,15 @@ namespace SomeFishingGPO
         private readonly MouseLease mouse;
         private readonly RelativePointer shopPointer;
         private readonly RelativePointer castPointer;
+        private readonly BaitSelectionController baitSelection;
+        private Point? permittedBaitPoint;
+        private BaitKind? activeBaitKind;
+        private BaitMenuReading lastBaitMenu;
+        private Bitmap lastBaitMenuFrame;
+        private double nextBaitMenu;
+        private long baitMenuSequence, publishedBaitSequence, rawBaitSequence = -1, absentBaitSequence = -1;
+        private BaitReading publishedBaitReading = new BaitReading();
+        private bool baitRowAbsent;
         private bool castPressPending;
         private Point? settledShopPoint;
         private Point shopAimTarget;
@@ -167,11 +176,12 @@ namespace SomeFishingGPO
         private readonly MouseLease shopKey, controlKey;
         private volatile int currentShopKey;
         private readonly WindowsShopReader shopReader;
-        private readonly WindowsBaitReader baitReader;
+        private WindowsBaitReader baitReader;
         private readonly System.Threading.Timer watchdog;
         private readonly Stopwatch clock = Stopwatch.StartNew();
         private volatile bool closing;
         private volatile string safetyReason = "Parada de protección: no se pudo comprobar la ventana de Roblox.";
+        private readonly StatefulTrackingDetector fishingDetector=new StatefulTrackingDetector();
         public Bitmap LastFrame { get; private set; }
         internal bool PendingRelease { get { return mouse.PendingRelease || jump.PendingRelease || shopKey.PendingRelease || controlKey.PendingRelease; } }
         internal string FaultReason { get { return mouse.Fault ?? jump.Fault ?? shopKey.Fault ?? controlKey.Fault; } }
@@ -199,6 +209,8 @@ namespace SomeFishingGPO
                 delegate{return ForegroundAllowed;},delegate(Point point){return Settings.ContainsSafely(Native.ClientBounds(target),new Rectangle(point,new Size(1,1)));});
             castPointer=new RelativePointer(delegate{return Cursor.Position;},delegate(Point delta){if(sendClicks)Native.MoveRelative(delta);},
                 delegate{return ForegroundAllowed;},delegate(Point point){return Settings.ContainsSafely(Native.ClientBounds(target),new Rectangle(point,new Size(1,1)));});
+            baitSelection = new BaitSelectionController(delegate { return IsActive; }, ReadBaitMenu, AimBaitRow,
+                TickShopAim, ClickBaitRow, ReleaseBaitInputs, settings.ShopPhaseTimeoutSeconds);
             watchdog = new System.Threading.Timer(delegate
             {
                 mouse.Watchdog(); jump.Watchdog(); shopKey.Watchdog(); controlKey.Watchdog();
@@ -229,7 +241,7 @@ namespace SomeFishingGPO
                 if (Native.InStopCorner())
                 { safetyReason = "Detenida: el ratón llegó a la esquina superior izquierda."; return false; }
                 Rectangle client = Native.ClientBounds(target);
-                bool inside = ((!requireFishingArea&&settings.Area.IsEmpty)||Settings.ContainsSafely(client, settings.Area)) && (!settings.UsesBaitCounter || Settings.ContainsSafely(client, settings.BaitArea)) && (!settings.AutoBuyBait || (settings.UseDirectShopFlow?settings.ValidateShopButtons(client)==null:Settings.ContainsSafely(client,settings.ShopArea))) && (!settings.AutoCast ||
+                bool inside = ((!requireFishingArea&&settings.Area.IsEmpty)||Settings.ContainsSafely(client, settings.Area)) && (settings.UseManualBait ? Settings.ContainsSafely(client, settings.BaitMenuArea) : (!settings.UsesBaitCounter || Settings.ContainsSafely(client, settings.BaitArea))) && (!settings.AutoBuyBait || (settings.UseDirectShopFlow?settings.ValidateShopButtons(client)==null:Settings.ContainsSafely(client,settings.ShopArea))) && (!settings.AutoCast ||
                     (settings.CastPointSet && Settings.ContainsSafely(client, new Rectangle(settings.CastPoint, new Size(1, 1)))));
                 if (!inside) safetyReason = "Detenida: la zona o el punto de lanzamiento quedó fuera de la ventana de Roblox.";
                 return inside;
@@ -280,6 +292,7 @@ namespace SomeFishingGPO
         }
         public void Release()
         {
+            if (baitSelection != null) baitSelection.Cancel();
             if(shopPointer!=null)shopPointer.Cancel();settledShopPoint=null;
             if(castPointer!=null)castPointer.Cancel();castPressPending=false;
             ReleaseInputs();
@@ -320,7 +333,11 @@ namespace SomeFishingGPO
         public void ShopClick(Point point,ShopClickKind kind)
         {
             Guard();if(!ShopPointAllowed(point))throw new InvalidOperationException("Clic de compra fuera de los botones autorizados.");
-            if(settings.UseDirectShopFlow&&settledShopPoint!=point)throw new InvalidOperationException("El movimiento al botón no terminó; clic cancelado.");
+            PressMarkedPoint(point,kind,settings.UseDirectShopFlow);
+        }
+        private void PressMarkedPoint(Point point, ShopClickKind kind, bool requireSettled)
+        {
+            if(requireSettled&&settledShopPoint!=point)throw new InvalidOperationException("El movimiento al botón no terminó; clic cancelado.");
             Point actual=Cursor.Position;
             if(sendClicks&&(Math.Abs(actual.X-point.X)>3||Math.Abs(actual.Y-point.Y)>3))throw new InvalidOperationException("El puntero no llegó al botón o se movió. Clic cancelado; suelta el ratón durante la prueba.");
             IntPtr below=Native.WindowAt(actual);
@@ -331,9 +348,14 @@ namespace SomeFishingGPO
         }
         private bool ShopPointAllowed(Point point)
         {
-            return settings.AutoBuyBait&&(settings.UseDirectShopFlow?
-                settings.ShopButtonsSet&&(point==settings.ShopLeftPoint||point==settings.ShopMiddlePoint||point==settings.ShopRightPoint):
-                Settings.ContainsSafely(settings.ShopArea,new Rectangle(point,new Size(1,1))));
+            return MarkedShopPointAllowed(settings, point);
+        }
+        internal static bool MarkedShopPointAllowed(Settings options, Point point)
+        {
+            if (options.UseDirectShopFlow)
+                return options.ShopButtonsSet && ((options.AutoBuyBait && point == options.ShopLeftPoint)
+                    || point == options.ShopMiddlePoint || point == options.ShopRightPoint);
+            return options.AutoBuyBait && Settings.ContainsSafely(options.ShopArea, new Rectangle(point, new Size(1, 1)));
         }
         public ShopVisualReading ReadShopVisual(double now)
         {
@@ -370,8 +392,101 @@ namespace SomeFishingGPO
         {
             Guard();
             if (!settings.UsesBaitCounter) return new BaitReading();
+            if (settings.UseManualBait) return ReadActiveBaitCounter(now);
             if (baitReader.Due(now)) baitReader.Submit(Native.Capture(settings.BaitArea), now);
             return baitReader.Latest;
+        }
+        public void BeginBaitSelection(BaitKind kind, double now)
+        {
+            Guard();
+            if (!settings.UseManualBait) throw new InvalidOperationException("La selección por tipo de cebo está desactivada.");
+            if (!activeBaitKind.HasValue || activeBaitKind.Value != kind)
+            {
+                activeBaitKind = kind; ResetBaitReader();
+                publishedBaitReading = new BaitReading { Sequence = ++publishedBaitSequence, SampledAt = now, Detail = "Esperando el contador del nuevo tipo de cebo" };
+            }
+            // A previous menu snapshot must not authorize a new selection.
+            nextBaitMenu = 0; baitSelection.Begin(kind, now);
+        }
+        public BaitSelectionResult TickBaitSelection(double now) { return baitSelection.Tick(now); }
+        private void ReleaseBaitInputs()
+        {
+            permittedBaitPoint = null;
+            if (shopPointer != null) shopPointer.Cancel(); settledShopPoint = null;
+            ReleaseInputs();
+        }
+        private void AimBaitRow(Point point)
+        {
+            Guard();
+            if (!settings.UseManualBait || !Settings.ContainsSafely(settings.BaitMenuArea, new Rectangle(point, new Size(1, 1))))
+                throw new InvalidOperationException("La fila de cebo está fuera del menú marcado.");
+            ReleaseBaitInputs();
+            if (PendingRelease) throw new InvalidOperationException("Hay una entrada pendiente de liberación.");
+            permittedBaitPoint = shopAimTarget = point;
+            shopPointer.Start(point, clock.Elapsed.TotalMilliseconds);
+            inputStatus = "Moviendo el puntero a la fila de cebo";
+        }
+        private void ClickBaitRow(Point point)
+        {
+            Guard();
+            if (!settings.UseManualBait || permittedBaitPoint != point || !Settings.ContainsSafely(settings.BaitMenuArea, new Rectangle(point, new Size(1, 1))))
+                throw new InvalidOperationException("Clic de cebo fuera de la fila autorizada.");
+            PressMarkedPoint(point, ShopClickKind.Button, true);
+        }
+        private BaitMenuReading ReadBaitMenu(double now)
+        {
+            Guard();
+            if (lastBaitMenu != null && now < nextBaitMenu) return lastBaitMenu;
+            Rectangle area = settings.BaitMenuArea;
+            if (!settings.UseManualBait || area.Width < 60 || area.Height < 16 || !Settings.ContainsSafely(Native.ClientBounds(target), area))
+                throw new InvalidOperationException("Selecciona el menú completo de cebos dentro de Roblox.");
+            Bitmap frame = Native.Capture(area);
+            if (lastBaitMenuFrame != null) lastBaitMenuFrame.Dispose();
+            lastBaitMenuFrame = frame;
+            lastBaitMenu = BaitMenuVisual.Analyze(frame, area.Location);
+            lastBaitMenu.Sequence = ++baitMenuSequence; lastBaitMenu.SampledAt = now; nextBaitMenu = now + 200;
+            return lastBaitMenu;
+        }
+        private void ResetBaitReader()
+        {
+            // The old worker may finish later, but its disposed reader can no
+            // longer publish a quantity belonging to a different bait type.
+            baitReader.Dispose(); baitReader = new WindowsBaitReader(settings.OcrLanguage);
+            rawBaitSequence = -1; absentBaitSequence = -1; baitRowAbsent = false;
+        }
+        private BaitReading ReadActiveBaitCounter(double now)
+        {
+            if (!activeBaitKind.HasValue) return publishedBaitReading;
+            BaitMenuReading menu = ReadBaitMenu(now); BaitMenuRow row;
+            if (!menu.TryGetRow(activeBaitKind.Value, out row))
+            {
+                if (!baitRowAbsent) { ResetBaitReader(); baitRowAbsent = true; }
+                if (absentBaitSequence != menu.Sequence)
+                {
+                    absentBaitSequence = menu.Sequence;
+                    publishedBaitReading = new BaitReading { Sequence = ++publishedBaitSequence, SampledAt = menu.SampledAt,
+                        // Ambiguous/hidden menus are unknown, never a numeric zero.
+                        VisuallyAbsent = menu.Rows.Count > 0 && menu.Rows.TrueForAll(delegate(BaitMenuRow candidate) { return candidate.Kind != activeBaitKind.Value; }),
+                        Detail = "No se distingue el contador de cebo " + BaitSelectionController.Name(activeBaitKind.Value) };
+                }
+                return publishedBaitReading;
+            }
+            baitRowAbsent = false;
+            if (baitReader.Due(now))
+            {
+                Rectangle local = row.CounterBounds; local.Offset(-settings.BaitMenuArea.X, -settings.BaitMenuArea.Y);
+                if (!Settings.ContainsSafely(new Rectangle(Point.Empty, lastBaitMenuFrame.Size), local))
+                    throw new InvalidOperationException("El contador quedó fuera del menú de cebos.");
+                baitReader.Submit(lastBaitMenuFrame.Clone(local, PixelFormat.Format32bppArgb), menu.SampledAt);
+            }
+            BaitReading raw = baitReader.Latest;
+            if (raw.Sequence > 0 && raw.Sequence != rawBaitSequence)
+            {
+                rawBaitSequence = raw.Sequence;
+                publishedBaitReading = new BaitReading { Sequence = ++publishedBaitSequence, SampledAt = raw.SampledAt,
+                    Count = raw.Count, VisuallyAbsent = raw.VisuallyAbsent, Detail = raw.Detail };
+            }
+            return publishedBaitReading;
         }
         public Observation Observe()
         {
@@ -380,10 +495,11 @@ namespace SomeFishingGPO
             Bitmap frame = Native.Capture(settings.Area);
             if (LastFrame != null) LastFrame.Dispose();
             LastFrame = frame;
-            return Detector.Analyze(frame, settings);
+            return fishingDetector.Analyze(frame, settings);
         }
         public void Dispose()
         {
+            baitSelection.Cancel();
             shopPointer.Cancel();settledShopPoint=null;
             castPointer.Cancel();castPressPending=false;
             closing = true; mouse.Stop(); jump.Stop(); shopKey.Stop(); controlKey.Stop(); baitReader.Dispose(); shopReader.Dispose();
@@ -391,6 +507,7 @@ namespace SomeFishingGPO
             // If Windows rejected button-up, the timer retains this object and retries
             // until it is accepted. The UI blocks a new run while release is pending.
             if (LastFrame != null) LastFrame.Dispose(); LastFrame = null;
+            if (lastBaitMenuFrame != null) lastBaitMenuFrame.Dispose(); lastBaitMenuFrame = null;
         }
     }
 }

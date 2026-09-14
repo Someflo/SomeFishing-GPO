@@ -1,45 +1,52 @@
-SomeFishing GPO 0.7.1 - verificacion local, 2026-09-05
+SomeFishing GPO 0.8.0 - verificacion local, 2026-09-13
 
-802 comprobaciones integradas; 925 con quince capturas privadas del usuario.
-Todas las entradas de prueba son simuladas: no se enviaron clics o teclas a
-Roblox. La logica de pesca y compra sigue siendo la de 0.7.0.
+993 comprobaciones integradas; 1000 con la nueva captura privada de referencia.
+Las entradas de las pruebas son simuladas; no se enviaron clics o teclas a Roblox.
+Las capturas anteriores ya no estan disponibles en su ruta temporal. Se conservan
+las regresiones sinteticas anteriores, sin afirmar una nueva validacion con ellas.
 
-Selector Idioma / Language siempre visible en la barra lateral. Espanol y
-English se aplican inmediatamente y se guardan en ajustes.xml. Los ajustes
-antiguos sin InterfaceLanguage siguen en espanol. El selector es independiente
-del idioma OCR; cambiarlo conserva zonas, coordenadas, cantidades, tiempos,
-permisos de entrada y vistas activas, sin reconstruir la ventana.
+Inventario manual obligatorio en la interfaz, cantidades separadas y prioridad
+legendario -> raro -> comun. Solo se compra comun. Cuenta rondas iniciadas,
+terminadas y lanzamientos separados. Una ronda detectada consume una unidad
+estimada una sola vez; un lanzamiento sin minijuego no consume el inventario.
+La cuenta no afirma cuantos peces se capturaron. Los valores se conservan localmente.
 
-Traducciones embebidas en el ejecutable para navegacion, controles, ayudas,
-selector de areas, mensajes de estado, errores propios, guia y diagnosticos.
-La traduccion se aplica en presentacion y mantiene los datos del detector y
-la compra intactos. No cambia la cultura de Windows ni el formato numerico.
-Dialogos/errores de Windows pueden seguir el idioma del sistema; registros
-historicos conservan el idioma en que fueron escritos.
+Pruebas de inventario: no decrementos dobles durante perdidas breves, cambios de
+tipo antes de lanzar, reposicion 300 menos el saldo, cronometro, limite de capacidad,
+agotamiento, correccion explicita y persistencia de idioma/contador/modos en interfaz.
+Pruebas de compra: menus nuevos y estables, retrasos de entradas, reintentos por
+fase, cancelacion con el boton derecho marcado, cierre final y vuelta al agua.
+Comprar no se repite si pudo enviarse. Una compra ambigua pide corregir cantidades.
+Un flujo completado acredita la cantidad solicitada como estimacion, no prueba
+el pago ni la entrega real. Las pruebas de compra siguen independientes del inventario.
 
-32 comprobaciones nuevas validan migracion de XML, persistencia e independencia
-del OCR, catalogo embebido, mensajes compuestos, cantidades, cuenta atras,
-coordenadas negativas, registros multilinea, conservacion de identificadores,
-datos del detector y parser, cambios en ambos sentidos y preferencia al abrir.
-El cambio de idioma se prueba en todos los apartados y conserva los mismos
-controles, valores y permisos. Se revisaron los renders en ingles y el selector
-visible en espanol, y se corrigio un texto cortado en la compra de prueba.
-Se agrega README.en.md con inicio, configuracion y limites en ingles.
+La seleccion de cebo busca cada fila en el menu completo y exige borde amarillo
+para confirmar el tipo. Las filas no se seleccionan por un indice fijo. El OCR
+de apoyo recorta el contador del tipo activo y descarta resultados de otro tipo.
+Las regresiones de recorte excluyen bordes amarillos en x1/x2/x4/x14/x300.
+En la captura real, la prueba aislada del OCR leyo 3 y 108. x14 quedo desconocido
+aun con un recorte limpio de 30 x 18 px. No se convirtio en cero ni autorizo compra.
+El inventario manual sigue siendo la base; el OCR informa coincidencias/diferencias.
 
-Las regresiones de compra por puntos, comprobacion visual del menu,
-movimiento relativo, umbral 2/capacidad 300, cronometro 50/40 minutos,
-lecturas x2/x3/x4, persistencia, foco y liberacion siguen aprobadas.
-Las comprobaciones visuales de compra no verifican el numero escrito,
-el pago ni el cierre en Roblox. Se conserva ese limite en la interfaz.
+El detector usa los bordes reales de la barra, admite margen vertical y lateral,
+separa la linea blanca del texto del aviso E y descarta la barra de progreso verde.
+En la captura privada identifica el pez cerca de y=277 y el hueco cerca de y=374.
+Se probaron pandeo, oclusion, hueco en extremos, escala, dos barras, lineas ambiguas,
+escenas vacias y zonas de hasta 1200 x 1400. Nunca se devuelve geometria vieja como
+deteccion actual. El motor conserva la ultima orden por un maximo de 180 ms ante
+una perdida breve y luego libera. El cierre requiere ausencia sostenida de 1600 ms.
 
-Microsoft Defender completo el analisis del ejecutable: found no threats.
-No es una garantia absoluta ni certificacion. Ejecutable sin firma comercial.
-Se conserva NOTICE.md, sin licencia concedida por ahora. No se distribuyen
-capturas privadas, ajustes, registros personales, credenciales ni rutas locales.
-La documentacion visual contiene renders y ejemplos sinteticos.
+Interfaz revisada mediante renders sin activar ventanas ni registrar teclas.
+Espanol e ingles disponibles. Nuevos campos y paginas conservan los valores al
+cambiar de idioma. Menu Cebos, reintentos en Avanzado y aviso de inventario estimado.
+
+Microsoft Defender termino el analisis del ejecutable: found no threats.
+Esto no es una garantia absoluta. Se conserva NOTICE.md sin licencia concedida.
+No se distribuyen capturas privadas, ajustes personales, registros de sesion,
+credenciales ni rutas de usuario. Los renders y ejemplos incluidos son sinteticos.
 
 SHA256 DEL EJECUTABLE
-306E44CA74EB4058A25CBB7EA5A673449D970F32F689FBF1DF2242A1DD4B69DC  SomeFishingGPO.exe
+F9E508A28636615C7993C344D52E7BE3DED97E8A344357E68610397B6D14CE57  SomeFishingGPO.exe
 
 PRUEBAS INTEGRADAS
 OK: Windows INPUT structure matches the platform ABI
@@ -123,7 +130,8 @@ OK: Casting holds only after the preparation delay
 OK: Changing focus during a cast stops and releases
 OK: A stopped engine cannot send a delayed press
 OK: An already visible minigame skips casting
-OK: A single missing frame releases without counting a round
+OK: A single missing frame preserves the last command during the bounded grace window
+OK: Tracking releases after 180 ms without fresh geometry and does not count a new round
 OK: Sustained disappearance completes one round
 OK: A closed menu triggers the next cast after the rest
 OK: Explicit stop releases the mouse
@@ -794,7 +802,7 @@ OK: Marked-point patches preserve negative monitor coordinates
 OK: A patch with overflowing coordinates is rejected
 OK: Shop synchronization never clicks while pointer movement is pending
 OK: The full 700 ms settling delay starts after pointer arrival, not after requesting movement
-OK: The initial Yes click occurs only after the arrived pointer has settled
+OK: The initial Yes click occurs only after the arrived pointer has settled and fresh confirmation is visible
 OK: Fresh quantity-menu confirmations allow the complete synchronized purchase sequence
 OK: Synchronized direct buying verifies visual presence without any text OCR or fishing reads
 OK: Synchronization preserves the number's 250 ms double click and four explicit aiming stages
@@ -803,7 +811,7 @@ OK: Focus loss during movement cancels the pending aim and prevents later pollin
 OK: F10 during pointer movement cannot leave a delayed click behind
 OK: A failed pointer driver stops before Yes and releases all held keys
 OK: If Yes does not open the quantity menu, synchronization blocks the number, typing and Buy
-OK: A missing quantity menu fails after approximately eight seconds without retrying Yes
+OK: An unknown quantity menu fails at the configured ten second phase timeout without retrying Yes
 OK: Failed visual confirmation cannot emit future inputs
 OK: A quantity menu lost during pointer movement to the field prevents both number clicks, typing and Buy
 OK: Losing the quantity menu after the double click prevents Ctrl+A and any typing
@@ -846,6 +854,196 @@ OK: A newly confirmed low counter interrupts and cancels water aiming before it 
 OK: A low-bait interruption still requires the 1600 ms clear-menu pause
 OK: An interrupted aim is not treated as an in-flight cast requiring a bite window before buying
 OK: Timer expiration during water aiming also cancels the unsent cast and buys after only the clear-menu pause
+OK: Manual inventory retains independently entered common, rare and legendary quantities
+OK: Known positive bait has legendary, rare, common selection priority
+OK: Entering quantities does not invent prior fishing rounds
+OK: One confirmed minigame consumes one active bait and starts one unfinished round
+OK: Repeated frames for the same round cannot consume bait twice
+OK: An unstarted round cannot be counted as finished
+OK: A disappearing completed minigame counts one finished round regardless of catch outcome
+OK: Changing selected bait cannot charge another bait for an already recorded round
+OK: Round consumption touches only the selected bait type
+OK: Finishing the last legendary bait proposes rare without pretending a game selection occurred
+OK: Exhausted rare bait proposes common and cannot trigger a common purchase before selection
+OK: Common restocking uses the entered remaining count and configurable threshold without resetting rounds
+OK: Reconciliation can suggest another bait without changing the active type behind the engine
+OK: Uncertain legendary inventory is excluded from selection without invalidating known common bait
+OK: An explicitly empty inventory has no available bait and can request common restock
+OK: A real round at estimated zero stays nonnegative and marks that estimate uncertain
+OK: Repeated zero-count frames still count the real round only once
+OK: Correcting inventory clears uncertainty but preserves the identity of previously charged rounds
+OK: The next distinct round uses the corrected quantity
+OK: An order without inventory evidence cannot invent a successful MAX purchase
+OK: Ambiguous purchase inventory prevents repeated threshold spending
+OK: Later evidence resolves one ambiguous purchase and credits its actual common quantity
+OK: Duplicate purchase confirmation cannot credit the same order twice
+OK: A late ambiguous callback for a settled purchase cannot alter any bait inventory
+OK: Confirming one order leaves uncertainty from a different unresolved order intact
+OK: An explicit corrected count includes pending orders so delayed confirmation cannot double-credit them
+OK: A confirmed purchase does not repair pre-existing uncertainty about the starting inventory
+OK: Even while legendary is selected, the common vendor credits common bait only
+OK: An impossible out-of-range purchase total is unresolved rather than overflowed or silently truncated
+OK: Persisted uncertain inventory can disable all guessed bait selections until the user reconciles it
+OK: One corrected bait type becomes usable while other uncertain quantities remain uncertain
+OK: Manual quantities reject negative values and values above the supported entry range
+OK: An invalid correction cannot replace a valid known quantity
+OK: Unknown bait enum values are rejected rather than accessing another inventory slot
+OK: Invalid round and purchase identities are rejected before mutating history
+OK: Zero and oversized purchase credits cannot become confirmed inventory
+OK: Manual round inventory identifies itself as an estimate before any purchase credit
+OK: A completed dialog can advance the common estimate by the requested quantity without claiming inventory verification
+OK: Repeated estimated credit and late confirmed credit share one settled order identity
+OK: Estimated common purchases preserve rare and legendary inventory
+OK: An incomplete purchase dialog creates uncertainty without adding even an estimated quantity
+OK: Later completed-dialog evidence can resolve its pending order as one estimated credit
+OK: A confirmed order cannot be credited again by the estimate path or have its last-credit evidence downgraded
+OK: A corrected quantity also retires pending orders against delayed estimated credits
+OK: An estimated order exceeding the ledger range stays unresolved instead of overflowing or truncating
+OK: Manual engine locates and selects legendary bait before its first casting input
+OK: Selecting and launching alone cannot consume estimated bait or invent a fishing round
+OK: Two confirmed fish frames begin one round and decrement the selected legendary estimate
+OK: Repeated tracking frames cannot consume the final bait repeatedly
+OK: A brief detection dropout within one minigame creates neither a new round nor a finished round
+OK: A sustained menu disappearance counts one finished round without claiming a catch
+OK: After the legendary row is depleted, the next round requires a fresh rare selection and charges rare only
+OK: After rare depletion the engine selects common and preserves the three separate type quantities
+OK: Further common casts retain the confirmed common selection without selecting a vanished row again
+OK: A cast whose minigame never appears respects zero retries and leaves manual inventory untouched
+OK: Missing-minigame recovery identifies Quantity and cancels it without buying or charging bait
+OK: Recovery confirms bait selection again before returning to the water for another cast
+OK: Repeated failure after the one recovery does not cause an unbounded cast or cleanup loop
+OK: An unconfirmed bait-row selection stops before casting or consuming inventory
+OK: Manual remaining 2 computes a common replenishment of capacity minus remaining before casting
+OK: Observed purchase completion credits the requested common amount once as an estimate from 2
+OK: A manual purchase needs neither counter OCR nor invented fishing rounds from 2
+OK: Resuming after replenishment reselects common without charging the estimated inventory or buying again
+OK: Manual remaining 0 computes a common replenishment of capacity minus remaining before casting
+OK: Observed purchase completion credits the requested common amount once as an estimate from 0
+OK: A manual purchase needs neither counter OCR nor invented fishing rounds from 0
+OK: Resuming after replenishment reselects common without charging the estimated inventory or buying again
+OK: A timed request for fifty common bait is capped to thirty when the manual estimate is 270 of 300
+OK: Timed replenishment updates the common estimate and restarts its interval while preserving manual-cast mode
+OK: An empty manual common inventory can replenish fifty immediately instead of casting without bait until the timer
+OK: A common-bait timer cannot interrupt the higher-priority legendary bait before common becomes active
+OK: Reaching threshold two at round start lets that confirmed manual round finish before opening the shop
+OK: The round-driven replenishment quantity uses the once-decremented common count after the menu closes
+OK: A failed initial Yes phase begins recovery without marking an unsent purchase as spent or ambiguous
+OK: Recovery cancels Confirm and returns to fishing with a purchase retry cooldown instead of immediate repeated spending
+OK: A submitted purchase without a completed dialog leaves manual inventory uncertain with no fictional credit
+OK: An ambiguous submitted purchase is cleaned up once then requires correction without buying or fishing on a guessed inventory
+OK: Retrying a stuck final close button cannot resubmit the purchase or credit its estimated quantity twice
+OK: Purchase diagnostics bypass manual thresholds, uncertainty and bait selection to test the explicit quantity once
+OK: Purchase diagnostics cannot charge manual rounds or require fish/counter OCR
+OK: Empty-bait diagnostics simulate zero independently from manual starting quantities without fishing inputs
+OK: Blank marked button patches classify as absent rather than a usable menu
+OK: White side labels with an empty center identify the initial Yes / No dialog
+OK: Conflicting center and side white text remains unknown instead of authorizing Yes
+OK: Three aligned separate small white dots identify the closing dialog
+OK: Side text prevents treating three central specks as a closing dialog
+OK: An isolated central quantity digit is not accepted as a three-dot close button
+OK: Purchase recognizes Confirm, Quantity, Done and stable absence before reporting observed completion
+OK: Normal purchase directs each action to its recognized menu without cancelling
+OK: A missed E retries only after fresh stable absence, then sends one purchase
+OK: A missed Yes retries only while the confirmation menu is still visible
+OK: A missed closing click retries the three dots without repeating Buy
+OK: Two configured retries limit a stuck confirmation to three Yes clicks and never type
+OK: Zero retries leaves one initial attempt before reporting a stuck phase
+OK: A submitted purchase that remains in Quantity is never submitted twice or treated as the closing dialog
+OK: An input exception during Buy preserves an uncertain submitted order and blocks automatic resubmission
+OK: Unknown post-purchase imagery cannot authorize the center closing click or inventory credit
+OK: Stale confirmation imagery cannot authorize Yes or an opening retry
+OK: Repeated cached confirmation is not counted as two fresh observations
+OK: Future-dated menu imagery cannot authorize a click
+OK: A late opening dialog waits for recognition without sending premature Yes or extra E
+OK: A long scheduling pause invalidates the old confirmation before a queued Yes click
+OK: Recovery of Confirm closes only the matched menu without typing, opening or buying
+OK: Recovery of Confirm chooses the correct Cancel or three-dot target
+OK: Recovery of Quantity closes only the matched menu without typing, opening or buying
+OK: Recovery of Quantity chooses the correct Cancel or three-dot target
+OK: Recovery of Done closes only the matched menu without typing, opening or buying
+OK: Recovery of Done chooses the correct Cancel or three-dot target
+OK: Already absent menus complete recovery after stable frames without any input
+OK: Recovery refuses to guess a cancellation target from an unknown menu
+OK: Recovery retries a stuck cancellation only up to the configured attempt limit
+OK: A menu change during gradual aiming invalidates the old target and re-identifies the closing menu
+OK: Cached recovery frames never authorize Cancel
+OK: Focus loss during recovery cancels pending movement and any delayed click
+OK: Bait labels and their own yellow counters identify all three types without OCR
+OK: Rainbow legendary lettering is distinguished from the cyan rare label
+OK: Rare bait is identified by its label rather than a fixed row index
+OK: Common bait has a point inside its independently detected row
+OK: The per-type OCR crop contains the yellow counter and excludes the label
+OK: Menu rows and counter crops preserve negative desktop coordinates
+OK: Disappearing legendary rows do not leave a phantom selectable item
+OK: The shifted rare row is selected only with its own yellow outline
+OK: Common moves upward after a row disappears without inheriting the previous highlight
+OK: The last remaining common row is recognized at the top and its gold border is confirmed
+OK: Duplicate same-colour bait rows are ambiguous and cannot authorize a click
+OK: A white menu title and gold help text cannot impersonate a bait row
+OK: A flat cyan scene without a complete label and quantity is rejected
+OK: A label without a visible associated counter cannot select an exhausted row
+OK: Selected x1 counter crop excludes the gold top, bottom and slanted side outline
+OK: The complete x1 glyphs survive the outline crop, including a separated narrow 1
+OK: Selected x2 counter crop excludes the gold top, bottom and slanted side outline
+OK: The complete x2 glyphs survive the outline crop, including a separated narrow 1
+OK: Selected x4 counter crop excludes the gold top, bottom and slanted side outline
+OK: The complete x4 glyphs survive the outline crop, including a separated narrow 1
+OK: Selected x14 counter crop excludes the gold top, bottom and slanted side outline
+OK: The complete x14 glyphs survive the outline crop, including a separated narrow 1
+OK: Selected x300 counter crop excludes the gold top, bottom and slanted side outline
+OK: The complete x300 glyphs survive the outline crop, including a separated narrow 1
+OK: A remaining gold highlight without common quantity cannot select another type as exhausted common bait
+OK: Bait selection requires fresh stable evidence before moving the mouse
+OK: Selection moves smoothly, waits for arrival and settles before one row click
+OK: A sent mouse click alone is never reported as a verified bait selection
+OK: Two fresh selected-outline frames finish selection and release the input
+OK: An already selected type is confirmed without an unnecessary click
+OK: A row shifting while the pointer is travelling cancels the old destination before clicking
+OK: A newly stable row is reacquired at its current position
+OK: Focus loss cancels selection, releases inputs and prevents any delayed click
+OK: An explicit stop cannot resume the pending bait selection
+OK: Repeated stale frames cannot authorize a move or a click and eventually time out
+OK: A missing requested type ends with a bounded failure rather than choosing another row
+OK: An unconfirmed highlight permits at most two paced selection clicks before timing out
+OK: A rejected click is released and reported without repeatedly attempting the same input
+OK: A reversed clock cannot advance a pending selection
+OK: Geometry detector finds the thin fish line and controlled gray gap despite cyan ocean and green progress
+OK: Detected bounds describe the actual blue track rather than the full selected image height
+OK: The detector reacquires a sideways-panning blue track at x=35
+OK: The detector reacquires a sideways-panning blue track at x=80
+OK: The detector reacquires a sideways-panning blue track at x=140
+OK: The detector reacquires a sideways-panning blue track at x=220
+OK: The detector reacquires a sideways-panning blue track at x=265
+OK: The controlled gray gap remains detectable at the top track endpoint
+OK: The controlled gray gap remains detectable at the bottom track endpoint
+OK: The existing broad synthetic track geometry remains compatible at sideways offset 20
+OK: The existing broad synthetic track geometry remains compatible at sideways offset 70
+OK: The existing broad synthetic track geometry remains compatible at sideways offset 125
+OK: White E-prompt lettering outside the narrow cyan interior cannot replace the actual fish line
+OK: A thick text overlay obscuring a short blue section is neither a thin fish line nor a gray controlled gap
+OK: A visible track with no fish marker remains partial instead of following unrelated white prompt text
+OK: Two plausible thin white lines are ambiguous and cannot silently select a wrong fish marker
+OK: Cyan ocean alone cannot create a vertical track
+OK: A neutral dark rectangle alone cannot create a track
+OK: A green progress meter with a white highlight still cannot count as a blue fishing track
+OK: Green progress is excluded even when green was accidentally picked as the cyan target color
+OK: Two real fishing tracks in the selected area are rejected instead of choosing one by score
+OK: Large vertical padding does not make a genuine track disappear through a whole-image dark-column threshold
+OK: A scaled track preserves the physical marker and gap centers instead of using fixed pixel positions
+OK: Stateful tracking learns a confirmed track box
+OK: Missing marker evidence retains only current visible-menu evidence, never a cached found position
+OK: Current evidence reacquires a panned marker after a partial frame
+OK: A closed menu is not kept visible solely because a previous track box was remembered
+OK: Reset permits clean acquisition at a new track location
+OK: Marked cancel and close points remain available for cleanup with buying disabled
+OK: Cleanup authorization cannot click Buy or an unmarked point
+OK: Typing inventory requires explicit Apply before fishing
+OK: Applying preserves three independent quantities as the primary inventory
+OK: An explicit inventory correction clears a previous uncertain order
+OK: Timer mode retains manual inventory and optional supporting OCR
+OK: Changing a quantity invalidates the previous inventory confirmation
+OK: With zero legendary bait the applied inventory chooses rare next
+OK: Changing language preserves applied inventory, quantities, timer and OCR assistance
 OK: Existing installations default to Spanish when no interface language is saved
 OK: Old XML loads with Spanish without losing the OCR language or purchase quantity
 OK: Interface language persists independently of the Windows OCR language
@@ -879,29 +1077,15 @@ OK: Round-trip language changes preserve every setting and preview state
 OK: The always-visible selector works across every page without rebuilding forms
 OK: A saved English preference applies on startup
 UI: rendered off-screen non-activating form; no hotkeys registered and no clicks sent.
-PASS: 802 checks.
+PASS: 993 checks.
 
-VALIDACION CON CAPTURAS NO DISTRIBUIDAS
+VALIDACION CON CAPTURA NO DISTRIBUIDA
 OK: Windows INPUT structure matches the platform ABI
 OK: Detect cyan bar, interior gap and thin white marker
 OK: Target center agrees with synthetic image
 OK: Marker center agrees with synthetic image
 OK: Empty images do not start tracking
 OK: Missing white marker is rejected
-OK: Detect the bar in the screenshot supplied by the user
-OK: Screenshot: marker near y=225
-OK: Screenshot: target in the dark gap above the marker
-IMAGE: marker y=224,5; target y=165,0; target bounds 137..193
-OK: New screenshot 1: detect the gray gap at the bottom endpoint
-OK: New screenshot 1: white fish line near y=365
-OK: New screenshot 1: controlled gap near the bottom
-OK: New screenshot 1: hold to raise the gap toward the fish
-IMAGE 2: fish y=364,5; controlled gap y=500,5
-OK: New screenshot 2: detect the interior gap and fish
-OK: New screenshot 2: white fish line near y=342
-OK: New screenshot 2: gap above the fish
-OK: New screenshot 2: release to lower the gap toward the fish
-IMAGE 3: fish y=342,5; controlled gap y=291,0
 OK: Hold raises the gray gap toward a fish above it
 OK: Release lowers the gray gap toward a fish below it
 OK: Losing detection releases the controller
@@ -977,7 +1161,8 @@ OK: Casting holds only after the preparation delay
 OK: Changing focus during a cast stops and releases
 OK: A stopped engine cannot send a delayed press
 OK: An already visible minigame skips casting
-OK: A single missing frame releases without counting a round
+OK: A single missing frame preserves the last command during the bounded grace window
+OK: Tracking releases after 180 ms without fresh geometry and does not count a new round
 OK: Sustained disappearance completes one round
 OK: A closed menu triggers the next cast after the rest
 OK: Explicit stop releases the mouse
@@ -994,8 +1179,6 @@ OK: Valid negative monitor coordinates are supported
 OK: Null XML configuration is rejected without returning a null Settings object
 OK: DTD and entity declarations in settings are rejected
 OK: A solid blue background is not treated as the fishing menu
-OK: Reject all 90 tested landscape crops away from the minigame
-NEGATIVE IMAGE: 90 landscape crops; false menus=0; false tracking=0
 OK: Tracking timeout still stops when valid and invalid frames alternate
 OK: Independent watchdog releases a click when UI heartbeats stop
 OK: Expired leases cannot send a new mouse-down
@@ -1038,43 +1221,6 @@ OK: Follow lateral sway in a wide area, frame 30
 OK: Lateral sway with a green progress bar does not trigger a recast or end the round
 OK: Green is excluded even with maximum tolerance and an incorrectly calibrated blue color
 OK: Two plausible blue bars are treated as ambiguous, with no tracking click
-OK: Real screenshot 0 tolerates 50 pixels of blue-sky padding above and below
-OK: Real screenshot 0 including green progress tracks correctly at horizontal offset 0
-OK: Real screenshot 0 including green progress tracks correctly at horizontal offset 23
-OK: Real screenshot 0 including green progress tracks correctly at horizontal offset 90
-OK: Real screenshot 0 including green progress tracks correctly at horizontal offset 170
-OK: Real screenshot 1 tolerates 50 pixels of blue-sky padding above and below
-OK: Real screenshot 1 including green progress tracks correctly at horizontal offset 0
-OK: Real screenshot 1 including green progress tracks correctly at horizontal offset 23
-OK: Real screenshot 1 including green progress tracks correctly at horizontal offset 90
-OK: Real screenshot 1 including green progress tracks correctly at horizontal offset 170
-OK: Real screenshot 2 tolerates 50 pixels of blue-sky padding above and below
-OK: Real screenshot 2 including green progress tracks correctly at horizontal offset 0
-OK: Real screenshot 2 including green progress tracks correctly at horizontal offset 23
-OK: Real screenshot 2 including green progress tracks correctly at horizontal offset 90
-OK: Real screenshot 2 including green progress tracks correctly at horizontal offset 170
-OK: Real green progress bar alone does not count as a fishing track
-OK: Wide landscape region rejected: {X=0,Y=10,Width=180,Height=300}
-OK: Wide landscape region rejected: {X=50,Y=10,Width=180,Height=300}
-OK: Wide landscape region rejected: {X=100,Y=10,Width=180,Height=300}
-OK: Wide landscape region rejected: {X=150,Y=10,Width=180,Height=300}
-OK: Wide landscape region rejected: {X=0,Y=100,Width=180,Height=300}
-OK: Wide landscape region rejected: {X=50,Y=100,Width=180,Height=300}
-OK: Wide landscape region rejected: {X=100,Y=100,Width=180,Height=300}
-OK: Wide landscape region rejected: {X=150,Y=100,Width=180,Height=300}
-OK: Wide landscape region rejected: {X=0,Y=190,Width=180,Height=300}
-OK: Wide landscape region rejected: {X=50,Y=190,Width=180,Height=300}
-OK: Wide landscape region rejected: {X=100,Y=190,Width=180,Height=300}
-OK: Wide landscape region rejected: {X=150,Y=190,Width=180,Height=300}
-OK: Wide landscape region rejected: {X=0,Y=280,Width=180,Height=300}
-OK: Wide landscape region rejected: {X=50,Y=280,Width=180,Height=300}
-OK: Wide landscape region rejected: {X=100,Y=280,Width=180,Height=300}
-OK: Wide landscape region rejected: {X=150,Y=280,Width=180,Height=300}
-OK: Wide landscape region rejected: {X=0,Y=370,Width=180,Height=300}
-OK: Wide landscape region rejected: {X=50,Y=370,Width=180,Height=300}
-OK: Wide landscape region rejected: {X=100,Y=370,Width=180,Height=300}
-OK: Wide landscape region rejected: {X=150,Y=370,Width=180,Height=300}
-WIDE NEGATIVE: 20 wide landscape crops rejected.
 OK: Opening the selector does not commit the previous zone automatically
 OK: Confirming the visible rectangle preserves negative monitor coordinates
 OK: Canceling selection returns no replacement for the saved zone
@@ -1131,11 +1277,6 @@ OK: A small bait counter rectangle is accepted
 OK: A counter outside the screen is rejected
 OK: An excessively wide inventory selection is rejected
 OK: The counter selector allows a 17-pixel-high numeric region
-OK: Windows OCR reads 300 common bait in the user's new screenshot
-OK: The difficult rare-bait lettering is unknown instead of guessed as a number or zero
-OK: Selecting both bait rows is rejected instead of combining the quantities
-OCR: two image scales agree on 300; the rare bait row is outside the selected region.
-OCR LIMIT: the 42 rare-bait crop was not recognized reliably; the reader reports unknown. Both rows together are rejected.
 OK: A never-readable counter cannot trigger disappearance replenishment
 OK: Short counter disappearance is ignored
 OK: Counter disappearance waits the full eight seconds
@@ -1177,18 +1318,9 @@ OK: The fishing engine completes the whole replenishment cycle and casts again
 OK: The session purchase limit prevents another order and permits idle jumps
 OK: Counter disappearance cannot interrupt the active last fish
 OK: A persistent disappearance begins replenishment only after the last fish closes
-OK: The supplied purchase offer and Sí/No buttons are recognized
-OK: The actual No button does not match Sí
-OK: The supplied amount dialogue reads MAX 5 and quantity 1
-OK: The cropped final screenshot without visible dots cannot authorize a close click
-SHOP: the earlier final crop lacks dots. The additional final screenshot is checked separately when supplied. No live purchases were sent.
-OK: The supplied 295-bait counter is readable when the yellow button border is excluded
 OK: White-only UI strips do not produce counter glyphs
 OK: A white strip never becomes a numeric zero
 OK: A thin gold border cannot become counter text
-OK: The supplied x300 preview is read despite its white strip and enlarged lettering
-OK: The same preview resized to the reported 44x25 selection still reads 300
-COUNTER: the new image is a screenshot of the enlarged preview, not the original screen crop; the 44x25 case is a reconstruction. No live game input was sent.
 OK: Purchase diagnostic forces one order of one bait without automatic casting
 OK: Diagnostic settings do not change the user's fishing settings
 OK: A real purchase diagnostic requires a shop region
@@ -1261,19 +1393,6 @@ OK: The x2 visual reference rejects unrelated lettering: xO
 OK: The x2 visual reference rejects unrelated lettering: xZ
 OK: The x2 visual reference rejects unrelated lettering: 2
 OK: A solid yellow region is not a two-bait counter
-OK: Real x300 lettering and partial selections cannot match x2: width 15
-OK: Real x300 lettering and partial selections cannot match x2: width 16
-OK: Real x300 lettering and partial selections cannot match x2: width 17
-OK: Real x300 lettering and partial selections cannot match x2: width 20
-OK: Real x300 lettering and partial selections cannot match x2: width 25
-OK: Real x300 lettering and partial selections cannot match x2: width 30
-OK: The supplied x2 preview is recognized as two bait
-OK: The x2 preview survives reconstructed size {Width=38, Height=33}
-OK: The x2 preview survives reconstructed size {Width=52, Height=45}
-OK: The x2 preview survives reconstructed size {Width=104, Height=91}
-OK: The positive visual fallback requires the x, not just a partial digit
-OK: A substantially obscured x2 counter remains unmatched
-TINY COUNTER LIMIT: visual fallback supports complete x2/x3/x4 references, never zero. The 38x33 x2 case is reconstructed from an enlarged preview; x3/x4 have optional native samples. Other shapes or scales can remain unknown.
 OK: New purchase values are 50 bait every 40 minutes, with automation opt-in
 OK: Timer mode accepts an unconfigured counter even if the old reader checkbox was enabled
 OK: Zero minute intervals cannot create a purchase loop
@@ -1329,8 +1448,6 @@ OK: A suffix, ambiguous glyph or extra number cannot authorize a counter quantit
 OK: A suffix, ambiguous glyph or extra number cannot authorize a counter quantity: x4.2
 OK: A suffix, ambiguous glyph or extra number cannot authorize a counter quantity: x
 OK: Soft contrast cannot turn an empty crop into digits
-OK: Regression: a resized x42 counter must not be misread as its final digit 2
-OK: Soft contrast retains the tiny 295 digits at two scales where the hard mask loses them
 OK: Above the configured bait threshold fishing continues
 OK: Confirmed low bait preserves the already-started bite wait
 OK: Two confirmed remaining bait trigger replenishment at threshold two
@@ -1390,21 +1507,6 @@ OK: An enumerated installed OCR language is selectable: en-US
 OK: An enumerated installed OCR language is selectable: es-ES
 OK: An enumerated installed OCR language is selectable: es-MX
 OK: Unavailable OCR language is a read error, not a closed dialogue
-OK: Yes click lands on the supplied button lettering rather than a generic third of the region
-OK: Double-click target lands on the displayed numeric field in the supplied image
-OK: The actual ellipsis is recognized among HUD labels and targeted at its visible position
-OK: The same HUD without its three dots cannot authorize a closing click
-OK: The new post-Yes image reads MAX294 and quantity1: automatic
-OK: The new image keeps the numeric click at its central1 and Buy separately
-OK: The tighter519x199 selection also recognizes MAX294 and quantity1: automatic
-OK: Ambiguous English OCR cannot turn the new MAX294 image into29 or299
-OK: The ambiguous English crop stays unknown instead of inventing a limit
-OK: The new post-Yes image reads MAX294 and quantity1: es-ES
-OK: The new image keeps the numeric click at its central1 and Buy separately
-OK: The tighter519x199 selection also recognizes MAX294 and quantity1: es-ES
-OK: The new post-Yes image reads MAX294 and quantity1: es-MX
-OK: The new image keeps the numeric click at its central1 and Buy separately
-OK: The tighter519x199 selection also recognizes MAX294 and quantity1: es-MX
 OK: Direct purchase uses the three marked points; Yes/Buy share left and Quantity/Close share middle
 OK: Marked buttons support valid negative monitor coordinates without recalculating percentages
 OK: Direct flow completes one order of 298, preserving its start-time quantity
@@ -1731,7 +1833,7 @@ OK: Marked-point patches preserve negative monitor coordinates
 OK: A patch with overflowing coordinates is rejected
 OK: Shop synchronization never clicks while pointer movement is pending
 OK: The full 700 ms settling delay starts after pointer arrival, not after requesting movement
-OK: The initial Yes click occurs only after the arrived pointer has settled
+OK: The initial Yes click occurs only after the arrived pointer has settled and fresh confirmation is visible
 OK: Fresh quantity-menu confirmations allow the complete synchronized purchase sequence
 OK: Synchronized direct buying verifies visual presence without any text OCR or fishing reads
 OK: Synchronization preserves the number's 250 ms double click and four explicit aiming stages
@@ -1740,7 +1842,7 @@ OK: Focus loss during movement cancels the pending aim and prevents later pollin
 OK: F10 during pointer movement cannot leave a delayed click behind
 OK: A failed pointer driver stops before Yes and releases all held keys
 OK: If Yes does not open the quantity menu, synchronization blocks the number, typing and Buy
-OK: A missing quantity menu fails after approximately eight seconds without retrying Yes
+OK: An unknown quantity menu fails at the configured ten second phase timeout without retrying Yes
 OK: Failed visual confirmation cannot emit future inputs
 OK: A quantity menu lost during pointer movement to the field prevents both number clicks, typing and Buy
 OK: Losing the quantity menu after the double click prevents Ctrl+A and any typing
@@ -1783,6 +1885,203 @@ OK: A newly confirmed low counter interrupts and cancels water aiming before it 
 OK: A low-bait interruption still requires the 1600 ms clear-menu pause
 OK: An interrupted aim is not treated as an in-flight cast requiring a bite window before buying
 OK: Timer expiration during water aiming also cancels the unsent cast and buys after only the clear-menu pause
+OK: Manual inventory retains independently entered common, rare and legendary quantities
+OK: Known positive bait has legendary, rare, common selection priority
+OK: Entering quantities does not invent prior fishing rounds
+OK: One confirmed minigame consumes one active bait and starts one unfinished round
+OK: Repeated frames for the same round cannot consume bait twice
+OK: An unstarted round cannot be counted as finished
+OK: A disappearing completed minigame counts one finished round regardless of catch outcome
+OK: Changing selected bait cannot charge another bait for an already recorded round
+OK: Round consumption touches only the selected bait type
+OK: Finishing the last legendary bait proposes rare without pretending a game selection occurred
+OK: Exhausted rare bait proposes common and cannot trigger a common purchase before selection
+OK: Common restocking uses the entered remaining count and configurable threshold without resetting rounds
+OK: Reconciliation can suggest another bait without changing the active type behind the engine
+OK: Uncertain legendary inventory is excluded from selection without invalidating known common bait
+OK: An explicitly empty inventory has no available bait and can request common restock
+OK: A real round at estimated zero stays nonnegative and marks that estimate uncertain
+OK: Repeated zero-count frames still count the real round only once
+OK: Correcting inventory clears uncertainty but preserves the identity of previously charged rounds
+OK: The next distinct round uses the corrected quantity
+OK: An order without inventory evidence cannot invent a successful MAX purchase
+OK: Ambiguous purchase inventory prevents repeated threshold spending
+OK: Later evidence resolves one ambiguous purchase and credits its actual common quantity
+OK: Duplicate purchase confirmation cannot credit the same order twice
+OK: A late ambiguous callback for a settled purchase cannot alter any bait inventory
+OK: Confirming one order leaves uncertainty from a different unresolved order intact
+OK: An explicit corrected count includes pending orders so delayed confirmation cannot double-credit them
+OK: A confirmed purchase does not repair pre-existing uncertainty about the starting inventory
+OK: Even while legendary is selected, the common vendor credits common bait only
+OK: An impossible out-of-range purchase total is unresolved rather than overflowed or silently truncated
+OK: Persisted uncertain inventory can disable all guessed bait selections until the user reconciles it
+OK: One corrected bait type becomes usable while other uncertain quantities remain uncertain
+OK: Manual quantities reject negative values and values above the supported entry range
+OK: An invalid correction cannot replace a valid known quantity
+OK: Unknown bait enum values are rejected rather than accessing another inventory slot
+OK: Invalid round and purchase identities are rejected before mutating history
+OK: Zero and oversized purchase credits cannot become confirmed inventory
+OK: Manual round inventory identifies itself as an estimate before any purchase credit
+OK: A completed dialog can advance the common estimate by the requested quantity without claiming inventory verification
+OK: Repeated estimated credit and late confirmed credit share one settled order identity
+OK: Estimated common purchases preserve rare and legendary inventory
+OK: An incomplete purchase dialog creates uncertainty without adding even an estimated quantity
+OK: Later completed-dialog evidence can resolve its pending order as one estimated credit
+OK: A confirmed order cannot be credited again by the estimate path or have its last-credit evidence downgraded
+OK: A corrected quantity also retires pending orders against delayed estimated credits
+OK: An estimated order exceeding the ledger range stays unresolved instead of overflowing or truncating
+OK: Manual engine locates and selects legendary bait before its first casting input
+OK: Selecting and launching alone cannot consume estimated bait or invent a fishing round
+OK: Two confirmed fish frames begin one round and decrement the selected legendary estimate
+OK: Repeated tracking frames cannot consume the final bait repeatedly
+OK: A brief detection dropout within one minigame creates neither a new round nor a finished round
+OK: A sustained menu disappearance counts one finished round without claiming a catch
+OK: After the legendary row is depleted, the next round requires a fresh rare selection and charges rare only
+OK: After rare depletion the engine selects common and preserves the three separate type quantities
+OK: Further common casts retain the confirmed common selection without selecting a vanished row again
+OK: A cast whose minigame never appears respects zero retries and leaves manual inventory untouched
+OK: Missing-minigame recovery identifies Quantity and cancels it without buying or charging bait
+OK: Recovery confirms bait selection again before returning to the water for another cast
+OK: Repeated failure after the one recovery does not cause an unbounded cast or cleanup loop
+OK: An unconfirmed bait-row selection stops before casting or consuming inventory
+OK: Manual remaining 2 computes a common replenishment of capacity minus remaining before casting
+OK: Observed purchase completion credits the requested common amount once as an estimate from 2
+OK: A manual purchase needs neither counter OCR nor invented fishing rounds from 2
+OK: Resuming after replenishment reselects common without charging the estimated inventory or buying again
+OK: Manual remaining 0 computes a common replenishment of capacity minus remaining before casting
+OK: Observed purchase completion credits the requested common amount once as an estimate from 0
+OK: A manual purchase needs neither counter OCR nor invented fishing rounds from 0
+OK: Resuming after replenishment reselects common without charging the estimated inventory or buying again
+OK: A timed request for fifty common bait is capped to thirty when the manual estimate is 270 of 300
+OK: Timed replenishment updates the common estimate and restarts its interval while preserving manual-cast mode
+OK: An empty manual common inventory can replenish fifty immediately instead of casting without bait until the timer
+OK: A common-bait timer cannot interrupt the higher-priority legendary bait before common becomes active
+OK: Reaching threshold two at round start lets that confirmed manual round finish before opening the shop
+OK: The round-driven replenishment quantity uses the once-decremented common count after the menu closes
+OK: A failed initial Yes phase begins recovery without marking an unsent purchase as spent or ambiguous
+OK: Recovery cancels Confirm and returns to fishing with a purchase retry cooldown instead of immediate repeated spending
+OK: A submitted purchase without a completed dialog leaves manual inventory uncertain with no fictional credit
+OK: An ambiguous submitted purchase is cleaned up once then requires correction without buying or fishing on a guessed inventory
+OK: Retrying a stuck final close button cannot resubmit the purchase or credit its estimated quantity twice
+OK: Purchase diagnostics bypass manual thresholds, uncertainty and bait selection to test the explicit quantity once
+OK: Purchase diagnostics cannot charge manual rounds or require fish/counter OCR
+OK: Empty-bait diagnostics simulate zero independently from manual starting quantities without fishing inputs
+OK: Blank marked button patches classify as absent rather than a usable menu
+OK: White side labels with an empty center identify the initial Yes / No dialog
+OK: Conflicting center and side white text remains unknown instead of authorizing Yes
+OK: Three aligned separate small white dots identify the closing dialog
+OK: Side text prevents treating three central specks as a closing dialog
+OK: An isolated central quantity digit is not accepted as a three-dot close button
+OK: Purchase recognizes Confirm, Quantity, Done and stable absence before reporting observed completion
+OK: Normal purchase directs each action to its recognized menu without cancelling
+OK: A missed E retries only after fresh stable absence, then sends one purchase
+OK: A missed Yes retries only while the confirmation menu is still visible
+OK: A missed closing click retries the three dots without repeating Buy
+OK: Two configured retries limit a stuck confirmation to three Yes clicks and never type
+OK: Zero retries leaves one initial attempt before reporting a stuck phase
+OK: A submitted purchase that remains in Quantity is never submitted twice or treated as the closing dialog
+OK: An input exception during Buy preserves an uncertain submitted order and blocks automatic resubmission
+OK: Unknown post-purchase imagery cannot authorize the center closing click or inventory credit
+OK: Stale confirmation imagery cannot authorize Yes or an opening retry
+OK: Repeated cached confirmation is not counted as two fresh observations
+OK: Future-dated menu imagery cannot authorize a click
+OK: A late opening dialog waits for recognition without sending premature Yes or extra E
+OK: A long scheduling pause invalidates the old confirmation before a queued Yes click
+OK: Recovery of Confirm closes only the matched menu without typing, opening or buying
+OK: Recovery of Confirm chooses the correct Cancel or three-dot target
+OK: Recovery of Quantity closes only the matched menu without typing, opening or buying
+OK: Recovery of Quantity chooses the correct Cancel or three-dot target
+OK: Recovery of Done closes only the matched menu without typing, opening or buying
+OK: Recovery of Done chooses the correct Cancel or three-dot target
+OK: Already absent menus complete recovery after stable frames without any input
+OK: Recovery refuses to guess a cancellation target from an unknown menu
+OK: Recovery retries a stuck cancellation only up to the configured attempt limit
+OK: A menu change during gradual aiming invalidates the old target and re-identifies the closing menu
+OK: Cached recovery frames never authorize Cancel
+OK: Focus loss during recovery cancels pending movement and any delayed click
+OK: Bait labels and their own yellow counters identify all three types without OCR
+OK: Rainbow legendary lettering is distinguished from the cyan rare label
+OK: Rare bait is identified by its label rather than a fixed row index
+OK: Common bait has a point inside its independently detected row
+OK: The per-type OCR crop contains the yellow counter and excludes the label
+OK: Menu rows and counter crops preserve negative desktop coordinates
+OK: Disappearing legendary rows do not leave a phantom selectable item
+OK: The shifted rare row is selected only with its own yellow outline
+OK: Common moves upward after a row disappears without inheriting the previous highlight
+OK: The last remaining common row is recognized at the top and its gold border is confirmed
+OK: Duplicate same-colour bait rows are ambiguous and cannot authorize a click
+OK: A white menu title and gold help text cannot impersonate a bait row
+OK: A flat cyan scene without a complete label and quantity is rejected
+OK: A label without a visible associated counter cannot select an exhausted row
+OK: Selected x1 counter crop excludes the gold top, bottom and slanted side outline
+OK: The complete x1 glyphs survive the outline crop, including a separated narrow 1
+OK: Selected x2 counter crop excludes the gold top, bottom and slanted side outline
+OK: The complete x2 glyphs survive the outline crop, including a separated narrow 1
+OK: Selected x4 counter crop excludes the gold top, bottom and slanted side outline
+OK: The complete x4 glyphs survive the outline crop, including a separated narrow 1
+OK: Selected x14 counter crop excludes the gold top, bottom and slanted side outline
+OK: The complete x14 glyphs survive the outline crop, including a separated narrow 1
+OK: Selected x300 counter crop excludes the gold top, bottom and slanted side outline
+OK: The complete x300 glyphs survive the outline crop, including a separated narrow 1
+OK: A remaining gold highlight without common quantity cannot select another type as exhausted common bait
+OK: Bait selection requires fresh stable evidence before moving the mouse
+OK: Selection moves smoothly, waits for arrival and settles before one row click
+OK: A sent mouse click alone is never reported as a verified bait selection
+OK: Two fresh selected-outline frames finish selection and release the input
+OK: An already selected type is confirmed without an unnecessary click
+OK: A row shifting while the pointer is travelling cancels the old destination before clicking
+OK: A newly stable row is reacquired at its current position
+OK: Focus loss cancels selection, releases inputs and prevents any delayed click
+OK: An explicit stop cannot resume the pending bait selection
+OK: Repeated stale frames cannot authorize a move or a click and eventually time out
+OK: A missing requested type ends with a bounded failure rather than choosing another row
+OK: An unconfirmed highlight permits at most two paced selection clicks before timing out
+OK: A rejected click is released and reported without repeatedly attempting the same input
+OK: A reversed clock cannot advance a pending selection
+OK: Geometry detector finds the thin fish line and controlled gray gap despite cyan ocean and green progress
+OK: Detected bounds describe the actual blue track rather than the full selected image height
+OK: The detector reacquires a sideways-panning blue track at x=35
+OK: The detector reacquires a sideways-panning blue track at x=80
+OK: The detector reacquires a sideways-panning blue track at x=140
+OK: The detector reacquires a sideways-panning blue track at x=220
+OK: The detector reacquires a sideways-panning blue track at x=265
+OK: The controlled gray gap remains detectable at the top track endpoint
+OK: The controlled gray gap remains detectable at the bottom track endpoint
+OK: The existing broad synthetic track geometry remains compatible at sideways offset 20
+OK: The existing broad synthetic track geometry remains compatible at sideways offset 70
+OK: The existing broad synthetic track geometry remains compatible at sideways offset 125
+OK: White E-prompt lettering outside the narrow cyan interior cannot replace the actual fish line
+OK: A thick text overlay obscuring a short blue section is neither a thin fish line nor a gray controlled gap
+OK: A visible track with no fish marker remains partial instead of following unrelated white prompt text
+OK: Two plausible thin white lines are ambiguous and cannot silently select a wrong fish marker
+OK: Cyan ocean alone cannot create a vertical track
+OK: A neutral dark rectangle alone cannot create a track
+OK: A green progress meter with a white highlight still cannot count as a blue fishing track
+OK: Green progress is excluded even when green was accidentally picked as the cyan target color
+OK: Two real fishing tracks in the selected area are rejected instead of choosing one by score
+OK: Large vertical padding does not make a genuine track disappear through a whole-image dark-column threshold
+OK: A scaled track preserves the physical marker and gap centers instead of using fixed pixel positions
+OK: Stateful tracking learns a confirmed track box
+OK: Missing marker evidence retains only current visible-menu evidence, never a cached found position
+OK: Current evidence reacquires a panned marker after a partial frame
+OK: A closed menu is not kept visible solely because a previous track box was remembered
+OK: Reset permits clean acquisition at a new track location
+OK: The supplied E-prompt screenshot resolves the actual white marker and bottom gray gap from the full frame
+OK: The same supplied prompt screenshot works in a selected fishing rectangle with both bars and sideways margin
+OK: The real supplied green progress meter alone does not become a fishing track
+OK: Supplied dock, avatar, prompt and bait-menu crops outside the fishing track do not create false visible menus
+OK: Supplied overlay: three bait types remain distinct beside the fishing minigame
+OK: Supplied overlay: the real yellow border identifies the selected common bait
+OK: Supplied overlay: common counter crop excludes the surrounding yellow selection frame
+OK: Marked cancel and close points remain available for cleanup with buying disabled
+OK: Cleanup authorization cannot click Buy or an unmarked point
+OK: Typing inventory requires explicit Apply before fishing
+OK: Applying preserves three independent quantities as the primary inventory
+OK: An explicit inventory correction clears a previous uncertain order
+OK: Timer mode retains manual inventory and optional supporting OCR
+OK: Changing a quantity invalidates the previous inventory confirmation
+OK: With zero legendary bait the applied inventory chooses rare next
+OK: Changing language preserves applied inventory, quantities, timer and OCR assistance
 OK: Existing installations default to Spanish when no interface language is saved
 OK: Old XML loads with Spanish without losing the OCR language or purchase quantity
 OK: Interface language persists independently of the Windows OCR language
@@ -1815,41 +2114,5 @@ OK: Switching back restores the canonical diagnostic log without reverse transla
 OK: Round-trip language changes preserve every setting and preview state
 OK: The always-visible selector works across every page without rebuilding forms
 OK: A saved English preference applies on startup
-OK: The supplied complete x3 image matches its own low-count shape
-OK: The supplied x3 image is readable with automatic OCR language
-OK: The supplied x3 image is readable with en-US
-OK: The supplied x3 image is readable with es-ES
-OK: The supplied x3 image is readable with es-MX
-OK: Rescaled x3 is correct or unknown, never another low count at scale 0,8
-OK: Rescaled x3 is correct or unknown, never another low count at scale 1
-OK: Rescaled x3 is correct or unknown, never another low count at scale 1,25
-OK: Rescaled x3 is correct or unknown, never another low count at scale 1,5
-OK: Rescaled x3 is correct or unknown, never another low count at scale 2
-OK: Rescaled x3 is correct or unknown, never another low count at scale 3
-OK: The supplied x3 image cannot match when its x prefix is hidden
-OK: The supplied x3 shape in green cannot become a yellow bait reading
-OK: The supplied complete x4 image matches its own low-count shape
-OK: The supplied x4 image is readable with automatic OCR language
-OK: The supplied x4 image is readable with en-US
-OK: The supplied x4 image is readable with es-ES
-OK: The supplied x4 image is readable with es-MX
-OK: Rescaled x4 is correct or unknown, never another low count at scale 0,8
-OK: Rescaled x4 is correct or unknown, never another low count at scale 1
-OK: Rescaled x4 is correct or unknown, never another low count at scale 1,25
-OK: Rescaled x4 is correct or unknown, never another low count at scale 1,5
-OK: Rescaled x4 is correct or unknown, never another low count at scale 2
-OK: Rescaled x4 is correct or unknown, never another low count at scale 3
-OK: The supplied x4 image cannot match when its x prefix is hidden
-OK: The supplied x4 shape in green cannot become a yellow bait reading
-OK: Latest quantity screenshot contains all three marked-point patches
-OK: Latest quantity screenshot: Botones de cantidad visibles · verde izquierdo: 364 · blanco central: 78 · rojo derecho: 326
-OK: MAX294 quantity screenshot contains all three marked-point patches
-OK: MAX294 quantity screenshot: Botones de cantidad visibles · verde izquierdo: 373 · blanco central: 55 · rojo derecho: 371
-OK: MAX5 quantity screenshot contains all three marked-point patches
-OK: MAX5 quantity screenshot: Botones de cantidad visibles · verde izquierdo: 392 · blanco central: 57 · rojo derecho: 359
-OK: Initial Yes No screenshot contains all three marked-point patches
-OK: Initial Yes No screenshot: Esperando botones de cantidad · verde izquierdo: 0 · blanco central: 0 · rojo derecho: 0
-OK: Final screenshot contains all three marked-point patches
-OK: Final screenshot: Esperando botones de cantidad · verde izquierdo: 0 · blanco central: 29 · rojo derecho: 0
 UI: rendered off-screen non-activating form; no hotkeys registered and no clicks sent.
-PASS: 925 checks.
+PASS: 1000 checks.

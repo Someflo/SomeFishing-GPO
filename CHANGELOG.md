@@ -1,5 +1,20 @@
 # Historial de cambios
 
+## 0.8.0 · Inventario, tipos de cebo y recuperación
+
+- Nuevo apartado **Cebos**: cantidades manuales de legendario, raro y común, con confirmación explícita antes de iniciar pesca. Conserva las estimaciones en los ajustes y permite corregirlas.
+- Usa los tipos en orden legendario → raro → común. Selecciona el menú completo, localiza las filas de nuevo al cambiar su disposición y comprueba el borde amarillo del tipo seleccionado.
+- Cuenta rondas iniciadas, rondas terminadas y lanzamientos por separado. Descuenta una unidad estimada por minijuego detectado, sin repetir el descuento entre imágenes. Un lanzamiento sin minijuego no descuenta. Las rondas terminadas incluyen capturas y escapes.
+- **Inventario y rondas** reemplaza al OCR como disparador principal: repone común hasta la capacidad al alcanzar el umbral. Conserva el cronómetro ajustable de 50 comunes cada 40 minutos; la reposición espera el uso de común y puede adelantarse si se agota el inventario.
+- OCR opcional como contraste de la fila activa. No sustituye las cantidades manuales ni interpreta un menú desconocido como cero.
+- Recorte automático del contador de la fila activa, separando el borde amarillo de los caracteres antes del OCR. La mejora del recorte no equivale a confirmar la lectura numérica de Windows.
+- Detección de pesca apoyada en los bordes reales de la barra azul, sin exigir que cubra el 60 % de la altura de la zona. Limita la búsqueda de pez y hueco a su interior e ignora verde y texto externo.
+- Conserva el control durante pérdidas visuales de hasta 180 ms y después libera el clic. Una interrupción breve no crea otra ronda ni otro descuento de cebo; no devuelve posiciones antiguas como si fueran una detección nueva.
+- Reintentos ajustables por falta de minijuego y por fase de compra, con tiempo máximo. Identifica Sí/No, cantidad, cierre con tres puntos y ausencia mediante capturas nuevas. Rechaza evidencia vieja o repetida y vuelve a comprobar acciones atrasadas.
+- Recuperación de compra: cancela con el punto derecho o cierra los tres puntos según el menú reconocido. Solo retoma pesca cuando observa el cierre; un menú ambiguo o persistente termina la recuperación.
+- Comprar se marca enviado antes de llamar al controlador de entrada para impedir un segundo pedido ante un error incierto. Una compra incompleta no acredita cebos ni se vuelve a enviar; pide corregir el inventario. Un diálogo terminado solo acredita una estimación de la cantidad solicitada, sin afirmar el pago o entrega reales.
+- Mantiene Español/English y amplía las traducciones, guía y pruebas simuladas para inventario, menús, reintentos y selección. La validación en el juego sigue siendo distinta de las pruebas sin entradas reales.
+
 ## 0.7.1 · Español e inglés
 
 - Selector **Idioma / Language** visible en la barra lateral de todos los apartados: Español y English. Cambia la interfaz al instante y guarda la preferencia.

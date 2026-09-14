@@ -22,7 +22,7 @@ namespace SomeFishingGPO
             At(flow,game,aimed+449);check(game.Clicks.Count==0&&game.Arrivals.Count==0,"Shop synchronization never clicks while pointer movement is pending");
             At(flow,game,aimed+450);At(flow,game,aimed+1149);
             check(game.Arrivals.Count==1&&game.Clicks.Count==0,"The full 700 ms settling delay starts after pointer arrival, not after requesting movement");
-            At(flow,game,aimed+1150);check(game.Clicks.Count==1&&game.Clicks[0].At-game.Arrivals[0]>=700,"The initial Yes click occurs only after the arrived pointer has settled");
+            At(flow,game,aimed+1150);Until(flow,game,delegate{return game.Clicks.Count==1;},500);check(game.Clicks.Count==1&&game.Clicks[0].At-game.Arrivals[0]>=700,"The initial Yes click occurs only after the arrived pointer has settled and fresh confirmation is visible");
             Until(flow,game,delegate{return Terminal(flow);});
             check(flow.State==PurchasePhase.Complete&&flow.Submitted&&game.Digits=="2"&&game.Clicks.Count==5,"Fresh quantity-menu confirmations allow the complete synchronized purchase sequence");
             check(game.Reads>=6&&game.TextReads==0&&game.FishingReads==0,"Synchronized direct buying verifies visual presence without any text OCR or fishing reads");
@@ -39,7 +39,7 @@ namespace SomeFishingGPO
 
             game=new Fake{Mode="missing"};flow=new DirectPurchaseController(Options(),game,game);flow.Start(0);Until(flow,game,delegate{return Terminal(flow);});
             check(flow.State==PurchasePhase.Failed&&game.Clicks.Count==1&&game.Aims.Count==1&&!game.Keys.Any(k=>k!=0x45)&&!flow.Submitted,"If Yes does not open the quantity menu, synchronization blocks the number, typing and Buy");
-            check(game.FirstReadAt>=0&&game.Now-game.FirstReadAt>=7800&&game.Now-game.FirstReadAt<=8200,"A missing quantity menu fails after approximately eight seconds without retrying Yes");
+            check(game.FirstReadAt>=0&&game.Now-game.FirstReadAt>=9800&&game.Now-game.FirstReadAt<=10200,"An unknown quantity menu fails at the configured ten second phase timeout without retrying Yes");
             events=game.InputCount;At(flow,game,game.Now+100000);check(game.InputCount==events,"Failed visual confirmation cannot emit future inputs");
 
             game=new Fake{Mode="lost_while_aiming_number"};flow=new DirectPurchaseController(Options(),game,game);flow.Start(0);Until(flow,game,delegate{return Terminal(flow);});
@@ -57,7 +57,7 @@ namespace SomeFishingGPO
             game=new Fake{Mode="throws"};flow=new DirectPurchaseController(Options(),game,game);flow.Start(0);Until(flow,game,delegate{return Terminal(flow);});
             check(flow.State==PurchasePhase.Failed&&game.Clicks.Count==1&&game.KeysDown.Count==0,"A visual reader exception fails safely without proceeding to the field");
 
-            game=new Fake{Mode="manual"};flow=new DirectPurchaseController(Options(),game,game);flow.Start(0);Until(flow,game,delegate{return game.Reads>0;});double gate=game.Now;
+            game=new Fake{Mode="manual"};flow=new DirectPurchaseController(Options(),game,game);flow.Start(0);Until(flow,game,delegate{return game.FirstReadAt>=0;});double gate=game.Now;
             game.Manual=new ShopVisualReading{QuantityMenu=true,Sequence=10,SampledAt=gate+1,Detail="first fresh"};At(flow,game,gate+1);
             check(game.Aims.Count==1,"One fresh quantity-menu frame does not authorize moving to the number");At(flow,game,gate+50);
             check(game.Aims.Count==1,"Reading the same cached visual frame again does not satisfy two-frame confirmation");
@@ -93,14 +93,18 @@ namespace SomeFishingGPO
             public void ShopClick(Point point,ShopClickKind kind){if(!Active||PointerPending||Position!=point||MouseHeld||KeysDown.Count!=0)throw new InvalidOperationException("Unsettled fake click");MouseHeld=true;mouseUpAt=Now+180;Clicks.Add(new ClickEvent{Point=point,Kind=kind,At=Now});Log("Click "+point);}
             public void ShopKey(int key,bool held){if(held){if(!Active||PointerPending||MouseHeld)throw new InvalidOperationException("Unsafe key");Keys.Add(key);KeysDown.Add(key);Log("Key "+key);}else KeysDown.Remove(key);}
             public ShopVisualReading ReadShopVisual(double now){
-                Reads++;if(FirstReadAt<0)FirstReadAt=now;Log("Visual "+Mode+" #"+Reads);
+                Reads++;Log("Visual "+Mode+" #"+Reads);
+                if(Clicks.Count==0)return new ShopVisualReading{Menu=ShopMenuKind.Confirm,Sequence=Reads,SampledAt=now};
+                if(Clicks.Count==4)return new ShopVisualReading{Menu=ShopMenuKind.Done,Sequence=Reads,SampledAt=now};
+                if(Clicks.Count>=5)return new ShopVisualReading{Menu=ShopMenuKind.Absent,Sequence=Reads,SampledAt=now};
+                if(FirstReadAt<0)FirstReadAt=now;
                 if(Mode=="throws")throw new InvalidOperationException("Visual capture failed");if(Mode=="manual")return Manual;
                 bool present=Clicks.Count>=1&&Clicks.Count<4;
                 if(Mode=="missing")present=false;
                 if(Mode=="lost_while_aiming_number"&&Aims.Count>=2)present=false;
                 if(Mode=="lost_before_selection"&&Clicks.Count>=3)present=false;
                 if(Mode=="lost_before_buy"&&Digits.Length>0)present=false;
-                if(Mode=="single_then_missing")present=Reads==1;
+                if(Mode=="single_then_missing")present=now==FirstReadAt;
                 if(Mode=="alternating")present=Reads%2==1;
                 double sampled=Mode=="stale"?now-501:Mode=="future"?now+1:Mode=="same_frame"?FirstReadAt:Mode=="before_gate"?FirstReadAt-200:now;
                 return new ShopVisualReading{QuantityMenu=present,Sequence=Mode=="same_frame"?1:Reads,SampledAt=sampled,Detail="Synthetic visual frame"};
