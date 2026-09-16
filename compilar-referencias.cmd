@@ -1,0 +1,25 @@
+@echo off
+setlocal
+cd /d "%~dp0"
+set "PESCA_CSC=%WINDIR%\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
+if not exist "%PESCA_CSC%" (
+  echo No se encontro el compilador de .NET Framework de Windows.
+  exit /b 1
+)
+set "PESCA_WINMD="
+for /f "delims=" %%D in ('dir /b /ad /o-n "%ProgramFiles(x86)%\Windows Kits\10\UnionMetadata" 2^>nul') do if not defined PESCA_WINMD if exist "%ProgramFiles(x86)%\Windows Kits\10\UnionMetadata\%%D\Facade\Windows.winmd" if exist "%ProgramFiles(x86)%\Windows Kits\10\UnionMetadata\%%D\Windows.winmd" set "PESCA_WINMD=%ProgramFiles(x86)%\Windows Kits\10\UnionMetadata\%%D\Windows.winmd"
+if not defined PESCA_WINMD (
+  echo Para compilar el lector de cebo necesitas el Windows 10 o Windows 11 SDK.
+  exit /b 1
+)
+set "PESCA_RUNTIME="
+for /d %%D in ("%WINDIR%\Microsoft.NET\assembly\GAC_MSIL\System.Runtime\v4.0_*") do if exist "%%D\System.Runtime.dll" set "PESCA_RUNTIME=%%D\System.Runtime.dll"
+if not defined PESCA_RUNTIME (
+  echo No se encontro System.Runtime. Requiere .NET Framework 4.8.
+  exit /b 1
+)
+"%PESCA_CSC%" /nologo /target:winexe /platform:x64 /optimize+ /warn:4 /main:SomeFishingGPO.ReferenceCollectorProgram /out:CapturarReferencias.exe /win32manifest:src\app.manifest /resource:src\Strings.en.tsv,SomeFishingGPO.Strings.en.tsv /reference:System.dll /reference:System.Core.dll /reference:System.Drawing.dll /reference:System.Windows.Forms.dll /reference:System.Xml.dll /reference:"%PESCA_WINMD%" /reference:"%WINDIR%\Microsoft.NET\Framework64\v4.0.30319\System.Runtime.WindowsRuntime.dll" /reference:"%PESCA_RUNTIME%" src\Core.cs src\Native.cs src\ReusableFrameCapture.cs src\ReusableFrameCaptureTests.cs src\App.cs src\Interface.cs src\Tests.cs src\Bait.cs src\WindowsBaitReader.cs src\CounterGlyphs.cs src\Shop.cs src\ShopLabels.cs src\WindowsShopReader.cs src\DirectPurchase.cs src\DirectPurchaseTests.cs src\LowBaitTests.cs src\SimplePurchaseEngineTests.cs src\RelativePointer.cs src\RelativePointerTests.cs src\ShopVisual.cs src\ShopVisualTests.cs src\ShopSynchronizationTests.cs src\CastReturnTests.cs src\Localization.cs src\LocalizationTests.cs src\EngineInventory.cs src\InventoryInterface.cs src\ManualInventory.cs src\ManualInventoryTests.cs src\InventoryEngineTests.cs src\PurchaseRecoveryTests.cs src\BaitSelection.cs src\BaitSelectionTests.cs src\TrackingDetector.cs src\TrackingDetectorTests.cs src\DetectorPerformanceTests.cs src\LongSession.cs src\LongSessionTests.cs src\AsyncSettingsStore.cs src\AsyncSettingsStoreTests.cs src\BaitPointSelection.cs src\BaitPointSelectionTests.cs src\BaitReserveTests.cs src\WinRtWait.cs src\OcrTimeoutTests.cs src\SessionJournal.cs src\SessionJournalTests.cs src\SettingsDefaultsTests.cs src\SessionCounters.cs src\SimplifiedInterfaceTests.cs src\EngineDiagnostics.cs src\SequentialShopRecovery.cs src\SequentialPurchaseTests.cs src\AssemblyInfo.cs src\ReferenceCollector.cs src\ReferenceCollectorForm.cs src\ReferenceCollectorTests.cs
+if errorlevel 1 exit /b 1
+echo Compilado: CapturarReferencias.exe
+endlocal
+
